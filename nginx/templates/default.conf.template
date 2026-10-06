@@ -1,0 +1,52 @@
+# Edge proxy: HTTPS termination, routing, rate limiting, security headers.
+# ${DOMAIN} is substituted from .env by the nginx image at startup.
+
+limit_req_zone $binary_remote_addr zone=api:10m rate=20r/s;
+limit_req_zone $binary_remote_addr zone=auth:10m rate=10r/m;
+
+server {
+    listen 80;
+    server_name ${DOMAIN};
+
+    # Let's Encrypt HTTP-01 challenge
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 301 https://$host$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:10m;
+
+    client_max_body_size 20m;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    # Telegram embeds the Mini App in an iframe on web.telegram.org, so no X-Frame-Options DENY
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org 'self'" always;
+
+    location = /api/auth/telegram {
+        limit_req zone=auth burst=10 nodelay;
+        limit_req_status 429;
+        proxy_pass http://backend:8000;
+        include /etc/nginx/proxy_params_bee;
+    }
+
+    location /api/ {
+        limit_req zone=api burst=40 nodelay;
+        limit_req_status 429;
+        proxy_pass http://backend:8000;
+        include /etc/nginx/proxy_params_bee;
+    }
+
+    location / {
+        proxy_pass http://frontend:80;
+        include /etc/nginx/proxy_params_bee;
+    }
+}
