@@ -153,11 +153,29 @@ cd backend && .venv/bin/pytest       # нужна PostgreSQL-база beekeeping
 cd frontend && npm test
 ```
 
+## Разработка через Spec Kit
+
+В проект подключён [GitHub Spec Kit](https://github.com/github/spec-kit):
+- `.specify/memory/constitution.md` — «конституция»: принципы, которые нельзя нарушать;
+- `docs/requirements.md` — исходное ТЗ;
+- `specs/NNN-название/` — спецификация, план и задачи каждого этапа;
+- команды Claude Code: `/speckit-specify`, `/speckit-plan`, `/speckit-tasks`, `/speckit-implement` и др.
+
+Установка CLI (не обязательна для работы приложения): `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git`
+
+## GitHub CI
+
+`.github/workflows/ci.yml` при каждом push запускает тесты backend на PostgreSQL, проверку миграций,
+тесты и сборку frontend.
+
 ## Структура
 
 ```
 backend/   FastAPI: app/{models,schemas,routers,services,repositories,auth,utils}, alembic/, tests/
 frontend/  React Mini App: src/{components,pages,layouts,hooks,services,api,types,utils,router}
 bot/       Telegram-бот (aiogram): кнопка открытия Mini App, позже — уведомления
+docs/      ТЗ проекта
+specs/     Спецификации этапов (Spec Kit)
+.specify/  Конституция, шаблоны и скрипты Spec Kit
 nginx/     Внешний прокси: HTTPS, маршрутизация, rate limiting
 ```

@@ -1,6 +1,9 @@
 # CLAUDE.md — notes for AI assistants working on this repo
 
-Beekeeping management Telegram Mini App. Full product spec lives with the project owner; work is done in 10 stages (see README status table). Do not start a stage before the previous one passes its tests.
+Beekeeping management Telegram Mini App. Full product spec: `docs/requirements.md` (Russian). Project principles: `.specify/memory/constitution.md` — they override everything else here. Work is done in 10 stages (see README status table). Do not start a stage before the previous one passes its tests.
+
+## Spec Kit workflow
+New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional) → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze` (optional) → `/speckit-implement`. Specs live in `specs/NNN-name/`. Stages 1–2 were built before Spec Kit was added; their behaviour is documented below and in tests.
 
 ## Architecture rules
 - Backend: FastAPI, **sync** SQLAlchemy 2 (psycopg 3), PostgreSQL only (never SQLite). Layers: `routers` (HTTP) → `services` (business rules, audit) → `repositories` (queries) → `models`.
