@@ -43,6 +43,7 @@ function renderApp() {
 
 describe('Telegram authentication', () => {
   it('shows "open in Telegram" when there is no initData', async () => {
+    vi.stubEnv('VITE_DEV_INIT_DATA', '')  // a developer's .env.local must not affect this test
     renderApp()
     expect(await screen.findByText('Откройте в Telegram')).toBeInTheDocument()
   })
