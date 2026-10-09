@@ -3,6 +3,7 @@ so every test run also proves the migrations work."""
 import json
 import os
 import time
+import uuid
 
 # Must be set before the app is imported
 os.environ["ENVIRONMENT"] = "test"
@@ -88,3 +89,23 @@ def login(client):
         body = r.json()
         return {"Authorization": f"Bearer {body['access_token']}"}, body
     return _login
+
+
+@pytest.fixture
+def as_role(login, db):
+    """Headers for a fresh user with the given role, e.g. as_role("BEEKEEPER")."""
+    from app.models.user import User, UserRole
+    counter = iter(range(5000, 6000))
+
+    def _as(role: str, telegram_id: int | None = None):
+        headers, body = login(telegram_id or next(counter))
+        user = db.get(User, uuid.UUID(body["user"]["id"]))
+        user.role = UserRole(role)
+        db.commit()
+        return headers
+    return _as
+
+
+@pytest.fixture
+def beekeeper(as_role):
+    return as_role("BEEKEEPER", 3000)

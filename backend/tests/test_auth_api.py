@@ -79,7 +79,7 @@ def test_expired_init_data_is_rejected(client):
 def test_empty_init_data_gives_readable_validation_error(client):
     r = client.post("/api/auth/telegram", json={"init_data": ""})
     assert r.status_code == 422
-    assert r.json()["detail"] == "Проверьте введённые данные"
+    assert r.json()["detail"].startswith("Проверьте введённые данные")
 
 
 def test_me_requires_token(client):

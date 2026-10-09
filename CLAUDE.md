@@ -10,6 +10,15 @@ Beekeeping management Telegram Mini App. Full product spec lives with the projec
 - Store dates of birth, never ages. Compute derived values (age, total_value) in code/SQL.
 - Error messages returned to users are in Russian (`detail`), validation errors use the shape `{detail, errors:[{field,message}]}`.
 
+## Domain rules (stage 2)
+- Hive UUID is permanent (QR target). Number is unique per apiary only among non-archived hives (partial unique index).
+- Archived hive statuses: MERGED, SOLD, LOST. Selling/losing a hive ends its family and retires its queen.
+- One ACTIVE family per hive and one queen per hive are enforced by partial unique indexes; services flush the old row before inserting the new one.
+- Queen history = `queen_assignments` (installed_at/removed_at per hive). Queen age is computed in `app/utils/age.py`.
+- Every write goes through a service that calls `audit_service.record(...)` with the changed fields only; `GET /api/hives/{id}/history` reads it.
+- Hives carry `version`; PUT with a stale version returns 409.
+- `app/utils/seed.py` creates demo data through the services; extend it in each stage.
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client. The role is loaded from DB on every request (`get_current_user`).

@@ -1,5 +1,38 @@
 """Import every model here so Alembic autogenerate sees the full metadata."""
+from app.models.apiary import Apiary
+from app.models.audit import AuditLog
 from app.models.base import Base
+from app.models.enums import (
+    ARCHIVED_HIVE_STATUSES,
+    REMOVED_QUEEN_STATUSES,
+    FamilyOrigin,
+    FamilyStatus,
+    FamilyStrength,
+    HiveStatus,
+    HiveType,
+    QueenOrigin,
+    QueenStatus,
+)
+from app.models.hive import BeeFamily, Hive, Queen, QueenAssignment
 from app.models.user import User, UserRole
 
-__all__ = ["Base", "User", "UserRole"]
+__all__ = [
+    "ARCHIVED_HIVE_STATUSES",
+    "REMOVED_QUEEN_STATUSES",
+    "Apiary",
+    "AuditLog",
+    "Base",
+    "BeeFamily",
+    "FamilyOrigin",
+    "FamilyStatus",
+    "FamilyStrength",
+    "Hive",
+    "HiveStatus",
+    "HiveType",
+    "Queen",
+    "QueenAssignment",
+    "QueenOrigin",
+    "QueenStatus",
+    "User",
+    "UserRole",
+]

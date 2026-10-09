@@ -10,7 +10,7 @@
 | Этап | Содержание | Статус |
 |---|---|---|
 | 1 | Структура, Docker, PostgreSQL, FastAPI, React, вход через Telegram | ✅ готово |
-| 2 | Пользователи, пасеки, ульи, семьи, матки | ⏳ |
+| 2 | Пользователи, пасеки, ульи, семьи, матки, история изменений | ✅ готово |
 | 3 | Осмотры, болезни, обработки, подкормки | ⏳ |
 | 4 | Мёд, продукция, роение, разделение/объединение, перемещения, зимовка | ⏳ |
 | 5 | QR-коды, сканер, deep link | ⏳ |
@@ -83,12 +83,20 @@ docker compose logs -f backend
 
 Если открыть сайт в обычном браузере, будет экран «Откройте в Telegram» — так и должно быть.
 
+### Демо-данные (по желанию)
+
+2 пасеки, 10 ульев, матки — чтобы сразу посмотреть интерфейс:
+
+```bash
+docker compose exec backend python -m app.utils.seed --telegram-id ВАШ_TELEGRAM_ID
+```
+
 ### Обновление
 
 ```bash
 cd /opt/beekeeping-app
-# замените файлы новой версией (кроме .env)
-docker compose up -d --build
+git pull                       # или замените файлы новой версией (кроме .env)
+docker compose up -d --build   # миграции базы применятся автоматически
 ```
 
 ### Резервная копия базы
@@ -135,6 +143,8 @@ npm run dev
 cd backend && .venv/bin/python -m app.utils.dev_init_data ВАШ_TELEGRAM_ID --first-name Иван
 # результат вставьте в frontend/.env.local: VITE_DEV_INIT_DATA=...
 ```
+
+Демо-данные локально: `cd backend && .venv/bin/python -m app.utils.seed`
 
 ### Тесты
 

@@ -52,7 +52,8 @@ describe('Telegram authentication', () => {
     const fetchSpy = mockFetch((url) => {
       if (url.endsWith('/api/auth/telegram'))
         return json({ access_token: 'tok', token_type: 'bearer', expires_in: 60, user, start_param: null })
-      if (url.endsWith('/api/health')) return json({ status: 'ok', database: 'ok' })
+      if (url.includes('/api/hives')) return json({ items: [], total: 4 })
+      if (url.includes('/api/queens')) return json({ items: [], total: 3 })
       return json({}, 404)
     })
     renderApp()
@@ -63,9 +64,9 @@ describe('Telegram authentication', () => {
     expect(JSON.parse(String(init?.body))).toEqual({ init_data: 'signed-init-data' })
 
     // Subsequent calls carry the bearer token
-    await waitFor(() => expect(screen.getByText('🟢 Работает')).toBeInTheDocument())
-    const healthCall = fetchSpy.mock.calls.find(([u]) => String(u).endsWith('/api/health'))!
-    expect(new Headers(healthCall[1]?.headers).get('Authorization')).toBe('Bearer tok')
+    await waitFor(() => expect(screen.getByText('4')).toBeInTheDocument())
+    const hivesCall = fetchSpy.mock.calls.find(([u]) => String(u).includes('/api/hives'))!
+    expect(new Headers(hivesCall[1]?.headers).get('Authorization')).toBe('Bearer tok')
   })
 
   it('shows a readable error when the backend rejects initData', async () => {

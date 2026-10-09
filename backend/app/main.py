@@ -4,9 +4,12 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 
 from app.config import get_settings
-from app.routers import auth, health
+from app.routers import apiaries, auth, health, hives, queens, users
+from app.utils.errors import DomainError
+from app.utils.validation_messages import humanize_errors
 
 
 @asynccontextmanager
@@ -45,21 +48,31 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(RequestValidationError)
     async def validation_handler(_: Request, exc: RequestValidationError):
-        # Human-readable errors for the Mini App, raw details kept for developers
-        errors = [
-            {
-                "field": ".".join(str(p) for p in e["loc"] if p != "body"),
-                "message": e["msg"],
-            }
-            for e in exc.errors()
-        ]
+        # Human-readable Russian errors for the Mini App, with the field each belongs to
+        errors = humanize_errors(exc.errors())
+        detail = "Проверьте введённые данные"
+        if errors:
+            detail += ": " + errors[0]["message"]
+        return JSONResponse(status_code=422, content={"detail": detail, "errors": errors})
+
+    @app.exception_handler(DomainError)
+    async def domain_handler(_: Request, exc: DomainError):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
+
+    @app.exception_handler(IntegrityError)
+    async def integrity_handler(_: Request, exc: IntegrityError):
+        # Last line of defence: DB constraints caught something the services did not
         return JSONResponse(
-            status_code=422,
-            content={"detail": "Проверьте введённые данные", "errors": errors},
+            status_code=409,
+            content={"detail": "Данные противоречат уже сохранённым записям. Обновите страницу и попробуйте снова."},
         )
 
     app.include_router(health.router)
     app.include_router(auth.router)
+    app.include_router(users.router)
+    app.include_router(apiaries.router)
+    app.include_router(hives.router)
+    app.include_router(queens.router)
     return app
 
 
