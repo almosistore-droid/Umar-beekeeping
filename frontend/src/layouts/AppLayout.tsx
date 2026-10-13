@@ -1,9 +1,7 @@
 import { useEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { BottomNav, NAV_ITEMS } from '../components/BottomNav'
+import { BottomNav, ROOT_PATHS } from '../components/BottomNav'
 import { getWebApp, takeStartParam } from '../services/telegram'
-
-const ROOT_PATHS = new Set<string>(NAV_ITEMS.map((i) => i.to))
 
 export function AppLayout() {
   const location = useLocation()

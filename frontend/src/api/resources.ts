@@ -3,6 +3,10 @@ import type {
   Apiary, AuditEntry, Family, FamilyOrigin, FamilyStatus, FamilyStrength, Hive, HiveListItem,
   HiveStatus, HiveType, Page, Queen, QueenAssignment, QueenOrigin, QueenStatus, User, UserRole,
 } from '../types/api'
+import type {
+  CrmSummary, Customer, CustomerDetails, Debtor, Expense, ExpenseCategory, LineInput, Order, OrderStatus, PayNowInput,
+  PaymentMethod, Sale,
+} from '../types/api'
 import type { Dashboard, HiveCheck, LabelsRequest, QrInfo, QrResolve, QrStatus, ReportFormat, YearlyReport } from '../types/api'
 
 const json = (method: string, body: unknown): RequestInit => ({ method, body: JSON.stringify(body) })
@@ -177,4 +181,37 @@ export const reportsApi = {
   yearly: (year: number) => api<YearlyReport>(`/api/reports/yearly/${year}`),
   download: (year: number, format: ReportFormat) => apiBlob(`/api/reports/yearly/${year}/export${qs({ format })}`),
   send: (year: number, format: ReportFormat) => api<{ sent: boolean }>(`/api/reports/yearly/${year}/send${qs({ format })}`, { method: 'POST' }),
+}
+
+// ---------- stage 7: CRM ----------
+export interface CustomerInput { name: string; phone?: string | null; city?: string | null; notes?: string | null }
+export interface ExpenseInput { expense_date?: string | null; category: ExpenseCategory; amount: number; description?: string | null; apiary_id?: string | null }
+export interface SaleInput extends PayNowInput { sale_date?: string | null; customer_id?: string | null; items: LineInput[]; notes?: string | null }
+export interface OrderInput { customer_id: string; order_date?: string | null; due_date?: string | null; items: LineInput[]; notes?: string | null }
+export interface PaymentInput { amount: number; paid_at?: string | null; method: PaymentMethod; notes?: string | null }
+type Period = { year?: number; month?: number | null }
+
+export const crmApi = {
+  settings: () => api<{ currency: string }>('/api/crm/settings'),
+  summary: (p: Period) => api<CrmSummary>(`/api/crm/summary${qs({ year: p.year, month: p.month })}`),
+  customers: (q?: string, includeArchived = false) => api<Customer[]>(`/api/crm/customers${qs({ q, include_archived: includeArchived })}`),
+  customer: (id: string) => api<CustomerDetails>(`/api/crm/customers/${id}`),
+  createCustomer: (body: CustomerInput) => api<Customer>('/api/crm/customers', json('POST', body)),
+  updateCustomer: (id: string, body: Partial<CustomerInput> & { is_archived?: boolean }) => api<CustomerDetails>(`/api/crm/customers/${id}`, json('PUT', body)),
+  expenses: (p: Period & { include_cancelled?: boolean }) => api<Expense[]>(`/api/crm/expenses${qs({ ...p })}`),
+  createExpense: (body: ExpenseInput) => api<Expense>('/api/crm/expenses', json('POST', body)),
+  updateExpense: (id: string, body: Partial<ExpenseInput> & { comment?: string | null }) => api<Expense>(`/api/crm/expenses/${id}`, json('PUT', body)),
+  cancelExpense: (id: string, reason: string) => api<Expense>(`/api/crm/expenses/${id}/cancel`, json('POST', { reason })),
+  sales: (p: Period & { unpaid?: boolean; customer_id?: string; include_cancelled?: boolean }) => api<Sale[]>(`/api/crm/sales${qs({ ...p })}`),
+  sale: (id: string) => api<Sale>(`/api/crm/sales/${id}`),
+  createSale: (body: SaleInput) => api<Sale>('/api/crm/sales', json('POST', body)),
+  pay: (saleId: string, body: PaymentInput) => api<Sale>(`/api/crm/sales/${saleId}/payments`, json('POST', body)),
+  cancelSale: (id: string, reason: string) => api<Sale>(`/api/crm/sales/${id}/cancel`, json('POST', { reason })),
+  orders: (p: { status?: OrderStatus; open_only?: boolean; customer_id?: string }) => api<Order[]>(`/api/crm/orders${qs({ ...p })}`),
+  order: (id: string) => api<Order>(`/api/crm/orders/${id}`),
+  createOrder: (body: OrderInput) => api<Order>('/api/crm/orders', json('POST', body)),
+  updateOrder: (id: string, body: { due_date?: string | null; notes?: string | null; items?: LineInput[]; status?: 'READY' }) => api<Order>(`/api/crm/orders/${id}`, json('PUT', body)),
+  deliver: (id: string, body: PayNowInput & { sale_date?: string | null }) => api<Sale>(`/api/crm/orders/${id}/deliver`, json('POST', body)),
+  cancelOrder: (id: string, reason: string) => api<Order>(`/api/crm/orders/${id}/cancel`, json('POST', { reason })),
+  debts: () => api<Debtor[]>('/api/crm/debts'),
 }

@@ -106,7 +106,9 @@ def test_honey_and_finance_sections(client, beekeeper, history):
     assert Decimal(m["by_month"][TODAY.month - 1]) == 15 and sum(Decimal(x) for x in m["by_month"]) == 15
     assert Decimal(m["value"]) == 1000
     assert m["products"] == [{"product_type": "WAX", "unit": "KG", "quantity": "2.00", "value": "300.00"}]
-    assert Decimal(r["finance"]["production_value"]) == 1300 and r["finance"]["ready"] is False
+    f = r["finance"]
+    assert Decimal(f["production_value"]) == 1300 and f["visible"] is True and f["currency"] == "смн"
+    assert Decimal(f["income"]) == 0 and Decimal(f["profit"]) == 0  # no sales or expenses recorded here
 
 
 def test_diseases_section(client, beekeeper, history):
@@ -148,7 +150,7 @@ def test_dashboard(client, beekeeper, history):
     t = d["tiles"]
     assert t["hives"] == 3 and t["queens_in_hives"] == 1 and t["queenless"] == 1  # E (split without a queen)
     assert Decimal(t["honey_year_kg"]) == 15 and t["best_hive"]["hive_number"] == "1"
-    assert d["finance_ready"] is False
+    assert d["finance"]["currency"] == "смн" and len(d["finance"]["income_by_month"]) == 12
     assert [b["key"] for b in d["strength"]] == ["VERY_WEAK", "WEAK", "MEDIUM", "STRONG", "VERY_STRONG"]
     assert sum(b["count"] for b in d["strength"]) == 3
     assert {b["key"]: b["count"] for b in d["queen_ages"]}["lt1"] == 1

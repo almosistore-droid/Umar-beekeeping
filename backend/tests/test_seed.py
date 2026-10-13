@@ -29,3 +29,15 @@ def test_seed_adds_operations_once(db):
     counts = [db.scalar(select(func.count()).select_from(m)) for m in models]
     seed.run(None)
     assert counts == [db.scalar(select(func.count()).select_from(m)) for m in models] and all(counts)
+
+
+def test_seed_adds_crm_once(db):
+    from app.models import Customer, Expense, Order, Payment, Sale
+    from app.services import crm_service
+    seed.run(None)
+    models = (Customer, Expense, Sale, Payment, Order)
+    counts = [db.scalar(select(func.count()).select_from(m)) for m in models]
+    seed.run(None)
+    assert counts == [db.scalar(select(func.count()).select_from(m)) for m in models] and all(counts)
+    debtors = crm_service.debts(db)
+    assert len(debtors) == 2 and all(d.debt > 0 for d in debtors)

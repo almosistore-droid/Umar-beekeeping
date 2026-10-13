@@ -8,7 +8,8 @@ from app.models import ARCHIVED_HIVE_STATUSES, FamilyStrength, Hive, HiveStatus,
 from app.models.enums import DiseaseCaseStatus
 from app.models.health import Disease, HiveDisease
 from app.schemas.common import today
-from app.schemas.report import Bucket, DashboardOut, DashboardTiles, DiseaseCount
+from app.config import get_settings
+from app.schemas.report import Bucket, DashboardFinance, DashboardOut, DashboardTiles, DiseaseCount
 from app.services import health_service, honey_service
 from app.utils.age import age_in_months
 from app.utils.labels import STRENGTH
@@ -42,7 +43,16 @@ def disease_counts(db: Session, year: int) -> list[DiseaseCount]:
     return sorted(out, key=lambda d: (-d.cases, d.name))
 
 
-def dashboard(db: Session, year: int) -> DashboardOut:
+def finance(db: Session, year: int) -> DashboardFinance:
+    from app.services import crm_service as crm
+    inc, exp = crm.income(db, year), crm.expenses_total(db, year)
+    inc_m, exp_m = crm.by_month(db, year)
+    return DashboardFinance(currency=get_settings().currency, income=inc, expenses=exp, profit=inc - exp,
+                            debts_total=sum((d.debt for d in crm.debts(db)), crm.ZERO),
+                            income_by_month=inc_m, expenses_by_month=exp_m)
+
+
+def dashboard(db: Session, year: int, show_finance: bool = False) -> DashboardOut:
     hives = list(db.scalars(select(Hive).where(Hive.status.not_in(ARCHIVED_HIVE_STATUSES))).unique())
     strengths = Counter(h.current_family.strength for h in hives if h.current_family)
     att = health_service.attention(db)
@@ -63,7 +73,7 @@ def dashboard(db: Session, year: int) -> DashboardOut:
             needs_inspection=att["needs_inspection"], open_tasks=att["open_tasks"], overdue_tasks=att["overdue_tasks"],
             honey_year_kg=honey["year_kg"], best_hive=honey["best_hive"],
         ),
-        finance_ready=False,
+        finance=finance(db, year) if show_finance else None,
         honey_by_month=honey["by_month"],
         honey_by_hive=honey["by_hive"][:10],
         strength=[Bucket(key=s.value, label=STRENGTH[s].capitalize(), count=strengths[s]) for s in STRENGTH_ORDER],

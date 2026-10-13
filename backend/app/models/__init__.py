@@ -25,10 +25,12 @@ from app.models.operations import (
     Wintering,
     hive_merge_sources,
 )
+from app.models.crm import Customer, Expense, Order, OrderItem, Payment, Sale, SaleItem
 from app.models.qr import QrCode
 from app.models.user import User, UserRole
 
 __all__ = [
+    "Customer", "Expense", "Order", "OrderItem", "Payment", "Sale", "SaleItem",
     "QrCode",
     "HiveMerge",
     "HiveMovement",

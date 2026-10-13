@@ -6,12 +6,13 @@ import { ROLE_LABELS } from '../types/api'
 
 export function MorePage() {
   const { user } = useAuth()
-  const { isAdmin } = usePermissions()
+  const { isAdmin, canManage } = usePermissions()
   if (!user) return null
   return (
     <div className="page">
       <h1 className="page__title">Ещё</h1>
       <nav className="menu">
+        {canManage && <Link to="/queens" className="menu__item"><Icon name="crown" />Матки<span className="chevron">›</span></Link>}
         <Link to="/apiaries" className="menu__item"><Icon name="apiary" />Пасеки<span className="chevron">›</span></Link>
         <Link to="/honey" className="menu__item"><Icon name="honey" />Мёд<span className="chevron">›</span></Link>
         <Link to="/products" className="menu__item"><Icon name="feed" />Продукция<span className="chevron">›</span></Link>

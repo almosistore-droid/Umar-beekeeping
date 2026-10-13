@@ -66,12 +66,25 @@ def summary(r: YearlyReportOut) -> list[tuple[str, list[tuple[str, str]]]]:
             ("Случаев выявлено", fmt(d.cases)), ("Вылечено", fmt(d.resolved)), ("Ещё не вылечено", fmt(d.open)),
             ("Обработок проведено", fmt(d.treatments)),
         ] + [(f"Препарат: {x.medication}", f"{x.count} {plural_ru(x.count, 'раз', 'раза', 'раз')}") for x in d.medications]),
-        ("Финансы", [
-            ("Стоимость продукции по ценам в записях", fmt(r.finance.production_value)),
-            ("Доходы, расходы, прибыль", "появятся на этапе 7"),
-        ]),
+        ("Финансы", _finance_rows(r)),
     ]
     return sections
+
+
+def _finance_rows(r: YearlyReportOut) -> list[tuple[str, str]]:
+    f = r.finance
+    cur = f.currency
+    rows = [("Стоимость продукции по ценам в записях", f"{fmt(f.production_value)} {cur}")]
+    if not f.visible:
+        return rows
+    rows += [
+        ("Доход (продажи)", f"{fmt(f.income)} {cur}"), ("Расход", f"{fmt(f.expenses)} {cur}"),
+        ("Прибыль", f"{fmt(f.profit)} {cur}"), ("Получено денег", f"{fmt(f.received)} {cur}"),
+        ("Долги клиентов сейчас", f"{fmt(f.debts_total)} {cur}"),
+    ]
+    rows += [(f"Доход: {x.label}", f"{fmt(x.amount)} {cur}") for x in f.income_by_category]
+    rows += [(f"Расход: {x.label}", f"{fmt(x.amount)} {cur}") for x in f.expenses_by_category]
+    return rows
 
 
 def title(r: YearlyReportOut) -> str:

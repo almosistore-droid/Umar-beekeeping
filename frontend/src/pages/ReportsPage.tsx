@@ -9,7 +9,7 @@ import { LoadingView } from '../components/StateViews'
 import { Choice, Chips, ErrorBox, InfoRow } from '../components/ui'
 import type { ReportFormat, YearlyReport } from '../types/api'
 import { plural } from '../utils/plural'
-import { FEED_UNIT, MONTHS_SHORT, PRODUCT_TYPE, formatDate, num } from '../utils/labels'
+import { FEED_UNIT, MONTHS_SHORT, PRODUCT_TYPE, formatDate, money, num } from '../utils/labels'
 
 const FORMATS: { value: ReportFormat; label: string }[] = [
   { value: 'pdf', label: 'PDF' }, { value: 'xlsx', label: 'Excel' }, { value: 'csv', label: 'CSV' },
@@ -107,8 +107,24 @@ function Report({ r }: { r: YearlyReport }) {
 
     <section className="card">
       <h2 className="card__title">Финансы</h2>
-      <InfoRow label="Стоимость продукции">{num(r.finance.production_value)}</InfoRow>
-      <p className="hint small">По ценам, указанным в записях мёда и продукции. Доходы, расходы и прибыль появятся на этапе 7.</p>
+      {r.finance.visible ? <>
+        <div className="kv-grid">
+          <Kv value={money(r.finance.income, r.finance.currency)} label="Доход" />
+          <Kv value={money(r.finance.expenses, r.finance.currency)} label="Расход" />
+        </div>
+        <InfoRow label="Прибыль"><b className={Number(r.finance.profit) >= 0 ? 'money__value--ok' : 'money__value--bad'}>{money(r.finance.profit, r.finance.currency)}</b></InfoRow>
+        <InfoRow label="Получено денег">{money(r.finance.received, r.finance.currency)}</InfoRow>
+        <InfoRow label="Долги клиентов сейчас">{money(r.finance.debts_total, r.finance.currency)}</InfoRow>
+        {r.finance.income_by_category.length > 0 && <>
+          <h3 className="form-section-title">Доход по видам</h3>
+          <BarList label="Доход по видам" unit={r.finance.currency} rows={r.finance.income_by_category.map((x) => ({ key: x.key, label: x.label, value: Number(x.amount) }))} />
+        </>}
+        {r.finance.expenses_by_category.length > 0 && <>
+          <h3 className="form-section-title">Расход по категориям</h3>
+          <BarList label="Расход по категориям" unit={r.finance.currency} rows={r.finance.expenses_by_category.map((x) => ({ key: x.key, label: x.label, value: Number(x.amount) }))} />
+        </>}
+      </> : <p className="hint small">Деньги видят администратор и пчеловод.</p>}
+      <InfoRow label="Стоимость продукции по ценам в записях">{money(r.finance.production_value, r.finance.currency)}</InfoRow>
     </section>
 
     <section className="card form">

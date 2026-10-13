@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { vi } from 'vitest'
 import { AuthGate } from '../App'
 import { AuthProvider } from '../hooks/useAuth'
-import { BottomNav } from '../components/BottomNav'
+import { navItems } from '../components/BottomNav'
 import { HomePage } from '../pages/HomePage'
 import type { TelegramWebApp } from '../types/telegram'
 
@@ -113,11 +113,8 @@ describe('Local dev login', () => {
 })
 
 describe('BottomNav', () => {
-  it('renders the six main sections and marks the active one', () => {
-    render(<MemoryRouter initialEntries={['/queens']}><BottomNav /></MemoryRouter>)
-    for (const label of ['Главная', 'Ульи', 'Сканер', 'Матки', 'Отчёты', 'Ещё'])
-      expect(screen.getByText(label)).toBeInTheDocument()
-    expect(screen.getByText('Матки').closest('a')).toHaveClass('is-active')
-    expect(screen.getByText('Главная').closest('a')).not.toHaveClass('is-active')
+  it('gives CRM to admin and beekeeper, queens to everyone else', () => {
+    expect(navItems(true).map((i) => i.label)).toEqual(['Главная', 'Ульи', 'Сканер', 'CRM', 'Отчёты', 'Ещё'])
+    expect(navItems(false).map((i) => i.label)).toEqual(['Главная', 'Ульи', 'Сканер', 'Матки', 'Отчёты', 'Ещё'])
   })
 })

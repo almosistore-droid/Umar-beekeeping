@@ -75,20 +75,29 @@ export function HomePage() {
         </span>
       </Link>
 
-      <section className="finance-strip" aria-label="Финансы появятся на этапе 7">
-        {['Доход', 'Расход', 'Прибыль'].map((label) => (
-          <div key={label} className="finance-strip__item">
-            <span className="finance-strip__value">—</span>
-            <span className="tile__label">{label}</span>
-          </div>
-        ))}
-        <span className="tile__soon finance-strip__note">этап 7</span>
-      </section>
+      {d?.finance && (
+        <Link to="/crm" className="finance-strip" aria-label="Финансы за год">
+          {[['Доход', d.finance.income], ['Расход', d.finance.expenses], ['Прибыль', d.finance.profit]].map(([label, v]) => (
+            <span key={label} className="finance-strip__item">
+              <span className={`finance-strip__value${label === 'Прибыль' ? (Number(v) >= 0 ? ' money__value--ok' : ' money__value--bad') : ''}`}>{num(v)}</span>
+              <span className="tile__label">{label}, {d.finance!.currency}</span>
+            </span>
+          ))}
+          {Number(d.finance.debts_total) > 0 && <span className="tile__soon finance-strip__note">долги {num(d.finance.debts_total)}</span>}
+        </Link>
+      )}
 
       {d && <>
         <h2 className="section-title">Графики {year}</h2>
         <ColumnChart title="Мёд по месяцам, кг" unit="кг" labelHeader="Месяц" labels={MONTHS_SHORT}
           shortLabels={MONTH_TICKS} values={d.honey_by_month.map(Number)} />
+
+        {d.finance && <>
+          <ColumnChart title={`Доход по месяцам, ${d.finance.currency}`} unit={d.finance.currency} labelHeader="Месяц" labels={MONTHS_SHORT}
+            shortLabels={MONTH_TICKS} values={d.finance.income_by_month.map(Number)} />
+          <ColumnChart title={`Расход по месяцам, ${d.finance.currency}`} unit={d.finance.currency} labelHeader="Месяц" labels={MONTHS_SHORT}
+            shortLabels={MONTH_TICKS} values={d.finance.expenses_by_month.map(Number)} />
+        </>}
 
         <section className="card">
           <div className="card__titlebar">

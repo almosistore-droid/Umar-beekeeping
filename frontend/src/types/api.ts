@@ -329,7 +329,7 @@ export interface Dashboard {
     hives: number; queens_in_hives: number; strong: number; weak: number; sick: number; queenless: number
     needs_inspection: number; open_tasks: number; overdue_tasks: number; honey_year_kg: string; best_hive: HiveRank | null
   }
-  finance_ready: boolean
+  finance: { currency: string; income: string; expenses: string; profit: string; debts_total: string; income_by_month: string[]; expenses_by_month: string[] } | null
   honey_by_month: string[]
   honey_by_hive: HiveRank[]
   strength: Bucket[]
@@ -349,7 +349,54 @@ export interface YearlyReport {
     products: { product_type: ProductType; unit: FeedUnit; quantity: string; value: string }[]
   }
   diseases: { cases: number; resolved: number; open: number; by_disease: DiseaseCount[]; treatments: number; medications: { medication: string; count: number }[] }
-  finance: { production_value: string; ready: boolean }
+  finance: {
+    production_value: string; visible: boolean; currency: string
+    income: string | null; expenses: string | null; profit: string | null; received: string | null; debts_total: string | null
+    income_by_category: { key: string; label: string; amount: string }[]; expenses_by_category: { key: string; label: string; amount: string }[]
+  }
   available_years: number[]
 }
 export type ReportFormat = 'pdf' | 'xlsx' | 'csv'
+
+// ---------- stage 7: CRM ----------
+export type ExpenseCategory = 'HIVES' | 'FRAMES' | 'FOUNDATION' | 'FEED' | 'MEDICINE' | 'EQUIPMENT' | 'TRANSPORT' | 'FUEL' | 'QUEENS' | 'COLONIES' | 'REPAIR' | 'OTHER'
+export type SaleCategory = 'HONEY' | 'WAX' | 'PROPOLIS' | 'BEE_BREAD' | 'POLLEN' | 'QUEENS' | 'COLONIES' | 'PACKAGES' | 'OTHER'
+export type PaymentMethod = 'CASH' | 'CARD' | 'TRANSFER'
+export type OrderStatus = 'NEW' | 'READY' | 'DELIVERED' | 'CANCELLED'
+export type SaleState = 'paid' | 'partial' | 'unpaid' | 'cancelled'
+export type PayMode = 'full' | 'partial' | 'credit'
+
+export interface CustomerBrief { id: string; name: string; phone: string | null }
+export interface Customer extends CustomerBrief {
+  city: string | null; notes: string | null; is_archived: boolean; created_at: string
+  bought: string; paid: string; debt: string; sales_count: number; last_purchase: string | null
+}
+export interface Line { id: string; category: SaleCategory; quantity: string; unit: FeedUnit; price_per_unit: string; total: string; description: string | null }
+export interface LineInput { category: SaleCategory; quantity: number; unit: FeedUnit; price_per_unit: number; description?: string | null }
+export interface PaymentRow { id: string; sale_id: string; paid_at: string; amount: string; method: PaymentMethod; notes: string | null }
+export interface Sale {
+  id: string; sale_date: string; customer: CustomerBrief | null; order_id: string | null; notes: string | null
+  items: Line[]; payments: PaymentRow[]; total: string; paid: string; debt: string; state: SaleState
+  cancelled_at: string | null; cancel_reason: string | null; author: string | null; created_at: string
+}
+export interface Expense {
+  id: string; expense_date: string; category: ExpenseCategory; amount: string; description: string | null
+  apiary_id: string | null; apiary_name: string | null; hive_id: string | null
+  cancelled_at: string | null; cancel_reason: string | null; author: string | null; created_at: string
+}
+export interface Order {
+  id: string; customer: CustomerBrief; order_date: string; due_date: string | null; status: OrderStatus
+  notes: string | null; cancel_reason: string | null; items: Line[]; total: string; overdue: boolean
+  sale_id: string | null; sale_state: SaleState | null; sale_debt: string | null; created_at: string
+}
+export interface CustomerDetails extends Customer { orders: Order[]; sales: Sale[] }
+export interface Debtor { customer: CustomerBrief | null; debt: string; sales: Sale[] }
+export interface AmountByKey { key: string; label: string; amount: string }
+export interface CrmSummary {
+  year: number; month: number | null; currency: string
+  income: string; expenses: string; profit: string; received: string; debts_total: string; debtors: number
+  open_orders: number; honey_stock_kg: string
+  income_by_month: string[]; expenses_by_month: string[]
+  income_by_category: AmountByKey[]; expenses_by_category: AmountByKey[]
+}
+export interface PayNowInput { payment: PayMode; paid_amount?: number | null; method: PaymentMethod }

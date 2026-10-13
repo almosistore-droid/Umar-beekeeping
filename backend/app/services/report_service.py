@@ -24,6 +24,7 @@ from app.schemas.report import (
     HivesSection,
     HoneySection,
     MedicationCount,
+    MoneyByKey,
     ProductTotal,
     QueensSection,
     YearlyReportOut,
@@ -160,7 +161,22 @@ def available_years(db: Session, spans: list[Span]) -> list[int]:
     return list(range(current, first - 1, -1))
 
 
-def yearly(db: Session, year: int) -> YearlyReportOut:
+def _finance(db: Session, year: int, production_value: Decimal, show: bool) -> FinanceSection:
+    from app.config import get_settings
+    from app.services import crm_service as crm
+    currency = get_settings().currency
+    if not show:
+        return FinanceSection(production_value=production_value, visible=False, currency=currency)
+    inc, exp = crm.income(db, year), crm.expenses_total(db, year)
+    return FinanceSection(
+        production_value=production_value, visible=True, currency=currency, income=inc, expenses=exp, profit=inc - exp,
+        received=crm.received(db, year), debts_total=sum((d.debt for d in crm.debts(db)), ZERO),
+        income_by_category=[MoneyByKey(**x.model_dump()) for x in crm.income_by_category(db, year)],
+        expenses_by_category=[MoneyByKey(**x.model_dump()) for x in crm.expenses_by_category(db, year)],
+    )
+
+
+def yearly(db: Session, year: int, show_finance: bool = False) -> YearlyReportOut:
     validate_year(year)
     y0, y1 = _period(year)
     spans = hive_spans(db)
@@ -172,6 +188,6 @@ def yearly(db: Session, year: int) -> YearlyReportOut:
         queens=_queens(db, y0, y1, stats["by_hive"]),
         honey=honey,
         diseases=_diseases(db, year, y0, y1),
-        finance=FinanceSection(production_value=honey.value + sum((p.value for p in honey.products), ZERO), ready=False),
+        finance=_finance(db, year, honey.value + sum((p.value for p in honey.products), ZERO), show_finance),
         available_years=available_years(db, spans),
     )

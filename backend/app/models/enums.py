@@ -179,3 +179,48 @@ class WinteringResult(str, enum.Enum):
     STRONG = "STRONG"   # перезимовала сильной
     WEAK = "WEAK"       # перезимовала, ослабла
     DIED = "DIED"       # погибла
+
+
+# ---------- stage 7: CRM ----------
+
+class ExpenseCategory(str, enum.Enum):
+    HIVES = "HIVES"            # ульи
+    FRAMES = "FRAMES"          # рамки
+    FOUNDATION = "FOUNDATION"  # вощина
+    FEED = "FEED"              # корм
+    MEDICINE = "MEDICINE"      # лекарства
+    EQUIPMENT = "EQUIPMENT"    # оборудование
+    TRANSPORT = "TRANSPORT"    # транспорт
+    FUEL = "FUEL"              # топливо
+    QUEENS = "QUEENS"          # матки
+    COLONIES = "COLONIES"      # семьи
+    REPAIR = "REPAIR"          # ремонт
+    OTHER = "OTHER"            # другое
+
+
+class SaleCategory(str, enum.Enum):
+    HONEY = "HONEY"
+    WAX = "WAX"
+    PROPOLIS = "PROPOLIS"
+    BEE_BREAD = "BEE_BREAD"
+    POLLEN = "POLLEN"
+    QUEENS = "QUEENS"
+    COLONIES = "COLONIES"
+    PACKAGES = "PACKAGES"
+    OTHER = "OTHER"
+
+
+class PaymentMethod(str, enum.Enum):
+    CASH = "CASH"
+    CARD = "CARD"
+    TRANSFER = "TRANSFER"
+
+
+class OrderStatus(str, enum.Enum):
+    NEW = "NEW"
+    READY = "READY"
+    DELIVERED = "DELIVERED"
+    CANCELLED = "CANCELLED"
+
+
+ORDER_STATUS_ORDER = {OrderStatus.NEW: 0, OrderStatus.READY: 1, OrderStatus.DELIVERED: 2}

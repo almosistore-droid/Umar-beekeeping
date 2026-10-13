@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 12
 
+    # Money label shown next to amounts (CRM, reports)
+    currency: str = "смн"
+
     # CORS
     cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["http://localhost:5173"])
 

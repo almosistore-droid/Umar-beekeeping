@@ -199,6 +199,7 @@ export const PRODUCT_TYPE: Record<ProductType, string> = {
 export const WINTERING_RESULT: Record<WinteringResult, string> = { STRONG: 'Перезимовала сильной', WEAK: 'Перезимовала, ослабла', DIED: 'Погибла' }
 export const HONEY_TYPES = ['Разнотравье', 'Акация', 'Липа', 'Гречиха', 'Подсолнечник', 'Горный', 'Хлопковый', 'Эспарцет']
 export const MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+export const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
 
 /** 12.50 → "12,5"; keeps up to 2 decimals, Russian decimal comma, thin-space thousands. */
 export function num(v: string | number | null | undefined): string {
@@ -213,4 +214,34 @@ export function daysAgoLabel(days: number): string {
   const n10 = days % 10, n100 = days % 100
   const word = n10 === 1 && n100 !== 11 ? 'день' : n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20) ? 'дня' : 'дней'
   return `${days} ${word} назад`
+}
+
+// ---------- stage 7: CRM ----------
+import type { ExpenseCategory, OrderStatus, PaymentMethod, SaleCategory, SaleState } from '../types/api'
+
+export const EXPENSE_CATEGORY: Record<ExpenseCategory, string> = {
+  HIVES: 'Ульи', FRAMES: 'Рамки', FOUNDATION: 'Вощина', FEED: 'Корм', MEDICINE: 'Лекарства', EQUIPMENT: 'Оборудование',
+  TRANSPORT: 'Транспорт', FUEL: 'Топливо', QUEENS: 'Матки', COLONIES: 'Семьи', REPAIR: 'Ремонт', OTHER: 'Другое',
+}
+export const SALE_CATEGORY: Record<SaleCategory, string> = {
+  HONEY: 'Мёд', WAX: 'Воск', PROPOLIS: 'Прополис', BEE_BREAD: 'Перга', POLLEN: 'Пыльца', QUEENS: 'Матки',
+  COLONIES: 'Семьи', PACKAGES: 'Пчелопакеты', OTHER: 'Другое',
+}
+export const DEFAULT_SALE_UNIT: Record<SaleCategory, FeedUnit> = {
+  HONEY: 'KG', WAX: 'KG', PROPOLIS: 'G', BEE_BREAD: 'KG', POLLEN: 'KG', QUEENS: 'PCS', COLONIES: 'PCS', PACKAGES: 'PCS', OTHER: 'PCS',
+}
+export const PAYMENT_METHOD: Record<PaymentMethod, string> = { CASH: 'Наличные', CARD: 'Карта', TRANSFER: 'Перевод' }
+export const ORDER_STATUS: Record<OrderStatus, { label: string; tone: Tone }> = {
+  NEW: { label: 'Новый', tone: 'warn' }, READY: { label: 'Собран', tone: 'ok' },
+  DELIVERED: { label: 'Выдан', tone: 'muted' }, CANCELLED: { label: 'Отменён', tone: 'muted' },
+}
+export const SALE_STATE: Record<SaleState, { label: string; tone: Tone }> = {
+  paid: { label: 'Оплачено', tone: 'ok' }, partial: { label: 'Частично', tone: 'warn' },
+  unpaid: { label: 'В долг', tone: 'bad' }, cancelled: { label: 'Отменена', tone: 'muted' },
+}
+
+/** 1 250 смн */
+export function money(v: string | number | null | undefined, currency: string): string {
+  if (v === null || v === undefined || v === '') return '—'
+  return `${Number(v).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ${currency}`
 }

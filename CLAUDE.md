@@ -53,7 +53,14 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Hive lifecycle in reports comes from history: start = installation_date (or created_at), end = merge date (MERGED) or the audit entry that set SOLD/LOST. Year end = min(31 Dec, today); years 2000…current, otherwise 422.
 - Exports in `report_export.py` share `summary()`; CSV is UTF-8 BOM with «;» and Russian number format; PDF reuses the DejaVu fonts.
 - Frontend charts: `components/charts/ColumnChart` (columns, tap tooltip, table toggle) and `BarList` (horizontal, values as text). One hue `#c08918`, highlight `--gold`. File delivery: `components/files/DeliverButtons` (bot in Telegram, download in a browser).
-- Finance (income/expenses/profit) is stage 7: dashboard shows a placeholder strip, report shows production value only.
+- Money on the dashboard (`finance`) and in the report (`finance.visible`) is returned only to ADMIN/BEEKEEPER.
+
+## Domain rules (stage 7 — specs/007-crm-finance)
+- CRM (`/api/crm/*`, `crm_service`) is ADMIN/BEEKEEPER only (403 for others). Bottom nav shows «CRM» instead of «Матки» for them (`navItems(canManage)`); queens move to «Ещё».
+- Sales and orders have lines with PostgreSQL generated `total`; sale total = Σ lines, paid = Σ payments, debt = total − paid. Overpayment refused; credit/partial sales need a customer.
+- Nothing is deleted: customers archived; expenses/sales/orders cancelled with a reason (sale with payments cannot be cancelled; a sale from an order is cancelled via the order). Order status NEW → READY → DELIVERED (deliver creates the sale in one transaction) or CANCELLED.
+- Income = sales by sale date; received = payments by date; profit = income − expenses. Honey stock = Σ harvest kg − Σ sold HONEY kg.
+- Currency label: `CURRENCY` setting (default «смн»), `GET /api/crm/settings`. Frontend forms in `components/crm/forms.tsx`, pages in `pages/crm/`.
 
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
@@ -64,7 +71,7 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Mobile-first; cards and big buttons, no wide tables.
 - Brand: Fayzi Umar (logo `frontend/public/logo.webp`). Palette tokens at the top of `src/styles.css` (`--pitch`, `--comb`, `--gold`, `--amber`, `--wax`…); the app keeps this dark palette in every Telegram theme and paints Telegram's header to match. Hexagon (`--hex`) is the brand motif: hive numbers, nav scanner button, icon cells. Titles use Forum, body Manrope (self-hosted via @fontsource). Icons: `src/components/Icon.tsx` (no emoji in UI).
 - Data fetching via TanStack Query; HTTP via `src/api/client.ts` (token in memory only).
-- Bottom nav: Главная / Ульи / Сканер / Матки / Отчёты / Ещё.
+- Bottom nav: Главная / Ульи / Сканер / CRM (admin, beekeeper) or Матки (others) / Отчёты / Ещё.
 
 ## Commands
 - Backend tests: `cd backend && .venv/bin/pytest` (DB `beekeeping_test`, migrated with Alembic in conftest).

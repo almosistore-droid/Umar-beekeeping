@@ -10,6 +10,12 @@ import { QueenDetailsPage } from '../pages/QueenDetailsPage'
 import { QueenFormPage } from '../pages/QueenFormPage'
 import { QueensPage } from '../pages/QueensPage'
 import { ReportsPage } from '../pages/ReportsPage'
+import { CrmHomePage } from '../pages/crm/CrmHomePage'
+import { SaleDetailsPage, SalesPage } from '../pages/crm/SalesPages'
+import { ExpensesPage } from '../pages/crm/ExpensesPage'
+import { OrderDetailsPage, OrdersPage } from '../pages/crm/OrdersPages'
+import { CustomerDetailsPage, CustomersPage } from '../pages/crm/CustomersPages'
+import { DebtsPage } from '../pages/crm/DebtsPage'
 import { UsersPage } from '../pages/UsersPage'
 import { TasksPage } from '../pages/TasksPage'
 import { HoneyPage } from '../pages/HoneyPage'
@@ -48,6 +54,15 @@ export const routes = [
       { path: 'open', element: <OpenQrPage /> },
       { path: 'qr-labels', element: <QrLabelsPage /> },
       { path: 'reports', element: <ReportsPage /> },
+      { path: 'crm', element: <CrmHomePage /> },
+      { path: 'crm/sales', element: <SalesPage /> },
+      { path: 'crm/sales/:id', element: <SaleDetailsPage /> },
+      { path: 'crm/expenses', element: <ExpensesPage /> },
+      { path: 'crm/orders', element: <OrdersPage /> },
+      { path: 'crm/orders/:id', element: <OrderDetailsPage /> },
+      { path: 'crm/customers', element: <CustomersPage /> },
+      { path: 'crm/customers/:id', element: <CustomerDetailsPage /> },
+      { path: 'crm/debts', element: <DebtsPage /> },
       { path: 'more', element: <MorePage /> },
       { path: '*', element: <MessageView icon="inspect" title="Страница не найдена" /> },
     ],

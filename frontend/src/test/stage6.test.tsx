@@ -24,7 +24,9 @@ months[6] = '40'; months[7] = '85.9'
 const rank = (n: string, kg: string) => ({ hive_id: `h${n}`, hive_number: n, apiary_name: 'Горная', kg, harvests: 2 })
 
 const dashboard = {
-  year: 2026, finance_ready: false, honey_by_month: months,
+  year: 2026, honey_by_month: months,
+  finance: { currency: 'смн', income: '12500', expenses: '9600', profit: '2900', debts_total: '1700',
+    income_by_month: months, expenses_by_month: Array(12).fill('0') },
   honey_by_hive: [rank('7', '30.9'), rank('3', '20')],
   strength: [
     { key: 'VERY_WEAK', label: 'Очень слабая', count: 0 }, { key: 'WEAK', label: 'Слабая', count: 3 },
@@ -45,7 +47,10 @@ describe('Dashboard', () => {
     expect(String(spy.mock.calls[0][0])).toContain('/api/dashboard?year=')
     expect(screen.getByText('Напоминания, просрочено 1')).toBeInTheDocument()
     expect(screen.getByText(/лучший улей №7/)).toBeInTheDocument()
-    expect(screen.getByLabelText('Финансы появятся на этапе 7')).toHaveTextContent(/Доход.*Расход.*Прибыль.*этап 7/)
+    const fin = screen.getByLabelText('Финансы за год')
+    expect(fin).toHaveTextContent(/12 500.*Доход, смн.*9 600.*Расход.*2 900.*Прибыль.*долги 1 700/)
+    expect(fin).toHaveAttribute('href', '/crm')
+    expect(screen.getByRole('img', { name: /Доход по месяцам, смн/ })).toBeInTheDocument()
     expect(screen.getByRole('img', { name: /Мёд по месяцам, кг: июл 40 кг, авг 85,9 кг/ })).toBeInTheDocument()
     const strength = screen.getByRole('list', { name: 'Сила семей, число семей' })
     expect(within(strength).getByText('Сильная').closest('a')).toHaveAttribute('href', '/hives?filter=strong')
@@ -64,7 +69,8 @@ const report = {
     by_month: months, by_hive: [], value: '17257', products: [{ product_type: 'WAX', unit: 'KG', quantity: '3.5', value: '525' }] },
   diseases: { cases: 2, resolved: 1, open: 1, by_disease: [{ name: 'Варроатоз', cases: 2, resolved: 1, open: 1 }], treatments: 2,
     medications: [{ medication: 'Бипин', count: 2 }] },
-  finance: { production_value: '18262', ready: false },
+  finance: { production_value: '18262', visible: true, currency: 'смн', income: '12500', expenses: '9600', profit: '2900',
+    received: '10800', debts_total: '1700', income_by_category: [{ key: 'HONEY', label: 'Мёд', amount: '11000' }], expenses_by_category: [] },
 }
 
 describe('Yearly report', () => {
@@ -79,7 +85,8 @@ describe('Yearly report', () => {
     expect(screen.getByText('№8 — 14,8 кг')).toBeInTheDocument()
     expect(screen.getByText('3,5 кг')).toBeInTheDocument()
     expect(screen.getByText('2 раза')).toBeInTheDocument()
-    expect(screen.getByText('18 262')).toBeInTheDocument()
+    expect(screen.getByText('18 262 смн')).toBeInTheDocument()
+    expect(screen.getByText('2 900 смн')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('tab', { name: '2025' }))
     await waitFor(() => expect(spy.mock.calls.some(([u]) => String(u).endsWith('/api/reports/yearly/2025'))).toBe(true))
     await waitFor(() => expect(screen.queryByText(/год ещё не закончился/)).not.toBeInTheDocument())

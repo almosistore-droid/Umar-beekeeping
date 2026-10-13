@@ -34,10 +34,20 @@ class DashboardTiles(BaseModel):
     best_hive: HiveRank | None
 
 
+class DashboardFinance(BaseModel):
+    currency: str
+    income: Decimal
+    expenses: Decimal
+    profit: Decimal
+    debts_total: Decimal
+    income_by_month: list[Decimal]
+    expenses_by_month: list[Decimal]
+
+
 class DashboardOut(BaseModel):
     year: int
     tiles: DashboardTiles
-    finance_ready: bool  # income / expenses / profit arrive in stage 7
+    finance: DashboardFinance | None  # only for ADMIN / BEEKEEPER
     honey_by_month: list[Decimal]
     honey_by_hive: list[HiveRank]
     strength: list[Bucket]
@@ -107,9 +117,23 @@ class DiseasesSection(BaseModel):
     medications: list[MedicationCount]
 
 
+class MoneyByKey(BaseModel):
+    key: str
+    label: str
+    amount: Decimal
+
+
 class FinanceSection(BaseModel):
     production_value: Decimal  # harvest and products at the prices written in the records
-    ready: bool  # income / expenses / profit: stage 7
+    visible: bool  # money is shown to ADMIN / BEEKEEPER only
+    currency: str
+    income: Decimal | None = None
+    expenses: Decimal | None = None
+    profit: Decimal | None = None
+    received: Decimal | None = None
+    debts_total: Decimal | None = None
+    income_by_category: list[MoneyByKey] = []
+    expenses_by_category: list[MoneyByKey] = []
 
 
 class YearlyReportOut(BaseModel):

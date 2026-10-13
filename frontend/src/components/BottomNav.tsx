@@ -1,21 +1,33 @@
 import { NavLink } from 'react-router-dom'
+import { usePermissions } from '../hooks/usePermissions'
 import { haptic } from '../services/telegram'
 import { Icon, type IconName } from './Icon'
 
-export const NAV_ITEMS: readonly { to: string; icon: IconName; label: string }[] = [
-  { to: '/', icon: 'home', label: 'Главная' },
-  { to: '/hives', icon: 'hive', label: 'Ульи' },
-  { to: '/scan', icon: 'scan', label: 'Сканер' },
-  { to: '/queens', icon: 'crown', label: 'Матки' },
-  { to: '/reports', icon: 'chart', label: 'Отчёты' },
-  { to: '/more', icon: 'menu', label: 'Ещё' },
-]
+type NavItem = { to: string; icon: IconName; label: string }
+const CRM: NavItem = { to: '/crm', icon: 'wallet', label: 'CRM' }
+const QUEENS: NavItem = { to: '/queens', icon: 'crown', label: 'Матки' }
+
+/** Admin and beekeeper see «CRM» in the 4th slot (queens move to «Ещё»); other roles keep «Матки». */
+export function navItems(canManage: boolean): NavItem[] {
+  return [
+    { to: '/', icon: 'home', label: 'Главная' },
+    { to: '/hives', icon: 'hive', label: 'Ульи' },
+    { to: '/scan', icon: 'scan', label: 'Сканер' },
+    canManage ? CRM : QUEENS,
+    { to: '/reports', icon: 'chart', label: 'Отчёты' },
+    { to: '/more', icon: 'menu', label: 'Ещё' },
+  ]
+}
+
+/** Every path that is a tab of the bottom bar for some role (no Telegram back button there). */
+export const ROOT_PATHS = new Set(['/', '/hives', '/scan', '/queens', '/crm', '/reports', '/more'])
 
 export function BottomNav() {
+  const { canManage } = usePermissions()
   return (
     <nav className="bottom-nav" aria-label="Основная навигация">
       <div className="bottom-nav__inner">
-        {NAV_ITEMS.map((item) => (
+        {navItems(canManage).map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

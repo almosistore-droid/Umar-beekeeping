@@ -48,6 +48,7 @@ def run(telegram_id: int | None) -> None:
             _seed_structure(db, user)
         _seed_health(db, user)
         _seed_operations(db, user)
+        _seed_crm(db, user)
     finally:
         db.close()
 
@@ -210,6 +211,56 @@ def _seed_operations(db, user) -> None:
         operations_service.move_hive(db, mover.id, MoveRequest(to_apiary_id=mountain.id, reason="Кочёвка на горное разнотравье",
                                                                movement_date=today - timedelta(days=30)), user)
     print("Готово: мёд за два сезона, воск и прополис, зимовка, отводок, кочёвка.")
+
+
+
+def _seed_crm(db, user) -> None:
+    """Stage 7 demo: customers, a year of expenses, sales (paid, partly paid, on credit), open orders."""
+    from app.models import Customer
+    from app.schemas.crm import CustomerIn, DeliverIn, ExpenseIn, LineIn, OrderCreate, PaymentIn, SaleCreate
+    from app.services import crm_service as crm
+
+    if db.scalar(select(Customer.id).where(Customer.name.like("% (демо)")).limit(1)):
+        print("Демо-данные CRM уже есть.")
+        return
+    today = date.today()
+
+    def back(days: int) -> date:
+        return max(today - timedelta(days=days), date(today.year, 1, 1))
+
+    people = [("Фарход Саидов (демо)", "+992901112233", "Душанбе", "Берёт горный мёд каждый месяц"),
+              ("Зарина Каримова (демо)", "+992935554466", "Худжанд", None),
+              ("Магазин «Асал» (демо)", "+992987770011", "Душанбе", "Оптовый покупатель, оплата частями"),
+              ("Рустам (демо)", None, "Вахдат", None)]
+    customers = [crm.create_customer(db, CustomerIn(name=n, phone=p, city=c, notes=x), user) for n, p, c, x in people]
+
+    for days, cat, amount, text in [(250, "FOUNDATION", 600, "Вощина 10 кг"), (220, "MEDICINE", 340, "Бипин, Апиварол"),
+                                    (180, "FRAMES", 900, "Рамки 60 шт"), (150, "FEED", 1200, "Сахар 100 кг"),
+                                    (120, "FUEL", 450, "Бензин на кочёвку"), (95, "EQUIPMENT", 1500, "Медогонка, ремонт"),
+                                    (60, "TRANSPORT", 800, "Перевозка ульев в горы"), (30, "QUEENS", 1000, "Плодные матки 4 шт"),
+                                    (10, "FEED", 700, "Канди на зиму")]:
+        crm.create_expense(db, ExpenseIn(expense_date=back(days), category=cat, amount=amount, description=text), user)
+
+    honey = lambda kg, price: LineIn(category="HONEY", quantity=kg, unit="KG", price_per_unit=price)
+    sales = [(80, customers[0], [honey(5, 90)], "full", None),
+             (70, customers[2], [honey(30, 75), LineIn(category="WAX", quantity=2, unit="KG", price_per_unit=150)], "partial", 1500),
+             (45, customers[1], [honey(3, 95)], "full", None),
+             (40, None, [honey(2, 100)], "full", None),
+             (25, customers[0], [honey(4, 90), LineIn(category="PROPOLIS", quantity=50, unit="G", price_per_unit=3)], "credit", None),
+             (12, customers[2], [honey(20, 75)], "partial", 500)]
+    created = [crm.create_sale(db, SaleCreate(sale_date=back(d), customer_id=c.id if c else None, items=items,
+                                              payment=pay, paid_amount=amount), user) for d, c, items, pay, amount in sales]
+    crm.add_payment(db, created[1], PaymentIn(amount=600, paid_at=back(30), method="TRANSFER"), user)
+
+    crm.create_order(db, OrderCreate(customer_id=customers[1].id, items=[honey(6, 95)], due_date=today + timedelta(days=5),
+                                     notes="Две банки по 3 л, горный"), user)
+    ready = crm.create_order(db, OrderCreate(customer_id=customers[3].id, order_date=back(6), items=[honey(10, 85)],
+                                             due_date=back(1)), user)
+    from app.schemas.crm import OrderUpdate
+    crm.update_order(db, ready, OrderUpdate(status="READY"), user)
+    done = crm.create_order(db, OrderCreate(customer_id=customers[0].id, order_date=back(20), items=[honey(3, 90)]), user)
+    crm.deliver_order(db, done, DeliverIn(sale_date=back(18)), user)
+    print("Готово: клиенты, расходы за год, продажи с долгами, заказы.")
 
 
 if __name__ == "__main__":

@@ -508,9 +508,9 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; gap:
 /* ---------- stage 6: dashboard & reports ---------- */
 .rank--plain .rank__row { grid-template-columns: 128px 1fr auto; }
 .section-title { margin: 8px 2px -4px; font-family: var(--font-display); font-weight: 400; font-size: 22px; color: var(--wax); }
-.finance-strip { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px 14px; border: 1px dashed var(--rim); border-radius: var(--radius); }
+.finance-strip { text-decoration: none; color: inherit; position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 22px 14px 12px; border: 1px solid var(--rim); background: var(--comb); border-radius: var(--radius); }
 .finance-strip__item { display: flex; flex-direction: column; gap: 2px; }
-.finance-strip__value { font-family: var(--font-display); font-size: 22px; color: var(--smoke); line-height: 1.1; }
+.finance-strip__value { font-family: var(--font-display); font-size: 22px; color: var(--wax); line-height: 1.1; overflow-wrap: anywhere; }
 .finance-strip__note { position: absolute; top: 8px; right: 12px; }
 .tile__soon { font-size: 12px; color: var(--smoke); }
 .report-head { display: flex; flex-direction: column; gap: 6px; }
@@ -519,3 +519,43 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; gap:
 .kv__value { font-family: var(--font-display); font-size: 24px; color: var(--wax); line-height: 1.1; }
 .kv__label { font-size: 12px; color: var(--smoke); font-weight: 600; }
 .format-pills { margin-bottom: 4px; }
+
+/* ---------- stage 7: CRM ---------- */
+.quick-grid--4 { grid-template-columns: repeat(4, 1fr); }
+.quick-grid--4 .quick { font-size: 13px; }
+.menu__note { margin-left: auto; font-size: 13px; color: var(--amber); font-weight: 600; }
+.menu__note + .chevron { margin-left: 8px; }
+.profit-hero { display: flex; flex-direction: column; gap: 2px; padding: 16px; border-radius: var(--radius); background: var(--comb); border: 1px solid color-mix(in srgb, var(--gold) 30%, var(--rim)); }
+.profit-hero__value { font-family: var(--font-display); font-size: 44px; line-height: 1.05; color: var(--wax); }
+.profit-hero__value small { font-size: 18px; color: var(--smoke); }
+.money-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.money-grid:has(> :nth-child(3):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.money { display: flex; flex-direction: column; gap: 2px; padding: 12px; border-radius: 14px; background: var(--comb); border: 1px solid var(--rim); text-decoration: none; color: inherit; min-width: 0; }
+.money__value { font-family: var(--font-display); font-size: 22px; color: var(--wax); line-height: 1.15; overflow-wrap: anywhere; }
+.money__label { font-size: 12px; color: var(--smoke); font-weight: 600; }
+.money__value--ok { color: var(--leaf); }
+.money__value--bad { color: var(--ember); }
+.stock-note { display: flex; align-items: center; gap: 6px; margin: 0; }
+.card--list { padding-top: 4px; padding-bottom: 4px; }
+.crm-row { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; padding: 10px 0; border: 0; border-bottom: 1px solid var(--rim); background: none; color: inherit; font: inherit; text-align: left; text-decoration: none; width: 100%; cursor: pointer; }
+.crm-row:last-child { border-bottom: 0; }
+.crm-row.is-cancelled { opacity: .5; }
+.crm-row__icon { width: 34px; height: 30px; display: grid; place-items: center; clip-path: var(--hex); background: var(--comb-2); color: var(--gold); }
+.crm-row__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.crm-row__main .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crm-row__side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; font-variant-numeric: tabular-nums; }
+.lines { display: flex; flex-direction: column; gap: 12px; }
+.line { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 14px; background: var(--comb-2); }
+.line__head { display: flex; justify-content: space-between; align-items: center; }
+.line__nums { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lines__total { text-align: right; font-size: 16px; }
+.lines__total b { font-family: var(--font-display); font-size: 24px; color: var(--wax); font-weight: 400; }
+.customer-picker { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.customer-picker .field { width: 100%; }
+.inline-card { width: 100%; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 14px; border: 1px dashed var(--rim); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; counter-reset: s; }
+.steps li { position: relative; padding: 8px 4px 6px; text-align: center; font-size: 13px; font-weight: 600; color: var(--smoke); border-top: 3px solid var(--comb-2); }
+.steps li.is-done { color: var(--wax); border-top-color: var(--gold); }
+.debt-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--rim); }
+.debt-row__main { display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: inherit; min-width: 0; }
+.debt-row .btn { flex: none; }

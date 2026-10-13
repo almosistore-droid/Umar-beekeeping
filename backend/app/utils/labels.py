@@ -43,3 +43,21 @@ PRODUCT_TYPE = {
 }
 MONTHS = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь",
           "Ноябрь", "Декабрь"]
+
+# ---------- stage 7: CRM ----------
+from app.models.enums import ExpenseCategory, OrderStatus, PaymentMethod, SaleCategory  # noqa: E402
+
+EXPENSE_CATEGORY = {
+    ExpenseCategory.HIVES: "Ульи", ExpenseCategory.FRAMES: "Рамки", ExpenseCategory.FOUNDATION: "Вощина",
+    ExpenseCategory.FEED: "Корм", ExpenseCategory.MEDICINE: "Лекарства", ExpenseCategory.EQUIPMENT: "Оборудование",
+    ExpenseCategory.TRANSPORT: "Транспорт", ExpenseCategory.FUEL: "Топливо", ExpenseCategory.QUEENS: "Матки",
+    ExpenseCategory.COLONIES: "Семьи", ExpenseCategory.REPAIR: "Ремонт", ExpenseCategory.OTHER: "Другое",
+}
+SALE_CATEGORY = {
+    SaleCategory.HONEY: "Мёд", SaleCategory.WAX: "Воск", SaleCategory.PROPOLIS: "Прополис",
+    SaleCategory.BEE_BREAD: "Перга", SaleCategory.POLLEN: "Пыльца", SaleCategory.QUEENS: "Матки",
+    SaleCategory.COLONIES: "Семьи", SaleCategory.PACKAGES: "Пчелопакеты", SaleCategory.OTHER: "Другое",
+}
+PAYMENT_METHOD = {PaymentMethod.CASH: "наличные", PaymentMethod.CARD: "карта", PaymentMethod.TRANSFER: "перевод"}
+ORDER_STATUS = {OrderStatus.NEW: "новый", OrderStatus.READY: "собран", OrderStatus.DELIVERED: "выдан",
+                OrderStatus.CANCELLED: "отменён"}
