@@ -300,3 +300,22 @@ export interface QrResolve {
 }
 export interface QrStatus { deep_link_ready: boolean; example_link: string | null }
 export interface LabelsRequest { hive_ids?: string[]; apiary_id?: string | null; blank_count?: number }
+
+// ---------- «Проверка улья» ----------
+export interface CheckIssue { code: string; level: 'attention' | 'problem'; message: string }
+export interface HiveCheck {
+  hive_id: string; hive_number: string; apiary: ApiaryBrief; status: HiveStatus; is_archived: boolean
+  verdict: 'ok' | 'attention' | 'problem'; headline: string; issues: CheckIssue[]
+  strength: FamilyStrength | null
+  queen: { id: string; queen_code: string; age_label: string | null; status: QueenStatus } | null
+  last_inspection: {
+    id: string; inspected_at: string; days_ago: number; user_name: string | null; strength: FamilyStrength
+    frames_total: number; brood_frames: number; honey_frames: number; pollen_frames: number
+    queen_present: boolean | null; egg_laying: boolean | null; queen_cells: number; swarming_signs: boolean
+    food_level: FoodLevel | null; health_status: InspectionHealth
+  } | null
+  next_inspection_at: string | null
+  open_cases: { disease_name: string; status: string }[]
+  open_tasks: { title: string; due_date: string; overdue: boolean }[]
+  honey_year_kg: string
+}

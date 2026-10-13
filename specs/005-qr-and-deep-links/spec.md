@@ -98,6 +98,27 @@ hive form, and the new hive gets exactly that UUID, so the label already stuck o
 2. **Given** the identifier already belongs to a hive, **Then** creation is refused: «Этот QR уже
    привязан к улью №…».
 
+### User Story 6 - At the hive: «Осмотр» or «Проверка» (Priority: P1)
+
+*Added 2026-10-13 at the owner's request.* After scanning, the beekeeper chooses what to do:
+**Осмотр** — a full-screen inspection made only of buttons (date Сегодня/Вчера, strength, frame
+steppers, queen seen / condition, eggs, queen cells, swarming Да/Нет, food, aggressiveness, health,
+next inspection), prefilled so one tap on «Сохранить» saves it. Each save is a separate inspection
+record with its date; the hive passport has an «Осмотры» tab listing them by date. After saving:
+«Следующий улей» (scanner), «Итог по улью», «Паспорт улья».
+**Проверка** — a read-only summary (`GET /api/hives/{id}/check`): a verdict «Всё в порядке /
+Требует внимания / Есть проблемы» with the reasons (no queen, possible queenless, weak, swarming,
+low/critical food, suspected disease, sick/quarantine, overdue inspection or reminder, archived,
+empty, never inspected), family and queen, last inspection with days ago, next inspection, open
+diseases and reminders, honey this year. Nothing is saved.
+
+**Acceptance Scenarios**:
+
+1. A known, non-archived hive QR opens the choice screen; an archived one opens its passport.
+2. A viewer sees «Осмотр» disabled («Только просмотр») and can use «Проверка».
+3. «Вчера» stores the inspection at noon UTC of that day; «Сегодня» uses the server time.
+4. A healthy, recently inspected hive with a queen gives «Всё в порядке» with no issues.
+
 ### Edge Cases
 
 - The QR is never regenerated with a different payload: `POST /api/hives/{id}/qr` is idempotent.

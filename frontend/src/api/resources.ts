@@ -3,7 +3,7 @@ import type {
   Apiary, AuditEntry, Family, FamilyOrigin, FamilyStatus, FamilyStrength, Hive, HiveListItem,
   HiveStatus, HiveType, Page, Queen, QueenAssignment, QueenOrigin, QueenStatus, User, UserRole,
 } from '../types/api'
-import type { LabelsRequest, QrInfo, QrResolve, QrStatus } from '../types/api'
+import type { HiveCheck, LabelsRequest, QrInfo, QrResolve, QrStatus } from '../types/api'
 
 const json = (method: string, body: unknown): RequestInit => ({ method, body: JSON.stringify(body) })
 
@@ -112,6 +112,7 @@ export interface FeedingInput {
 
 export const healthApi = {
   inspections: (hiveId: string) => api<Inspection[]>(`/api/hives/${hiveId}/inspections`),
+  check: (hiveId: string) => api<HiveCheck>(`/api/hives/${hiveId}/check`),
   inspect: (hiveId: string, body: InspectionInput) =>
     api<{ inspection: Inspection; hive: Hive; warnings: RecordWarning[] }>(`/api/hives/${hiveId}/inspections`, json('POST', body)),
   diseases: () => api<Disease[]>('/api/diseases'),

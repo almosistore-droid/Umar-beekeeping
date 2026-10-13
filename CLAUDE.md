@@ -46,6 +46,7 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Unknown QR → CAN_MANAGE may register a hive with that id (`HiveCreate.id`, frontend `/hives/new?qr=`).
 - Labels PDF (`qr_labels.py`, reportlab, bundled DejaVu fonts in `app/assets/fonts`): 3×4 on A4. In Telegram the bot sends it to the requesting user's own chat (`telegram_bot.send_document`); prints are audited as `qr_printed` only after successful delivery.
 - Frontend: `/scan` (Telegram `showScanQrPopup`, manual fallback), `/open?code=` resolver, start_param handled once in `AppLayout` via `takeStartParam()`, `/qr-labels`.
+- Field flow: a found, non-archived hive opens `/hives/:id/visit` → «Осмотр» (`/hives/:id/inspect`, full-screen InspectionForm with `doneActions`) or «Проверка» (`/hives/:id/check`, read-only `GET /api/hives/{id}/check` from `hive_check_service`: verdict ok/attention/problem + issues). Past inspection dates are sent as noon UTC. Hive passport has an «Осмотры» tab (`InspectionList`).
 
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.

@@ -1,9 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { healthApi, hivesApi, type InspectionInput } from '../../api/resources'
 import { haptic } from '../../services/telegram'
-import type { FamilyStrength, FoodLevel, Hive, InspectionHealth, RecordWarning } from '../../types/api'
-import { FOOD_LEVEL, INSPECTION_HEALTH, STRENGTH, addDaysIso, todayIso } from '../../utils/labels'
+import type { FamilyStrength, FoodLevel, Hive, InspectionHealth, QueenCondition, RecordWarning } from '../../types/api'
+import { FOOD_LEVEL, INSPECTION_HEALTH, QUEEN_CONDITION, STRENGTH, addDaysIso, formatDate, todayIso } from '../../utils/labels'
 import { Choice, ErrorBox, Field, Stepper, SubmitButton } from '../ui'
 import { useHiveRecordMutation } from './useHiveRecordMutation'
 
@@ -12,10 +12,19 @@ const foodOpts = (Object.keys(FOOD_LEVEL) as FoodLevel[]).map((k) => ({ value: k
 const healthOpts = (Object.keys(INSPECTION_HEALTH) as InspectionHealth[]).map((k) => ({ value: k, label: INSPECTION_HEALTH[k] }))
 const seenOpts = [{ value: true, label: 'Видна' }, { value: false, label: 'Не найдена' }]
 const eggOpts = [{ value: true, label: 'Есть' }, { value: false, label: 'Нет' }]
+const conditionOpts = (Object.keys(QUEEN_CONDITION) as QueenCondition[]).map((k) => ({ value: k, label: QUEEN_CONDITION[k] }))
+const yesNo = [{ value: true, label: 'Да' }, { value: false, label: 'Нет' }]
 const NEXT = [3, 7, 14]
 
-/** Inspection at the hive: chips and steppers, prefilled from the previous inspection. */
-export function InspectionForm({ hive, onDone }: { hive: Hive; onDone: () => void }) {
+/** Past days are stored at noon UTC so they stay on the same calendar day in any time zone. */
+const dayToInstant = (day: string) => (day === todayIso() ? null : `${day}T12:00:00Z`)
+
+/**
+ * Inspection at the hive: only taps (chips and steppers), prefilled from the previous inspection,
+ * so the beekeeper can save in one tap. Every save is a separate dated inspection record.
+ * `doneActions`: always show the «saved» screen with these buttons (field flow after a QR scan).
+ */
+export function InspectionForm({ hive, onDone, doneActions }: { hive: Hive; onDone: () => void; doneActions?: ReactNode }) {
   const previous = useQuery({ queryKey: ['hive-inspections', hive.id], queryFn: () => healthApi.inspections(hive.id) })
   const [f, setF] = useState<InspectionInput>({
     strength: hive.current_family?.strength ?? 'MEDIUM', frames_total: 10, brood_frames: 0, honey_frames: 0,
@@ -24,6 +33,7 @@ export function InspectionForm({ hive, onDone }: { hive: Hive; onDone: () => voi
   })
   const [prefilled, setPrefilled] = useState(false)
   const [warnings, setWarnings] = useState<RecordWarning[] | null>(null)
+  const [day, setDay] = useState(todayIso())
 
   useEffect(() => {
     const last = previous.data?.[0]
@@ -33,8 +43,8 @@ export function InspectionForm({ hive, onDone }: { hive: Hive; onDone: () => voi
     }
   }, [previous.data, prefilled])
 
-  const save = useHiveRecordMutation(hive, () => healthApi.inspect(hive.id, f), (res) => {
-    if (res.warnings.length) setWarnings(res.warnings)
+  const save = useHiveRecordMutation(hive, () => healthApi.inspect(hive.id, { ...f, inspected_at: dayToInstant(day) }), (res) => {
+    if (res.warnings.length || doneActions) setWarnings(res.warnings)
     else onDone()
   })
   const markQueenless = useHiveRecordMutation(hive, () => hivesApi.update(hive.id, { status: 'QUEENLESS', comment: 'По результатам осмотра' }), onDone)
@@ -47,7 +57,8 @@ export function InspectionForm({ hive, onDone }: { hive: Hive; onDone: () => voi
     const canMarkQueenless = warnings.some((w) => w.code === 'possible_queenless') && !hive.current_queen && hive.status !== 'QUEENLESS'
     return (
       <div className="form">
-        <div className="result-ok"><span className="result-ok__mark" aria-hidden>✓</span><b>Осмотр сохранён</b></div>
+        <div className="result-ok"><span className="result-ok__mark" aria-hidden>✓</span><b>Осмотр сохранён</b>
+          <span className="hint small">{day === todayIso() ? 'Сегодня' : formatDate(day)}, улей №{hive.hive_number}</span></div>
         {warnings.map((w) => <div key={w.code} className="warn-box">{w.message}</div>)}
         <ErrorBox error={markQueenless.error} />
         {canMarkQueenless && (
@@ -55,7 +66,7 @@ export function InspectionForm({ hive, onDone }: { hive: Hive; onDone: () => voi
             Отметить «Без матки»
           </button>
         )}
-        <button type="button" className="btn btn--primary btn--block" onClick={onDone}>Готово</button>
+        {doneActions ?? <button type="button" className="btn btn--primary btn--block" onClick={onDone}>Готово</button>}
       </div>
     )
   }
@@ -69,6 +80,12 @@ export function InspectionForm({ hive, onDone }: { hive: Hive; onDone: () => voi
   return (
     <form className="form" onSubmit={submit}>
       <ErrorBox error={save.error} />
+      <Choice label="Дата осмотра" value={day === todayIso() ? 'today' : day === addDaysIso(-1) ? 'yesterday' : null}
+        options={[{ value: 'today', label: 'Сегодня' }, { value: 'yesterday', label: 'Вчера' }]}
+        onChange={(v) => v && setDay(v === 'today' ? todayIso() : addDaysIso(-1))} />
+      {day !== todayIso() && day !== addDaysIso(-1) && <p className="hint small">Дата: {formatDate(day)}</p>}
+      <input className="input" type="date" aria-label="Другая дата осмотра" max={todayIso()} value={day}
+        onChange={(e) => e.target.value && setDay(e.target.value)} />
       <Choice label="Сила семьи" options={strengthOpts} value={f.strength} onChange={(v) => v && set({ strength: v })} />
 
       <span className="form-section-title">Рамки</span>
@@ -83,10 +100,15 @@ export function InspectionForm({ hive, onDone }: { hive: Hive; onDone: () => voi
       </p>
 
       <span className="form-section-title">Матка</span>
-      <Choice label="Матка" options={seenOpts} value={f.queen_present} onChange={(v) => set({ queen_present: v })} allowNone />
+      <Choice label="Матка" options={seenOpts} value={f.queen_present}
+        onChange={(v) => set({ queen_present: v, queen_condition: v === false ? 'NOT_SEEN' : v ? f.queen_condition === 'NOT_SEEN' ? null : f.queen_condition : null })} allowNone />
+      {f.queen_present && (
+        <Choice label="Состояние матки" options={conditionOpts.filter((o) => o.value !== 'NOT_SEEN')} value={f.queen_condition ?? null}
+          onChange={(v) => set({ queen_condition: v })} allowNone />
+      )}
       <Choice label="Яйца" options={eggOpts} value={f.egg_laying} onChange={(v) => set({ egg_laying: v })} allowNone />
       <Stepper label="Маточники" value={f.queen_cells} max={100} onChange={(v) => set({ queen_cells: v })} />
-      <label className="switch"><input type="checkbox" checked={f.swarming_signs} onChange={(e) => set({ swarming_signs: e.target.checked })} /><span>Признаки роения</span></label>
+      <Choice label="Признаки роения" options={yesNo} value={f.swarming_signs} onChange={(v) => v !== null && set({ swarming_signs: v })} />
 
       <span className="form-section-title">Состояние</span>
       <Choice label="Корм" options={foodOpts} value={f.food_level} onChange={(v) => set({ food_level: v })} allowNone />
@@ -105,7 +127,7 @@ export function InspectionForm({ hive, onDone }: { hive: Hive; onDone: () => voi
       <input className="input" type="date" aria-label="Дата следующего осмотра" min={todayIso()}
         value={f.next_inspection_at ?? ''} onChange={(e) => set({ next_inspection_at: e.target.value || null })} />
 
-      <Field label="Заметки">
+      <Field label="Заметки" hint="Можно не заполнять">
         <textarea className="input" rows={2} value={f.notes ?? ''} onChange={(e) => set({ notes: e.target.value || null })} maxLength={5000} />
       </Field>
       <div className="submit-bar"><SubmitButton pending={save.isPending}>Сохранить осмотр</SubmitButton></div>

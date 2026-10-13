@@ -29,3 +29,9 @@
 
 ## Phase 7: Polish
 - [x] T016 describeAudit qr_printed; component tests; docs (README, CLAUDE.md, TESTING.md, .env.example); full run; CI
+
+## Phase 8: US6 Field flow after a scan (added 2026-10-13)
+- [x] T017 hive_check_service + GET /api/hives/{id}/check; tests (verdicts, every issue, read-only, roles)
+- [x] T018 HiveVisitPage (choice), HiveInspectPage (full screen, done actions), HiveCheckPage; scan → /visit
+- [x] T019 InspectionForm: date buttons, queen condition, swarming Да/Нет; «Осмотры» tab by date
+- [x] T020 Component tests; docs

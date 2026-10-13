@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { healthApi } from '../../api/resources'
-import type { Hive, TimelineItem } from '../../types/api'
-import { CASE_STATUS, SEVERITY, describeAudit, formatDate, formatDateTime, todayIso } from '../../utils/labels'
+import type { Hive, Inspection, TimelineItem } from '../../types/api'
+import { CASE_STATUS, FOOD_LEVEL, INSPECTION_HEALTH, SEVERITY, STRENGTH, describeAudit, formatDate, formatDateTime, todayIso } from '../../utils/labels'
 import { Icon, type IconName } from '../Icon'
 import { Badge, ErrorBox } from '../ui'
 import { useHiveRecordMutation } from './useHiveRecordMutation'
@@ -94,6 +94,41 @@ export function Timeline({ hiveId }: { hiveId: string }) {
           </li>
         )
       })}
+    </ol>
+  )
+}
+
+function inspectionSummary(i: Inspection): string[] {
+  const out = [`Сила: ${STRENGTH[i.strength].label.toLowerCase()}`,
+    `Рамки ${i.frames_total}: расплод ${i.brood_frames}, мёд ${i.honey_frames}, перга ${i.pollen_frames}`]
+  const queen = i.queen_present === null ? null : i.queen_present ? 'матка видна' : 'матка не найдена'
+  const eggs = i.egg_laying === null ? null : i.egg_laying ? 'яйца есть' : 'яиц нет'
+  if (queen || eggs) out.push([queen, eggs].filter(Boolean).join(', '))
+  if (i.swarming_signs || i.queen_cells) out.push(`Роение: ${i.swarming_signs ? 'есть признаки' : 'нет'}, маточников ${i.queen_cells}`)
+  if (i.food_level) out.push(`Корм: ${FOOD_LEVEL[i.food_level].toLowerCase()}`)
+  out.push(`Здоровье: ${INSPECTION_HEALTH[i.health_status].toLowerCase()}`)
+  if (i.notes) out.push(i.notes)
+  return out
+}
+
+/** Every inspection as its own dated record, newest first. */
+export function InspectionList({ hiveId }: { hiveId: string }) {
+  const q = useQuery({ queryKey: ['hive-inspections', hiveId], queryFn: () => healthApi.inspections(hiveId) })
+  if (q.error) return <ErrorBox error={q.error} />
+  if (!q.data) return <p className="hint">Загрузка…</p>
+  if (!q.data.length) return <p className="hint">Осмотров ещё не было</p>
+  return (
+    <ol className="timeline">
+      {q.data.map((i) => (
+        <li key={i.id}>
+          <span className="timeline__icon timeline__icon--inspection" aria-hidden><Icon name="inspect" size={16} /></span>
+          <div>
+            <div className="timeline__title">Осмотр {formatDate(i.inspected_at)}</div>
+            {inspectionSummary(i).map((d) => <div key={d} className="small">{d}</div>)}
+            {i.user_name && <div className="small hint">{i.user_name}</div>}
+          </div>
+        </li>
+      ))}
     </ol>
   )
 }

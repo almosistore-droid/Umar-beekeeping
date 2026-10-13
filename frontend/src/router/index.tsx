@@ -18,6 +18,9 @@ import { MessageView } from '../components/StateViews'
 import { ScanPage } from '../pages/ScanPage'
 import { OpenQrPage } from '../pages/OpenQrPage'
 import { QrLabelsPage } from '../pages/QrLabelsPage'
+import { HiveVisitPage } from '../pages/HiveVisitPage'
+import { HiveInspectPage } from '../pages/HiveInspectPage'
+import { HiveCheckPage } from '../pages/HiveCheckPage'
 
 export const routes = [
   {
@@ -29,6 +32,9 @@ export const routes = [
       { path: 'hives/new', element: <HiveFormPage /> },
       { path: 'hives/:id', element: <HiveDetailsPage /> },
       { path: 'hives/:id/edit', element: <HiveFormPage /> },
+      { path: 'hives/:id/visit', element: <HiveVisitPage /> },
+      { path: 'hives/:id/inspect', element: <HiveInspectPage /> },
+      { path: 'hives/:id/check', element: <HiveCheckPage /> },
       { path: 'queens', element: <QueensPage /> },
       { path: 'queens/new', element: <QueenFormPage /> },
       { path: 'queens/:id', element: <QueenDetailsPage /> },

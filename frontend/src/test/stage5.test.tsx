@@ -50,6 +50,7 @@ function setup(role: UserRole, handler: Handler, path: string, routes: React.Rea
           <Routes>
             {routes}
             <Route path="/hives/:id" element={<Where />} />
+            <Route path="/hives/:id/visit" element={<Where />} />
             <Route path="/hives/new" element={<Where />} />
           </Routes>
         </MemoryRouter>
@@ -63,11 +64,17 @@ const resolveWith = (body: object): Handler => (url) =>
   url.includes('/api/qr/resolve') ? json({ hive_id: null, hive_number: null, apiary_name: null, is_archived: false, can_register: false, ...body }) : undefined
 
 describe('Opening a scanned code', () => {
-  it('goes straight to the hive when the QR is known', async () => {
+  it('goes to the «Осмотр / Проверка» choice when the QR is known', async () => {
     const spy = setup('VIEWER', resolveWith({ status: 'found', hive_id: HIVE_ID }), `/open?code=hive_${HIVE_ID}`,
       <Route path="/open" element={<OpenQrPage />} />)
-    expect(await screen.findByTestId('where')).toHaveTextContent(`/hives/${HIVE_ID}`)
+    expect(await screen.findByTestId('where')).toHaveTextContent(`/hives/${HIVE_ID}/visit`)
     expect(spy.mock.calls.some(([u]) => String(u).includes(`code=hive_${HIVE_ID}`))).toBe(true)
+  })
+
+  it('opens the passport of an archived hive', async () => {
+    setup('VIEWER', resolveWith({ status: 'found', hive_id: HIVE_ID, is_archived: true }), '/open?code=x',
+      <Route path="/open" element={<OpenQrPage />} />)
+    expect(await screen.findByTestId('where')).toHaveTextContent(new RegExp(`^/hives/${HIVE_ID}$`))
   })
 
   it('offers registration of an unknown QR to a beekeeper', async () => {
@@ -104,7 +111,7 @@ describe('Scanner', () => {
     let closed: boolean | void = false
     await waitFor(() => { closed = onText!(`https://t.me/umar_bee_bot/app?startapp=hive_${HIVE_ID}`) })
     expect(closed).toBe(true)
-    expect(await screen.findByTestId('where')).toHaveTextContent(`/hives/${HIVE_ID}`)
+    expect(await screen.findByTestId('where')).toHaveTextContent(`/hives/${HIVE_ID}/visit`)
   })
 
   it('falls back to manual entry when the camera is not available', async () => {
@@ -115,7 +122,7 @@ describe('Scanner', () => {
     expect(await screen.findByText(/Камера доступна, когда приложение открыто в Telegram/)).toBeInTheDocument()
     await userEvent.type(screen.getByLabelText(/Код или ссылка/), `hive_${HIVE_ID}`)
     await userEvent.click(screen.getByRole('button', { name: 'Открыть улей' }))
-    expect(await screen.findByTestId('where')).toHaveTextContent(`/hives/${HIVE_ID}`)
+    expect(await screen.findByTestId('where')).toHaveTextContent(`/hives/${HIVE_ID}/visit`)
   })
 })
 
@@ -128,7 +135,7 @@ describe('Deep link', () => {
         <Route path="open" element={<OpenQrPage />} />
       </Route>
     </>, { initDataUnsafe: { start_param: `hive_${HIVE_ID}` } })
-    expect(await screen.findByTestId('where')).toHaveTextContent(`/hives/${HIVE_ID}`)
+    expect(await screen.findByTestId('where')).toHaveTextContent(`/hives/${HIVE_ID}/visit`)
   })
 })
 

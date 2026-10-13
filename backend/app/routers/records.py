@@ -11,6 +11,7 @@ from app.auth.dependencies import CAN_MANAGE, CAN_WRITE, CurrentUser, require_ro
 from app.database import get_db
 from app.models import User
 from app.models.enums import TaskStatus
+from app.schemas.check import HiveCheckOut
 from app.schemas.health import (
     AttentionOut,
     CaseCreate,
@@ -33,7 +34,7 @@ from app.schemas.health import (
 from app.schemas.hive import HiveOut
 from app.services import health_service as health
 from app.services import inspection_service as insp
-from app.services import timeline_service
+from app.services import hive_check_service, timeline_service
 from app.services.hive_service import get_hive, to_out as hive_out
 
 router = APIRouter(prefix="/api", tags=["health"])
@@ -81,6 +82,12 @@ def _treat_out(t) -> TreatmentOut:
 
 
 # ---------- inspections ----------
+
+@router.get("/hives/{hive_id}/check", response_model=HiveCheckOut)
+def check_hive(hive_id: uuid.UUID, db: DB, user: CurrentUser):
+    """«Проверка улья» after a scan: current state and what needs attention. Read-only."""
+    return hive_check_service.check(db, get_hive(db, hive_id), user)
+
 
 @router.get("/hives/{hive_id}/inspections", response_model=list[InspectionOut])
 def list_inspections(hive_id: uuid.UUID, db: DB, _: CurrentUser):

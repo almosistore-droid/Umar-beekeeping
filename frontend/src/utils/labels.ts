@@ -164,7 +164,9 @@ export function todayIso(): string {
 }
 
 // ---------- stage 3 ----------
-import type { CaseStatus, DiseaseSeverity, FeedType, FeedUnit, FoodLevel, InspectionHealth } from '../types/api'
+import type { CaseStatus, DiseaseSeverity, FeedType, FeedUnit, FoodLevel, InspectionHealth, QueenCondition } from '../types/api'
+
+export const QUEEN_CONDITION: Record<QueenCondition, string> = { GOOD: 'Хорошее', NORMAL: 'Нормальное', POOR: 'Плохое', NOT_SEEN: 'Не видна' }
 
 export const FOOD_LEVEL: Record<FoodLevel, string> = { CRITICAL: 'Критично', LOW: 'Мало', NORMAL: 'Норма', ABUNDANT: 'Много' }
 export const INSPECTION_HEALTH: Record<InspectionHealth, string> = { HEALTHY: 'Здорова', SUSPICIOUS: 'Подозрение', SICK: 'Болеет' }
@@ -202,4 +204,13 @@ export const MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', '
 export function num(v: string | number | null | undefined): string {
   if (v === null || v === undefined || v === '') return '—'
   return Number(v).toLocaleString('ru-RU', { maximumFractionDigits: 2 })
+}
+
+/** «сегодня», «вчера», «5 дней назад» */
+export function daysAgoLabel(days: number): string {
+  if (days <= 0) return 'сегодня'
+  if (days === 1) return 'вчера'
+  const n10 = days % 10, n100 = days % 100
+  const word = n10 === 1 && n100 !== 11 ? 'день' : n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20) ? 'дня' : 'дней'
+  return `${days} ${word} назад`
 }

@@ -16,7 +16,8 @@ export function OpenQrPage() {
   if (resolved.error) return <div className="page"><ErrorBox error={resolved.error} /></div>
   const r = resolved.data!
 
-  if (r.status === 'found') return <Navigate to={`/hives/${r.hive_id}`} replace />
+  // At the hive: choose «Осмотр» or «Проверка». Archived hives open their passport (history only).
+  if (r.status === 'found') return <Navigate to={r.is_archived ? `/hives/${r.hive_id}` : `/hives/${r.hive_id}/visit`} replace />
 
   if (r.status === 'unknown') {
     return (

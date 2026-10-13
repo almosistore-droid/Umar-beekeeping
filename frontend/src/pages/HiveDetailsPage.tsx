@@ -1,13 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { HiveQrCard } from '../components/qr/HiveQr'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../api/client'
 import { hivesApi, queensApi } from '../api/resources'
 import { Icon, type IconName } from '../components/Icon'
-import { InspectionForm } from '../components/health/InspectionForm'
 import { DiseaseForm, FeedingForm, TreatmentForm } from '../components/health/RecordForms'
-import { OpenCasesCard, RemindersCard, Timeline } from '../components/health/HealthCards'
+import { InspectionList, OpenCasesCard, RemindersCard, Timeline } from '../components/health/HealthCards'
 import { HoneyForm, MergeForm, MoveForm, SplitForm, SwarmForm, WinteringForm } from '../components/operations/OperationForms'
 import { HoneyCard } from '../components/operations/HoneyCard'
 import { Badge, ErrorBox, Field, InfoRow, Select, Sheet, StrengthBars, SubmitButton } from '../components/ui'
@@ -40,8 +39,9 @@ const QUICK_ACTIONS: { icon: IconName; label: string; sheet?: SheetKind; stage?:
 export function HiveDetailsPage() {
   const { id = '' } = useParams()
   const { canManage, canWrite } = usePermissions()
+  const navigate = useNavigate()
   const [sheet, setSheet] = useState<SheetKind>(null)
-  const [tab, setTab] = useState<'timeline' | 'families' | 'queens'>('timeline')
+  const [tab, setTab] = useState<'timeline' | 'inspections' | 'families' | 'queens'>('timeline')
   const hive = useQuery({ queryKey: ['hive', id], queryFn: () => hivesApi.get(id) })
 
   if (hive.isLoading) return <LoadingView />
@@ -81,7 +81,7 @@ export function HiveDetailsPage() {
             return (
               <button key={a.label} type="button" className="quick" disabled={!ready}
                 title={a.stage ? `Появится на этапе ${a.stage}` : !family ? 'Сначала заселите семью' : undefined}
-                onClick={() => a.sheet && setSheet(a.sheet)}>
+                onClick={() => a.sheet === 'inspection' ? navigate(`/hives/${h.id}/inspect`) : a.sheet && setSheet(a.sheet)}>
                 <span className="quick__icon"><Icon name={a.icon} /></span>{a.label}
                 {a.stage ? <small>скоро</small> : !canWrite ? <small>только просмотр</small> : null}
               </button>
@@ -160,11 +160,12 @@ export function HiveDetailsPage() {
       {/* History */}
       <section className="card">
         <div className="segmented">
-          {([['timeline', 'Хронология'], ['families', 'Семьи'], ['queens', 'Матки']] as const).map(([k, l]) => (
+          {([['timeline', 'Хронология'], ['inspections', 'Осмотры'], ['families', 'Семьи'], ['queens', 'Матки']] as const).map(([k, l]) => (
             <button key={k} type="button" className={tab === k ? 'is-active' : ''} onClick={() => setTab(k)}>{l}</button>
           ))}
         </div>
         {tab === 'timeline' && <Timeline hiveId={h.id} />}
+        {tab === 'inspections' && <InspectionList hiveId={h.id} />}
         {tab === 'families' && <FamilyList hiveId={h.id} />}
         {tab === 'queens' && <QueenPeriods hiveId={h.id} />}
       </section>
@@ -174,7 +175,6 @@ export function HiveDetailsPage() {
       <Sheet open={sheet === 'family'} title={family ? 'Сменить семью' : 'Заселить семью'} onClose={close}><SettleFamilyForm hive={h} onDone={close} /></Sheet>
       <Sheet open={sheet === 'endFamily'} title="Семья выбыла" onClose={close}><EndFamilyForm hive={h} onDone={close} /></Sheet>
       <Sheet open={sheet === 'strength'} title="Сила семьи" onClose={close}><StrengthForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'inspection'} title={`Осмотр улья №${h.hive_number}`} onClose={close}><InspectionForm hive={h} onDone={close} /></Sheet>
       <Sheet open={sheet === 'disease'} title="Болезнь" onClose={close}><DiseaseForm hive={h} onDone={close} /></Sheet>
       <Sheet open={sheet === 'treatment'} title="Лечение" onClose={close}><TreatmentForm hive={h} onDone={close} /></Sheet>
       <Sheet open={sheet === 'feeding'} title="Подкормка" onClose={close}><FeedingForm hive={h} onDone={close} /></Sheet>
