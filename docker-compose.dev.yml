@@ -27,6 +27,9 @@ services:
       DATABASE_URL: postgresql+psycopg://bee:bee@postgres:5432/beekeeping
       # Your real bot token from .env is used if set (needed to test inside Telegram)
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-1234567890:local-test-token}
+      # Used in hive QR links: https://t.me/<bot>/<app>?startapp=hive_<uuid>
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_WEBAPP_SHORT_NAME: ${TELEGRAM_WEBAPP_SHORT_NAME:-}
       JWT_SECRET: local-dev-secret-local-dev-secret-0123456789
       ADMIN_TELEGRAM_IDS: ${ADMIN_TELEGRAM_IDS:-111111}
       DEFAULT_USER_ROLE: VIEWER

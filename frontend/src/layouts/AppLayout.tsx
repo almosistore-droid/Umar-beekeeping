@@ -1,13 +1,19 @@
 import { useEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { BottomNav, NAV_ITEMS } from '../components/BottomNav'
-import { getWebApp } from '../services/telegram'
+import { getWebApp, takeStartParam } from '../services/telegram'
 
 const ROOT_PATHS = new Set<string>(NAV_ITEMS.map((i) => i.to))
 
 export function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
+
+  // Opened from a QR deep link (t.me/<bot>/<app>?startapp=hive_<uuid>): go straight to that hive
+  useEffect(() => {
+    const code = takeStartParam()
+    if (code) navigate(`/open?code=${encodeURIComponent(code)}`, { replace: true })
+  }, [navigate])
 
   // Telegram's native back button on nested screens
   useEffect(() => {

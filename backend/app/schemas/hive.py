@@ -96,6 +96,8 @@ class FamilyOut(ORMModel):
 # ---------- hives ----------
 
 class HiveCreate(BaseModel):
+    # Optional: register the hive under the identifier of a pre-printed QR label
+    id: uuid.UUID | None = None
     apiary_id: uuid.UUID
     hive_number: str = Field(min_length=1, max_length=24)
     hive_type: HiveType = HiveType.DADANT

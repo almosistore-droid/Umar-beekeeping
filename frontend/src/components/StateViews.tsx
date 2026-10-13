@@ -18,12 +18,14 @@ export function MessageView({
   title,
   text,
   action,
+  secondary,
 }: {
   icon?: IconName
   logo?: boolean
   title: string
   text?: ReactNode
   action?: { label: string; onClick: () => void }
+  secondary?: { label: string; onClick: () => void }
 }) {
   return (
     <div className="state">
@@ -36,6 +38,7 @@ export function MessageView({
           {action.label}
         </button>
       )}
+      {secondary && <button className="btn btn--ghost" onClick={secondary.onClick}>{secondary.label}</button>}
     </div>
   )
 }

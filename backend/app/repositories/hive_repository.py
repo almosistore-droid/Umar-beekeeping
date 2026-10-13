@@ -19,7 +19,7 @@ from app.models import (
 )
 
 
-def _natural_order(column):
+def natural_order(column):
     # "2" before "10": pad numeric-looking numbers for sorting
     return func.lpad(column, 20, "0")
 
@@ -66,7 +66,7 @@ def list_hives(
 
     total = db.scalar(select(func.count()).select_from(stmt.order_by(None).subquery())) or 0
     rows = db.scalars(
-        stmt.order_by(Apiary.name, _natural_order(Hive.hive_number)).limit(limit).offset(offset)
+        stmt.order_by(Apiary.name, natural_order(Hive.hive_number)).limit(limit).offset(offset)
     ).unique().all()
     return list(rows), total
 

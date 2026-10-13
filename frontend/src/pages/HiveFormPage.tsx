@@ -23,6 +23,8 @@ function CreateHive() {
   const apiaries = useQuery({ queryKey: ['apiaries'], queryFn: () => apiariesApi.list() })
   const freeQueens = useQuery({ queryKey: ['queens', 'free'], queryFn: () => queensApi.list({ in_hive: false }) })
 
+  // Registering a hive under a pre-printed QR label scanned by the user
+  const qrId = params.get('qr')
   const [apiaryId, setApiaryId] = useState(params.get('apiary') ?? '')
   const [number, setNumber] = useState('')
   const [type, setType] = useState<HiveType>('DADANT')
@@ -40,6 +42,7 @@ function CreateHive() {
 
   const create = useMutation({
     mutationFn: () => hivesApi.create({
+      ...(qrId ? { id: qrId } : {}),
       apiary_id: apiaryId, hive_number: number, hive_type: type, installation_date: installDate, notes: notes || null,
       family: populated ? { strength, origin, start_date: startDate } : null,
       queen_id: populated && queenId ? queenId : null,
@@ -60,6 +63,9 @@ function CreateHive() {
   return (
     <form className="page form" onSubmit={submit}>
       <h1 className="page__title">Новый улей</h1>
+      {qrId && (
+        <p className="ok-box">Улей будет привязан к отсканированному QR-коду — наклейка на нём сразу начнёт открывать этот улей.</p>
+      )}
       <ErrorBox error={create.error} />
       <section className="card">
         <Field label="Пасека" error={fieldError(create.error, 'apiary_id')}>

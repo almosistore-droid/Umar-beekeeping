@@ -142,6 +142,7 @@ export function describeAudit(action: string, oldV: Record<string, unknown> | nu
     }
     case 'wintering_started': return { icon: 'apiary', title: `Ушёл в зимовку ${newV?.season ?? ''}`, details: [] }
     case 'wintering_finished': return { icon: 'apiary', title: `Зимовка ${newV?.season ?? ''} завершена`, details: [WINTERING_RESULT[newV?.result as WinteringResult] ?? ''] }
+    case 'qr_printed': return { icon: 'qr', title: 'Напечатан QR-код', details: [] }
     case 'task_done': return { icon: 'treat', title: `Выполнено: ${newV?.title ?? ''}`, details: [] }
     default: return { icon: 'edit', title: 'Изменения', details: changes() }
   }

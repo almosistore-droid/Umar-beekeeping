@@ -1,8 +1,9 @@
-import { api } from './client'
+import { api, apiBlob } from './client'
 import type {
   Apiary, AuditEntry, Family, FamilyOrigin, FamilyStatus, FamilyStrength, Hive, HiveListItem,
   HiveStatus, HiveType, Page, Queen, QueenAssignment, QueenOrigin, QueenStatus, User, UserRole,
 } from '../types/api'
+import type { LabelsRequest, QrInfo, QrResolve, QrStatus } from '../types/api'
 
 const json = (method: string, body: unknown): RequestInit => ({ method, body: JSON.stringify(body) })
 
@@ -32,7 +33,7 @@ export const apiariesApi = {
 export interface HiveFilters { apiary_id?: string; status?: HiveStatus[]; strength?: FamilyStrength[]; needs_inspection?: boolean; q?: string; include_archived?: boolean }
 export interface FamilyInput { strength: FamilyStrength; origin: FamilyOrigin; start_date?: string | null; notes?: string | null }
 export interface HiveCreateInput {
-  apiary_id: string; hive_number: string; hive_type: HiveType; status?: HiveStatus | null
+  id?: string | null; apiary_id: string; hive_number: string; hive_type: HiveType; status?: HiveStatus | null
   installation_date?: string | null; colonization_date?: string | null; notes?: string | null
   family?: FamilyInput | null; queen_id?: string | null
 }
@@ -158,4 +159,13 @@ export const operationsApi = {
     api<Wintering>(`/api/hives/${hiveId}/winterings`, json('POST', body)),
   finishWintering: (id: string, body: { end_date?: string | null; spring_strength?: FamilyStrength | null; result: WinteringResult; notes?: string | null }) =>
     api<{ wintering: Wintering; hive: Hive }>(`/api/winterings/${id}/finish`, json('PUT', body)),
+}
+
+// ---------- stage 5: QR ----------
+export const qrApi = {
+  get: (hiveId: string) => api<QrInfo>(`/api/hives/${hiveId}/qr`),
+  status: () => api<QrStatus>('/api/qr/status'),
+  resolve: (code: string) => api<QrResolve>(`/api/qr/resolve${qs({ code })}`),
+  sendLabels: (body: LabelsRequest) => api<{ sent: boolean; labels: number }>('/api/qr/labels', json('POST', { ...body, delivery: 'telegram' })),
+  downloadLabels: (body: LabelsRequest) => apiBlob('/api/qr/labels', json('POST', { ...body, delivery: 'download' })),
 }

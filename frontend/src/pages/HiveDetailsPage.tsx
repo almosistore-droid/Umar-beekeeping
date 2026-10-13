@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { HiveQrCard } from '../components/qr/HiveQr'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../api/client'
@@ -89,6 +90,7 @@ export function HiveDetailsPage() {
         </div>
       )}
 
+      <HiveQrCard hiveId={h.id} />
       <HoneyCard hiveId={h.id} />
       <OpenCasesCard hive={h} canWrite={canWrite && editable} />
       <RemindersCard hive={h} canWrite={canWrite && editable} />

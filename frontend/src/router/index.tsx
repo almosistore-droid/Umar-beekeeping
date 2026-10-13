@@ -15,6 +15,9 @@ import { TasksPage } from '../pages/TasksPage'
 import { HoneyPage } from '../pages/HoneyPage'
 import { ProductsPage } from '../pages/ProductsPage'
 import { MessageView } from '../components/StateViews'
+import { ScanPage } from '../pages/ScanPage'
+import { OpenQrPage } from '../pages/OpenQrPage'
+import { QrLabelsPage } from '../pages/QrLabelsPage'
 
 export const routes = [
   {
@@ -35,7 +38,9 @@ export const routes = [
       { path: 'tasks', element: <TasksPage /> },
       { path: 'honey', element: <HoneyPage /> },
       { path: 'products', element: <ProductsPage /> },
-      { path: 'scan', element: <StagePendingPage icon="scan" title="Сканер" stage={5} /> },
+      { path: 'scan', element: <ScanPage /> },
+      { path: 'open', element: <OpenQrPage /> },
+      { path: 'qr-labels', element: <QrLabelsPage /> },
       { path: 'reports', element: <StagePendingPage icon="chart" title="Отчёты" stage={6} /> },
       { path: 'more', element: <MorePage /> },
       { path: '*', element: <MessageView icon="inspect" title="Страница не найдена" /> },

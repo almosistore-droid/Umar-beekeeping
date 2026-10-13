@@ -39,6 +39,14 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Operations are shown in timelines through audit actions (moved, swarmed, swarm_settled, split, split_created, merged_into, merge_target, wintering_*), described in `describeAudit`.
 - Chart colour for honey bars `#c08918` (validated in-band on the dark card surface); highlight uses `--gold`.
 
+## Domain rules (stage 5 — specs/005-qr-and-deep-links)
+- QR payload is `hive_<hive uuid>` (Telegram startapp, ≤64 chars), stored in `qr_codes` (one per hive, created in `create_hive`, backfilled by migration 0005). It never changes.
+- QR content = `qr_service.deep_link(code)`: `t.me/<bot>/<short_name>?startapp=` or `t.me/<bot>?startapp=` (Main Mini App); without TELEGRAM_BOT_USERNAME it is the bare code and the UI warns before printing.
+- `qr_service.parse` accepts t.me links, `startapp=`/`tgWebAppStartParam=`, `hive_<uuid>`, bare UUID, `/hives/<uuid>`; `/api/qr/resolve` returns `found | unknown | invalid` (200, not 404).
+- Unknown QR → CAN_MANAGE may register a hive with that id (`HiveCreate.id`, frontend `/hives/new?qr=`).
+- Labels PDF (`qr_labels.py`, reportlab, bundled DejaVu fonts in `app/assets/fonts`): 3×4 on A4. In Telegram the bot sends it to the requesting user's own chat (`telegram_bot.send_document`); prints are audited as `qr_printed` only after successful delivery.
+- Frontend: `/scan` (Telegram `showScanQrPopup`, manual fallback), `/open?code=` resolver, start_param handled once in `AppLayout` via `takeStartParam()`, `/qr-labels`.
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client. The role is loaded from DB on every request (`get_current_user`).

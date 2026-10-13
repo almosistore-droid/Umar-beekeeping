@@ -21,6 +21,9 @@ const PATHS = {
   apiary: <><path d="M3 20h18" /><path d="M5 20v-6l3.5-3 3.5 3v6M12 20v-6l3.5-3 3.5 3v6" /><path d="M12 5v2M8.5 6.5l1 1.5M15.5 6.5l-1 1.5" /></>,
   users: <><circle cx="9" cy="9" r="3.5" /><path d="M3 20a6 6 0 0 1 12 0" /><path d="M16 5.5a3.5 3.5 0 0 1 0 7M18 14.5a6 6 0 0 1 3 5.5" /></>,
   chevron: <><path d="m9 6 6 6-6 6" /></>,
+  qr: <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><path d="M14 14h2v2h-2zM18 14h2M14 18v2M17 17h3v3h-3" /></>,
+  send: <><path d="M21 3 10.5 13.5" /><path d="M21 3 14.5 21l-4-7.5L3 9.5z" /></>,
+  download: <><path d="M12 4v11" /><path d="m7.5 10.5 4.5 4.5 4.5-4.5" /><path d="M5 19.5h14" /></>,
 } as const
 
 export type IconName = keyof typeof PATHS

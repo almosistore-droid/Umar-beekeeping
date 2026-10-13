@@ -30,7 +30,7 @@ from app.schemas.hive import (
 )
 from app.schemas.queen import AssignQueenRequest, RemoveQueenRequest
 from app.services import audit_service as audit
-from app.services import queen_service
+from app.services import qr_service, queen_service
 from app.services.apiary_service import get_apiary
 from app.services.queen_service import LIVING_HIVE_STATUSES
 from app.utils.errors import ConflictError, NotFoundError, ValidationFailed
@@ -150,13 +150,17 @@ def create_hive(db: Session, data: HiveCreate, user: User, *, commit: bool = Tru
     if apiary.is_archived:
         raise ConflictError("Пасека в архиве — в неё нельзя добавить улей")
     _ensure_number_free(db, apiary.id, data.hive_number)
+    if data.id is not None:
+        taken = db.get(Hive, data.id)
+        if taken is not None:
+            raise ConflictError(f"Этот QR уже привязан к улью №{taken.hive_number} («{taken.apiary.name}»)")
 
     status = data.status or (HiveStatus.ACTIVE if data.family else HiveStatus.EMPTY)
     if status != HiveStatus.EMPTY and not data.family:
         raise ValidationFailed("Для заселённого улья укажите пчелиную семью или выберите статус «Пустой»")
 
     hive = Hive(
-        apiary_id=apiary.id, hive_number=data.hive_number, hive_type=data.hive_type, status=status,
+        id=data.id or uuid.uuid4(), apiary_id=apiary.id, hive_number=data.hive_number, hive_type=data.hive_type, status=status,
         installation_date=data.installation_date or today(), colonization_date=data.colonization_date,
         next_inspection_at=data.next_inspection_at, notes=data.notes, version=1,
     )
@@ -168,8 +172,9 @@ def create_hive(db: Session, data: HiveCreate, user: User, *, commit: bool = Tru
         _new_family(db, hive, data.family, start)
         hive.colonization_date = hive.colonization_date or start
 
+    qr_service.ensure(db, hive, user)  # permanent QR from the first moment
     audit.record(db, user=user, entity_type="hive", entity_id=hive.id, hive_id=hive.id, action="created",
-                 new=audit.snapshot(hive))
+                 new=audit.snapshot(hive), comment="Зарегистрирован по QR-наклейке" if data.id else None)
 
     if data.queen_id:
         if hive.status == HiveStatus.QUEENLESS:

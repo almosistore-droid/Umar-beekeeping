@@ -52,6 +52,11 @@ export interface TelegramWebApp {
   setHeaderColor?: (color: string) => void
   setBackgroundColor?: (color: string) => void
   setBottomBarColor?: (color: string) => void
+  /** Bot API 6.4+: native QR scanner. Return true from the callback to close it. */
+  showScanQrPopup?: (params: { text?: string }, callback?: (text: string) => boolean | void) => void
+  closeScanQrPopup?: () => void
+  openLink?: (url: string) => void
+  openTelegramLink?: (url: string) => void
 }
 
 declare global {

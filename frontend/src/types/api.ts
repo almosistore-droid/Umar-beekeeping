@@ -286,3 +286,17 @@ export interface Wintering {
   winter_location: string | null; start_date: string; end_date: string | null; spring_strength: FamilyStrength | null
   result: WinteringResult | null; notes: string | null
 }
+
+// ---------- stage 5: QR ----------
+export interface QrInfo {
+  hive_id: string; hive_number: string; apiary_name: string; code: string
+  deep_link: string | null; content: string; deep_link_ready: boolean; svg_data_uri: string
+  print_count: number; last_printed_at: string | null
+}
+export interface QrResolve {
+  status: 'found' | 'unknown' | 'invalid'
+  hive_id: string | null; hive_number: string | null; apiary_name: string | null
+  is_archived: boolean; can_register: boolean
+}
+export interface QrStatus { deep_link_ready: boolean; example_link: string | null }
+export interface LabelsRequest { hive_ids?: string[]; apiary_id?: string | null; blank_count?: number }

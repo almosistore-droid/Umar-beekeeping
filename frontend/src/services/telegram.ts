@@ -57,3 +57,48 @@ export function haptic(kind: 'light' | 'success' | 'error' = 'light'): void {
   if (kind === 'light') h.impactOccurred('light')
   else h.notificationOccurred(kind)
 }
+
+/** Native QR scanner is available (Telegram 6.4+ on a phone or desktop with a camera). */
+export function canScanQr(): boolean {
+  const wa = getWebApp()
+  return !!wa?.showScanQrPopup && wa.isVersionAtLeast('6.4')
+}
+
+/**
+ * Opens Telegram's camera scanner; calls onResult once with the first text read and closes.
+ * Returns false when the scanner is not available (outside Telegram).
+ */
+export function scanQr(text: string, onResult: (value: string) => void): boolean {
+  const wa = getWebApp()
+  if (!wa?.showScanQrPopup || !canScanQr()) return false
+  let done = false
+  wa.showScanQrPopup({ text }, (value) => {
+    if (done) return true
+    done = true
+    haptic('success')
+    onResult(value)
+    return true
+  })
+  return true
+}
+
+let startParamUsed = false
+
+/**
+ * The deep-link payload (t.me/<bot>/<app>?startapp=…) the Mini App was opened with.
+ * Returned only once per page load so going back does not re-open the same hive.
+ */
+export function takeStartParam(): string | null {
+  if (startParamUsed) return null
+  startParamUsed = true
+  const fromSdk = getWebApp()?.initDataUnsafe.start_param
+  if (fromSdk) return fromSdk
+  const search = new URLSearchParams(window.location.search)
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+  return search.get('tgWebAppStartParam') ?? hash.get('tgWebAppStartParam') ?? null
+}
+
+/** Test helper. */
+export function resetStartParamForTests(): void {
+  startParamUsed = false
+}
