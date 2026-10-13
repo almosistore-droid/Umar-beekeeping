@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     app_name: str = "Beekeeping Management System"
     environment: str = Field(default="development", description="development | test | production")
 
+    # Calendar day of the apiary: «today», default dates and report periods follow this zone (IANA name)
+    timezone: str = "Asia/Dushanbe"
+
     database_url: str = "postgresql+psycopg://bee:bee@localhost:5432/beekeeping"
 
     # Telegram

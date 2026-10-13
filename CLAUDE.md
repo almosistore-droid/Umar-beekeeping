@@ -11,6 +11,7 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - UUID primary keys (`UUIDPrimaryKeyMixin`), `created_at/updated_at` (`TimestampMixin`). Constraint naming convention is in `models/base.py`.
 - Never hard-delete historical data (hives, families, queens): change status and keep history.
 - Store dates of birth, never ages. Compute derived values (age, total_value) in code/SQL.
+- «Today» is the apiary's calendar day: `schemas.common.today()` / `local_date(ts)` in `settings.timezone` (TIMEZONE, default Asia/Dushanbe), never `date.today()` or the UTC date. Dates stored as noon-UTC timestamps (next inspection) are read back with `stored_day()`. Tests use `app_today()` too.
 - Error messages returned to users are in Russian (`detail`), validation errors use the shape `{detail, errors:[{field,message}]}`.
 
 ## Domain rules (stage 2)

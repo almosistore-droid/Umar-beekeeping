@@ -4,7 +4,9 @@ from decimal import Decimal
 
 import pytest
 
-TODAY = date.today()
+from app.schemas.common import today as app_today
+
+TODAY = app_today()  # the apiary's calendar day, same clock as the server
 Y = TODAY.year
 
 

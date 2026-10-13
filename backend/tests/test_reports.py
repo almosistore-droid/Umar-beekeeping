@@ -1,15 +1,16 @@
 """Stage 6: dashboard, yearly report and its PDF / Excel / CSV exports — on a hand-counted history."""
 import csv
 import io
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
 from openpyxl import load_workbook
 
 from app.services import telegram_bot
+from app.schemas.common import today as app_today
 
-TODAY = datetime.now(timezone.utc).date()
+TODAY = app_today()  # the apiary's calendar day, same clock as the server
 Y = TODAY.year
 
 

@@ -10,3 +10,4 @@ httpx==0.28.1
 segno==1.6.1
 reportlab==4.2.5
 openpyxl==3.1.5
+tzdata==2025.2

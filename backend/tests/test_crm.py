@@ -1,10 +1,12 @@
 """Stage 7 CRM: customers, expenses, sales and payments, debts, orders, profit; roles; money arithmetic."""
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from decimal import Decimal
 
 import pytest
 
-TODAY = datetime.now(timezone.utc).date()
+from app.schemas.common import today as app_today
+
+TODAY = app_today()  # the apiary's calendar day, same clock as the server
 Y = TODAY.year
 D = Decimal
 

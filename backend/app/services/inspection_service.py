@@ -13,6 +13,7 @@ from app.models import Hive, Inspection, User
 from app.models.enums import InspectionHealth
 from app.schemas.health import InspectionCreate, InspectionUpdate
 from app.services import audit_service as audit
+from app.schemas.common import local_date
 from app.services.health_service import get_hive_for_record
 from app.utils.errors import NotFoundError
 
@@ -36,7 +37,7 @@ def _recompute_hive(db: Session, hive: Hive, user: User) -> None:
     if latest is None:
         hive.last_inspection_at = hive.next_inspection_at = None
         return
-    next_day = latest.next_inspection_at or (latest.inspected_at.date() + timedelta(days=DEFAULT_INTERVAL_DAYS))
+    next_day = latest.next_inspection_at or (local_date(latest.inspected_at) + timedelta(days=DEFAULT_INTERVAL_DAYS))
     new_last, new_next = latest.inspected_at, datetime.combine(next_day, _NOON)
     if (hive.last_inspection_at, hive.next_inspection_at) != (new_last, new_next):
         hive.last_inspection_at, hive.next_inspection_at = new_last, new_next

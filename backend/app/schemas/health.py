@@ -16,7 +16,7 @@ from app.models.enums import (
     TaskKind,
     TaskStatus,
 )
-from app.schemas.common import ORMModel, clean_text, not_in_future
+from app.schemas.common import ORMModel, clean_text, local_date, not_in_future, today
 
 Text = Field(default=None, max_length=5000)
 Short = Field(default=None, max_length=255)
@@ -69,7 +69,7 @@ class InspectionFields(BaseModel):
             raise ValueError(
                 f"Рамок с расплодом, мёдом и пергой ({used}) больше, чем всего рамок ({self.frames_total})"
             )
-        when = (self.inspected_at or datetime.now(timezone.utc)).date()
+        when = local_date(self.inspected_at) if self.inspected_at else today()
         if self.next_inspection_at and self.next_inspection_at < when:
             raise ValueError("Следующий осмотр не может быть раньше этого осмотра")
         return self
@@ -202,7 +202,7 @@ class TreatmentFields(BaseModel):
 
     @model_validator(mode="after")
     def _next(self):
-        base = self.treated_at or datetime.now(timezone.utc).date()
+        base = self.treated_at or today()
         if self.next_treatment_date and self.next_treatment_date < base:
             raise ValueError("Следующая обработка не может быть раньше этой")
         return self
@@ -251,7 +251,7 @@ class FeedingFields(BaseModel):
 
     @model_validator(mode="after")
     def _next(self):
-        base = self.fed_at or datetime.now(timezone.utc).date()
+        base = self.fed_at or today()
         if self.next_feeding_date and self.next_feeding_date < base:
             raise ValueError("Следующая подкормка не может быть раньше этой")
         return self

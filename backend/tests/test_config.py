@@ -57,3 +57,17 @@ def test_dev_compose_environment_loads(monkeypatch):
         monkeypatch.setenv(k, v)
     s = Settings(_env_file=None)
     assert s.cors_origins == ["http://localhost:5173"] and s.admin_telegram_ids == [111111]
+
+
+def test_apiary_calendar_day_follows_timezone(monkeypatch):
+    """At 00:30 in Dushanbe (19:30 UTC the day before) the apiary's date is already the next day."""
+    from datetime import date, datetime, timezone
+
+    from app.config import get_settings
+    from app.schemas.common import local_date
+
+    monkeypatch.setattr(get_settings(), "timezone", "Asia/Dushanbe")
+    assert local_date(datetime(2026, 10, 13, 19, 30, tzinfo=timezone.utc)) == date(2026, 10, 14)
+    assert local_date(datetime(2026, 10, 13, 18, 59, tzinfo=timezone.utc)) == date(2026, 10, 13)
+    monkeypatch.setattr(get_settings(), "timezone", "UTC")
+    assert local_date(datetime(2026, 10, 13, 19, 30, tzinfo=timezone.utc)) == date(2026, 10, 13)

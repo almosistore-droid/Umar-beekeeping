@@ -17,6 +17,7 @@ from app.config import get_settings
 from app.database import SessionLocal
 from app.models import Apiary, FamilyOrigin, FamilyStrength, HiveType, QueenOrigin, User, UserRole
 from app.schemas.apiary import ApiaryCreate
+from app.schemas.common import today as app_today
 from app.schemas.hive import FamilyCreate, HiveCreate
 from app.schemas.queen import AssignQueenRequest, QueenCreate
 from app.services import apiary_service, hive_service, queen_service
@@ -56,7 +57,7 @@ def run(telegram_id: int | None) -> None:
 def _seed_structure(db, user) -> None:
     """Stage 2 demo: 2 apiaries, 10 hives, queens with one replacement in history."""
     rnd = random.Random(42)
-    today = date.today()
+    today = app_today()
     apiaries = [
         apiary_service.create_apiary(
             db, ApiaryCreate(name=n, description=d, address=a, latitude=lat, longitude=lon), user)
@@ -119,7 +120,7 @@ def _seed_health(db, user) -> None:
         return
 
     rnd = random.Random(7)
-    today = date.today()
+    today = app_today()
     strengths = list(FamilyStrength)
     for n, hive in enumerate(hives):
         for weeks_ago in (5, 3, 1):
@@ -174,7 +175,7 @@ def _seed_operations(db, user) -> None:
         return
 
     rnd = random.Random(11)
-    today = date.today()
+    today = app_today()
     kinds = ["Разнотравье", "Акация", "Горный", "Подсолнечник", "Эспарцет"]
     for year in (today.year - 1, today.year):
         for hive in hives:
@@ -223,7 +224,7 @@ def _seed_crm(db, user) -> None:
     if db.scalar(select(Customer.id).where(Customer.name.like("% (демо)")).limit(1)):
         print("Демо-данные CRM уже есть.")
         return
-    today = date.today()
+    today = app_today()
 
     def back(days: int) -> date:
         return max(today - timedelta(days=days), date(today.year, 1, 1))

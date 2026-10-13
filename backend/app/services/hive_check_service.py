@@ -20,7 +20,7 @@ from app.models.health import HiveDisease, Inspection
 from app.schemas.apiary import ApiaryBrief
 from app.schemas.check import CheckCase, CheckInspection, CheckIssue, CheckQueen, CheckTask, HiveCheckOut
 from app.services import health_service, honey_service, queen_service
-from app.schemas.common import today as utc_today
+from app.schemas.common import local_date, stored_day, today as app_today
 from app.utils.age import plural_ru
 from app.utils.labels import CASE_STATUS
 
@@ -33,7 +33,7 @@ def _days(n: int) -> str:
 
 
 def check(db: Session, hive: Hive, _: User) -> HiveCheckOut:
-    today = utc_today()
+    today = app_today()
     issues: list[CheckIssue] = []
 
     def add(code: str, level: str, message: str) -> None:
@@ -77,8 +77,8 @@ def check(db: Session, hive: Hive, _: User) -> HiveCheckOut:
             if latest.health_status != InspectionHealth.HEALTHY and hive.status not in (HiveStatus.SICK, HiveStatus.QUARANTINE):
                 add("health_suspicious", "attention", "На осмотре отмечено подозрение на болезнь")
 
-        if hive.next_inspection_at and hive.next_inspection_at.date() < today:
-            add("inspection_overdue", "attention", f"Осмотр просрочен на {_days((today - hive.next_inspection_at.date()).days)}")
+        if hive.next_inspection_at and stored_day(hive.next_inspection_at) < today:
+            add("inspection_overdue", "attention", f"Осмотр просрочен на {_days((today - stored_day(hive.next_inspection_at)).days)}")
 
     for c in cases:
         if c.status in ACTIVE_CASE_STATUSES:
@@ -99,7 +99,7 @@ def check(db: Session, hive: Hive, _: User) -> HiveCheckOut:
         queen=CheckQueen(id=queen.id, queen_code=queen.queen_code, age_label=queen.age_label, status=queen.status) if queen else None,
         last_inspection=CheckInspection(
             id=latest.id, inspected_at=latest.inspected_at,
-            days_ago=max(0, (today - latest.inspected_at.date()).days),
+            days_ago=max(0, (today - local_date(latest.inspected_at)).days),
             user_name=latest.user.display_name if latest.user else None,
             strength=latest.strength, frames_total=latest.frames_total, brood_frames=latest.brood_frames,
             honey_frames=latest.honey_frames, pollen_frames=latest.pollen_frames, queen_present=latest.queen_present,

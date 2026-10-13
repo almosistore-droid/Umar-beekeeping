@@ -1,9 +1,11 @@
 """Stage 3: inspections, disease cases, treatments, feedings, reminders, timeline."""
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
-TODAY = date.today()
+from app.schemas.common import today as app_today
+
+TODAY = app_today()  # the apiary's calendar day, same clock as the server
 
 
 @pytest.fixture

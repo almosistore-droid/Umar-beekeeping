@@ -1,12 +1,13 @@
 """Stage 2: apiaries, hives, families, queens, history and permissions."""
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pytest
 from sqlalchemy import func, select
 
 from app.models import AuditLog, BeeFamily, Hive, Queen, QueenAssignment
+from app.schemas.common import today as app_today
 
-TODAY = date.today()
+TODAY = app_today()  # the apiary's calendar day, same clock as the server
 
 
 @pytest.fixture

@@ -3,7 +3,9 @@ from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
-TODAY = datetime.now(timezone.utc).date()
+from app.schemas.common import today as app_today
+
+TODAY = app_today()  # the apiary's calendar day, same clock as the server
 
 
 @pytest.fixture

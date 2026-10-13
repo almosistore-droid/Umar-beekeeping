@@ -13,10 +13,10 @@ from sqlalchemy.orm import Session
 
 from app.models import ARCHIVED_HIVE_STATUSES, Hive, HiveStatus, Queen, QueenStatus
 from app.models.audit import AuditLog
-from app.models.health import HiveDisease, Treatment
+from app.models.health import Treatment
 from app.models.hive import QueenAssignment
 from app.models.operations import HiveMerge, HiveSplit, HoneyHarvest, OtherProduct, hive_merge_sources
-from app.schemas.common import today
+from app.schemas.common import local_date, today
 from app.schemas.report import (
     BestFamily,
     DiseasesSection,
@@ -74,10 +74,10 @@ def hive_spans(db: Session) -> list[Span]:
             if h.status == HiveStatus.MERGED and h.id in merged:
                 end = merged[h.id]
             elif h.id in left:
-                end = left[h.id].date()
+                end = local_date(left[h.id])
             else:
-                end = h.updated_at.date()
-        spans.append(Span(h, h.installation_date or h.created_at.date(), end, h.status))
+                end = local_date(h.updated_at)
+        spans.append(Span(h, h.installation_date or local_date(h.created_at), end, h.status))
     return spans
 
 
