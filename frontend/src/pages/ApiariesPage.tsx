@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiariesApi, type ApiaryInput } from '../api/resources'
+import { Icon } from '../components/Icon'
 import { ErrorBox, Field, Sheet, SubmitButton, fieldError } from '../components/ui'
 import { LoadingView, MessageView } from '../components/StateViews'
 import { usePermissions } from '../hooks/usePermissions'
@@ -23,20 +24,20 @@ export function ApiariesPage() {
       </div>
       <ErrorBox error={apiaries.error} />
       {apiaries.isLoading ? <LoadingView /> : apiaries.data?.length === 0 ? (
-        <MessageView icon="🏡" title="Пасек пока нет" text={canManage ? 'Создайте первую пасеку, затем добавьте в неё ульи.' : undefined}
+        <MessageView icon="apiary" title="Пасек пока нет" text={canManage ? 'Создайте первую пасеку, затем добавьте в неё ульи.' : undefined}
           action={canManage ? { label: 'Создать пасеку', onClick: () => setEditing('new') } : undefined} />
       ) : (
         <ul className="list">
           {apiaries.data?.map((a) => (
             <li key={a.id} className={`card${a.is_archived ? ' card--muted' : ''}`}>
               <div className="card__titlebar">
-                <h2 className="card__title">🏡 {a.name}{a.is_archived && ' (архив)'}</h2>
-                {canManage && <button className="icon-btn" onClick={() => setEditing(a)} aria-label="Изменить">✏️</button>}
+                <h2 className="card__title">{a.name}{a.is_archived && ' (архив)'}</h2>
+                {canManage && <button className="icon-btn" onClick={() => setEditing(a)} aria-label="Изменить"><Icon name="edit" /></button>}
               </div>
-              {a.address && <p className="hint">📍 {a.address}</p>}
+              {a.address && <p className="hint">{a.address}</p>}
               {a.description && <p className="small">{a.description}</p>}
               <div className="btn-row">
-                <Link className="btn btn--secondary" to={`/hives?apiary=${a.id}`}>🐝 {a.hive_count} {plural(a.hive_count, 'улей', 'улья', 'ульев')}</Link>
+                <Link className="btn btn--secondary" to={`/hives?apiary=${a.id}`}>{a.hive_count} {plural(a.hive_count, 'улей', 'улья', 'ульев')}</Link>
                 {canManage && !a.is_archived && <Link className="btn btn--ghost" to={`/hives/new?apiary=${a.id}`}>＋ Улей</Link>}
               </div>
             </li>
@@ -86,7 +87,7 @@ function ApiaryForm({ apiary, onDone }: { apiary: Apiary | null; onDone: () => v
       <Field label="Координаты" hint="широта, долгота" error={fieldError(save.error, 'latitude') ?? fieldError(save.error, 'longitude')}>
         <div className="input-group">
           <input className="input" value={coords} onChange={(e) => setCoords(e.target.value)} placeholder="38.75, 68.82" inputMode="decimal" />
-          <button type="button" className="btn btn--secondary" onClick={locate} aria-label="Моё местоположение">📍</button>
+          <button type="button" className="btn btn--secondary" onClick={locate} aria-label="Моё местоположение"><Icon name="apiary" /></button>
         </div>
       </Field>
       <Field label="Описание"><textarea className="input" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>

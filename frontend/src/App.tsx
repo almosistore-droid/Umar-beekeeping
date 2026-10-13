@@ -13,7 +13,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       return (
         <>
           <MessageView
-            icon="🐝"
+            logo
             title="Откройте в Telegram"
             text="Это приложение работает внутри Telegram. Откройте бота и нажмите «Открыть пасеку»."
           />
@@ -23,7 +23,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     case 'error':
       return (
         <>
-          <MessageView icon="⚠️" title="Не удалось войти" text={state.message} action={{ label: 'Повторить', onClick: retry }} />
+          <MessageView icon="weak" title="Не удалось войти" text={state.message} action={{ label: 'Повторить', onClick: retry }} />
           {import.meta.env.DEV && <DevLogin onSubmit={loginWithInitData} />}
         </>
       )
@@ -49,7 +49,7 @@ function DevLogin({ onSubmit }: { onSubmit: (initData: string) => void }) {
   const [value, setValue] = useState('')
   return (
     <form className="card dev-login" onSubmit={(e) => { e.preventDefault(); if (value.trim()) onSubmit(value) }}>
-      <h2 className="card__title">🧪 Вход для проверки на компьютере</h2>
+      <h2 className="card__title">Вход для проверки на компьютере</h2>
       <p className="hint small">
         Выполните в папке проекта:<br />
         <code>docker compose -f docker-compose.dev.yml exec backend python -m app.utils.dev_init_data 111111</code><br />

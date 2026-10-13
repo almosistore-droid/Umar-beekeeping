@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../api/client'
+import { Icon } from './Icon'
 import type { Tone } from '../utils/labels'
 import { haptic } from '../services/telegram'
 
@@ -57,7 +58,7 @@ export function Select<T extends string>({ value, onChange, options, placeholder
 export function ErrorBox({ error }: { error: unknown }) {
   if (!error) return null
   const message = error instanceof ApiError || error instanceof Error ? error.message : 'Что-то пошло не так'
-  return <div className="error-box" role="alert">⚠️ {message}</div>
+  return <div className="error-box" role="alert">{message}</div>
 }
 
 /** Pick the API field error for a form input, e.g. fieldError(err, 'hive_number'). */
@@ -67,7 +68,7 @@ export function fieldError(error: unknown, field: string): string | undefined {
 }
 
 export function Fab({ to, label }: { to: string; label: string }) {
-  return <Link to={to} className="fab" onClick={() => haptic('light')}>＋ {label}</Link>
+  return <Link to={to} className="fab" onClick={() => haptic('light')}><Icon name="plus" />{label}</Link>
 }
 
 export function Sheet({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: ReactNode }) {

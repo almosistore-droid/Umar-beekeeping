@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ApiError } from '../api/client'
 import { queensApi } from '../api/resources'
+import { Icon } from '../components/Icon'
 import { Badge, ErrorBox, InfoRow } from '../components/ui'
 import { LoadingView, MessageView } from '../components/StateViews'
 import { usePermissions } from '../hooks/usePermissions'
@@ -18,7 +19,7 @@ export function QueenDetailsPage() {
   if (queen.isLoading) return <LoadingView />
   if (queen.error) {
     return queen.error instanceof ApiError && queen.error.status === 404
-      ? <MessageView icon="❌" title="Матка не найдена" />
+      ? <MessageView icon="crown" title="Матка не найдена" />
       : <div className="page"><ErrorBox error={queen.error} /></div>
   }
   const q = queen.data!
@@ -29,9 +30,9 @@ export function QueenDetailsPage() {
       <header className="hive-head">
         <div>
           <p className="hint">{q.breed ?? 'Порода не указана'}</p>
-          <h1 className="page__title">👑 {q.queen_code}</h1>
+          <h1 className="page__title">{q.queen_code}</h1>
         </div>
-        {canManage && <Link className="icon-btn" to={`/queens/${q.id}/edit`} aria-label="Изменить матку">✏️</Link>}
+        {canManage && <Link className="icon-btn" to={`/queens/${q.id}/edit`} aria-label="Изменить матку"><Icon name="edit" /></Link>}
       </header>
       <div className="row row--start"><Badge tone={QUEEN_STATUS[q.status].tone}>{QUEEN_STATUS[q.status].label}</Badge></div>
 
@@ -57,7 +58,7 @@ export function QueenDetailsPage() {
       </section>
 
       <section className="card">
-        <h2 className="card__title">📜 Где жила</h2>
+        <h2 className="card__title">Где жила</h2>
         {!history.data?.length ? <p className="hint">Ещё не была в улье</p> : (
           <ul className="plain-list">
             {history.data.map((a) => (

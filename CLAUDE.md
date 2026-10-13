@@ -28,7 +28,8 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Protect endpoints with `Depends(require_roles(*CAN_WRITE))` etc. from `app/auth/dependencies.py`.
 
 ## Frontend
-- Mobile-first, Telegram theme variables (`--tg-*`) in `src/styles.css`; cards and big buttons, no wide tables.
+- Mobile-first; cards and big buttons, no wide tables.
+- Brand: Fayzi Umar (logo `frontend/public/logo.webp`). Palette tokens at the top of `src/styles.css` (`--pitch`, `--comb`, `--gold`, `--amber`, `--wax`…); the app keeps this dark palette in every Telegram theme and paints Telegram's header to match. Hexagon (`--hex`) is the brand motif: hive numbers, nav scanner button, icon cells. Titles use Forum, body Manrope (self-hosted via @fontsource). Icons: `src/components/Icon.tsx` (no emoji in UI).
 - Data fetching via TanStack Query; HTTP via `src/api/client.ts` (token in memory only).
 - Bottom nav: Главная / Ульи / Сканер / Матки / Отчёты / Ещё.
 

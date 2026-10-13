@@ -5,6 +5,9 @@ import { App } from './App'
 import { AuthProvider } from './hooks/useAuth'
 import { initTelegram } from './services/telegram'
 import { ApiError } from './api/client'
+import '@fontsource/forum/cyrillic-400.css'
+import '@fontsource/forum/latin-400.css'
+import '@fontsource-variable/manrope/index.css'
 import './styles.css'
 
 initTelegram()

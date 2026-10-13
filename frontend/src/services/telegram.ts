@@ -26,41 +26,29 @@ export function isInsideTelegram(): boolean {
   return getWebApp() !== null
 }
 
-const THEME_VARS: Record<string, string> = {
-  bg_color: '--tg-bg',
-  text_color: '--tg-text',
-  hint_color: '--tg-hint',
-  link_color: '--tg-link',
-  button_color: '--tg-button',
-  button_text_color: '--tg-button-text',
-  secondary_bg_color: '--tg-secondary-bg',
-  section_bg_color: '--tg-section-bg',
-  destructive_text_color: '--tg-destructive',
-  accent_text_color: '--tg-accent',
-}
+// The app uses the Fayzi Umar brand palette in every Telegram theme; Telegram's own
+// header and background are painted to match so the Mini App looks seamless.
+const BRAND_BG = '#15120c'
 
-function applyTheme(wa: TelegramWebApp) {
-  const root = document.documentElement
-  root.dataset.theme = wa.colorScheme
-  for (const [key, cssVar] of Object.entries(THEME_VARS)) {
-    const value = wa.themeParams[key as keyof typeof wa.themeParams]
-    if (value) root.style.setProperty(cssVar, value)
+function paintTelegramChrome(wa: TelegramWebApp) {
+  try {
+    wa.setHeaderColor?.(BRAND_BG)
+    wa.setBackgroundColor?.(BRAND_BG)
+    if (wa.isVersionAtLeast('7.10')) wa.setBottomBarColor?.(BRAND_BG)
+  } catch {
+    /* older Telegram clients: keep their default colours */
   }
 }
 
 /** Call once at startup: tells Telegram we're ready, expands, syncs theme. */
 export function initTelegram(): void {
   const wa = getWebApp()
-  if (!wa) {
-    document.documentElement.dataset.theme =
-      window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    return
-  }
+  document.documentElement.dataset.theme = 'dark'
+  if (!wa) return
   wa.ready()
   wa.expand()
   if (wa.isVersionAtLeast('7.7')) wa.disableVerticalSwipes?.()
-  applyTheme(wa)
-  wa.onEvent('themeChanged', () => applyTheme(wa))
+  paintTelegramChrome(wa)
 }
 
 export function haptic(kind: 'light' | 'success' | 'error' = 'light'): void {

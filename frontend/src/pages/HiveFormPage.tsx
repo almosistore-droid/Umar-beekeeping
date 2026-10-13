@@ -79,7 +79,7 @@ function CreateHive() {
       <section className="card">
         <label className="switch">
           <input type="checkbox" checked={populated} onChange={(e) => setPopulated(e.target.checked)} />
-          <span>🐝 В улье живёт семья</span>
+          <span>В улье живёт семья</span>
         </label>
         {populated && <>
           <Field label="Сила семьи"><Select value={strength} onChange={setStrength} options={strengthOpts} /></Field>
@@ -155,7 +155,7 @@ function EditHive({ id }: { id: string }) {
         <Field label="Тип улья"><Select value={form.type} onChange={(v) => set({ type: v })} options={opts(HIVE_TYPE)} /></Field>
         <Field label="Статус">
           <Select value={form.status} onChange={(v) => set({ status: v })}
-            options={EDITABLE_HIVE_STATUSES.map((s) => ({ value: s, label: `${HIVE_STATUS[s].icon} ${HIVE_STATUS[s].label}` }))} />
+            options={EDITABLE_HIVE_STATUSES.map((s) => ({ value: s, label: HIVE_STATUS[s].label }))} />
         </Field>
         {archiving && <div className="warn-box">Улей уйдёт в архив. Семья и матка будут отмечены как {form.status === 'SOLD' ? 'проданные' : 'погибшие'}. История сохранится.</div>}
         <Field label="Дата установки">

@@ -20,7 +20,7 @@ export function UsersPage() {
     onError: () => haptic('error'),
   })
 
-  if (!isAdmin) return <MessageView icon="🔒" title="Только для администратора" />
+  if (!isAdmin) return <MessageView icon="users" title="Только для администратора" />
   if (users.isLoading) return <LoadingView />
 
   return (
@@ -48,10 +48,10 @@ export function UsersPage() {
       </ul>
       <section className="card card--muted small">
         <b>Роли</b>
-        <span>👑 Администратор — всё, включая пользователей</span>
-        <span>🐝 Пчеловод — пасеки, ульи, семьи, матки</span>
-        <span>🧤 Помощник — записи (сила семьи, позже осмотры)</span>
-        <span>👀 Наблюдатель — только просмотр</span>
+        <span><b>Администратор:</b> всё, включая пользователей</span>
+        <span><b>Пчеловод:</b> пасеки, ульи, семьи, матки</span>
+        <span><b>Помощник:</b> записи (сила семьи, позже осмотры)</span>
+        <span><b>Наблюдатель:</b> только просмотр</span>
       </section>
     </div>
   )

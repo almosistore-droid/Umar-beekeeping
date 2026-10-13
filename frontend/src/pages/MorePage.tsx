@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Icon } from '../components/Icon'
 import { useAuth } from '../hooks/useAuth'
 import { usePermissions } from '../hooks/usePermissions'
 import { ROLE_LABELS } from '../types/api'
@@ -11,8 +12,8 @@ export function MorePage() {
     <div className="page">
       <h1 className="page__title">Ещё</h1>
       <nav className="menu">
-        <Link to="/apiaries" className="menu__item"><span>🏡</span>Пасеки<span className="chevron">›</span></Link>
-        {isAdmin && <Link to="/users" className="menu__item"><span>👥</span>Пользователи<span className="chevron">›</span></Link>}
+        <Link to="/apiaries" className="menu__item"><Icon name="apiary" />Пасеки<span className="chevron">›</span></Link>
+        {isAdmin && <Link to="/users" className="menu__item"><Icon name="users" />Пользователи<span className="chevron">›</span></Link>}
       </nav>
       <section className="card">
         <h2 className="card__title">Профиль</h2>

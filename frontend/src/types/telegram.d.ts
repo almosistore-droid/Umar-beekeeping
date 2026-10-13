@@ -49,6 +49,9 @@ export interface TelegramWebApp {
   BackButton: TelegramBackButton
   HapticFeedback: TelegramHaptic
   disableVerticalSwipes?: () => void
+  setHeaderColor?: (color: string) => void
+  setBackgroundColor?: (color: string) => void
+  setBottomBarColor?: (color: string) => void
 }
 
 declare global {

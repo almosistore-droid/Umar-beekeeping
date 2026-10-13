@@ -1,3 +1,4 @@
+import type { IconName } from '../components/Icon'
 import type {
   FamilyOrigin, FamilyStatus, FamilyStrength, HiveStatus, HiveType, QueenOrigin, QueenStatus,
 } from '../types/api'
@@ -76,7 +77,7 @@ const FIELD_NAMES: Record<string, string> = {
 }
 
 /** Human-readable one-liner for a history (audit) entry. */
-export function describeAudit(action: string, oldV: Record<string, unknown> | null, newV: Record<string, unknown> | null): { icon: string; title: string; details: string[] } {
+export function describeAudit(action: string, oldV: Record<string, unknown> | null, newV: Record<string, unknown> | null): { icon: IconName; title: string; details: string[] } {
   const val = (k: string, v: unknown): string => {
     if (v === null || v === undefined || v === '') return '—'
     if (k === 'status' && typeof v === 'string' && v in HIVE_STATUS) return HIVE_STATUS[v as HiveStatus].label
@@ -90,21 +91,21 @@ export function describeAudit(action: string, oldV: Record<string, unknown> | nu
       `${FIELD_NAMES[k]}: ${val(k, oldV?.[k])} → ${val(k, newV?.[k])}`)
 
   switch (action) {
-    case 'created': return { icon: '🆕', title: 'Улей создан', details: [] }
-    case 'queen_installed': return { icon: '👑', title: `Подсажена матка ${newV?.queen_code}`, details: [] }
-    case 'queen_replaced': return { icon: '👑', title: 'Замена матки', details: [`${oldV?.queen_code} → ${newV?.queen_code}`] }
+    case 'created': return { icon: 'hive', title: 'Улей создан', details: [] }
+    case 'queen_installed': return { icon: 'crown', title: `Подсажена матка ${newV?.queen_code}`, details: [] }
+    case 'queen_replaced': return { icon: 'crown', title: 'Замена матки', details: [`${oldV?.queen_code} → ${newV?.queen_code}`] }
     case 'queen_removed': return {
-      icon: '👑', title: `Матка ${oldV?.queen_code ?? ''} убрана`,
+      icon: 'queenless', title: `Матка ${oldV?.queen_code ?? ''} убрана`,
       details: newV?.queen_status ? [QUEEN_STATUS[newV.queen_status as QueenStatus]?.label ?? ''] : [],
     }
-    case 'family_settled': return { icon: '🐝', title: 'Заселена семья', details: [FAMILY_ORIGIN[newV?.origin as FamilyOrigin] ?? ''] }
+    case 'family_settled': return { icon: 'hive', title: 'Заселена семья', details: [FAMILY_ORIGIN[newV?.origin as FamilyOrigin] ?? ''] }
     case 'family_replaced': return {
-      icon: '🐝', title: 'Смена семьи',
+      icon: 'hive', title: 'Смена семьи',
       details: [`Прежняя: ${FAMILY_STATUS[oldV?.family_status as FamilyStatus] ?? ''}`],
     }
-    case 'family_ended': return { icon: '🐝', title: 'Семья выбыла', details: [FAMILY_STATUS[newV?.family_status as FamilyStatus] ?? ''] }
-    case 'number_changed': return { icon: '🔢', title: 'Изменён номер', details: changes() }
-    default: return { icon: '✏️', title: 'Изменения', details: changes() }
+    case 'family_ended': return { icon: 'weak', title: 'Семья выбыла', details: [FAMILY_STATUS[newV?.family_status as FamilyStatus] ?? ''] }
+    case 'number_changed': return { icon: 'edit', title: 'Изменён номер', details: changes() }
+    default: return { icon: 'edit', title: 'Изменения', details: changes() }
   }
 }
 

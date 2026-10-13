@@ -29,10 +29,10 @@ export const routes = [
       { path: 'queens/:id/edit', element: <QueenFormPage /> },
       { path: 'apiaries', element: <ApiariesPage /> },
       { path: 'users', element: <UsersPage /> },
-      { path: 'scan', element: <StagePendingPage icon="📷" title="Сканер" stage={5} /> },
-      { path: 'reports', element: <StagePendingPage icon="📊" title="Отчёты" stage={6} /> },
+      { path: 'scan', element: <StagePendingPage icon="scan" title="Сканер" stage={5} /> },
+      { path: 'reports', element: <StagePendingPage icon="chart" title="Отчёты" stage={6} /> },
       { path: 'more', element: <MorePage /> },
-      { path: '*', element: <MessageView icon="🔎" title="Страница не найдена" /> },
+      { path: '*', element: <MessageView icon="inspect" title="Страница не найдена" /> },
     ],
   },
 ]
