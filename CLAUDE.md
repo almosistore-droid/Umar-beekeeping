@@ -48,6 +48,13 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Frontend: `/scan` (Telegram `showScanQrPopup`, manual fallback), `/open?code=` resolver, start_param handled once in `AppLayout` via `takeStartParam()`, `/qr-labels`.
 - Field flow: a found, non-archived hive opens `/hives/:id/visit` → «Осмотр» (`/hives/:id/inspect`, full-screen InspectionForm with `doneActions`) or «Проверка» (`/hives/:id/check`, read-only `GET /api/hives/{id}/check` from `hive_check_service`: verdict ok/attention/problem + issues). Past inspection dates are sent as noon UTC. Hive passport has an «Осмотры» tab (`InspectionList`).
 
+## Domain rules (stage 6 — specs/006-dashboard-and-yearly-report)
+- Read-only aggregation, no new tables. `GET /api/dashboard` (dashboard_service) feeds the home screen in one request; `GET /api/reports/yearly/{year}` (report_service); exports `GET …/export?format=pdf|xlsx|csv`, bot delivery `POST …/send?format=`.
+- Hive lifecycle in reports comes from history: start = installation_date (or created_at), end = merge date (MERGED) or the audit entry that set SOLD/LOST. Year end = min(31 Dec, today); years 2000…current, otherwise 422.
+- Exports in `report_export.py` share `summary()`; CSV is UTF-8 BOM with «;» and Russian number format; PDF reuses the DejaVu fonts.
+- Frontend charts: `components/charts/ColumnChart` (columns, tap tooltip, table toggle) and `BarList` (horizontal, values as text). One hue `#c08918`, highlight `--gold`. File delivery: `components/files/DeliverButtons` (bot in Telegram, download in a browser).
+- Finance (income/expenses/profit) is stage 7: dashboard shows a placeholder strip, report shows production value only.
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client. The role is loaded from DB on every request (`get_current_user`).

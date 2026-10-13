@@ -27,6 +27,11 @@ function mockFetch(handler: (url: string, init?: RequestInit) => Response) {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
+const dashboard = {
+  year: 2026, finance_ready: false, honey_by_month: Array(12).fill('0'), honey_by_hive: [], strength: [], diseases: [], queen_ages: [],
+  tiles: { hives: 4, queens_in_hives: 3, strong: 0, weak: 0, sick: 0, queenless: 0, needs_inspection: 0, open_tasks: 0, overdue_tasks: 0, honey_year_kg: '0', best_hive: null },
+}
+
 function renderApp() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
@@ -54,8 +59,7 @@ describe('Telegram authentication', () => {
     const fetchSpy = mockFetch((url) => {
       if (url.endsWith('/api/auth/telegram'))
         return json({ access_token: 'tok', token_type: 'bearer', expires_in: 60, user, start_param: null })
-      if (url.includes('/api/hives')) return json({ items: [], total: 4 })
-      if (url.includes('/api/queens')) return json({ items: [], total: 3 })
+      if (url.includes('/api/dashboard')) return json(dashboard)
       return json({}, 404)
     })
     renderApp()
@@ -67,8 +71,8 @@ describe('Telegram authentication', () => {
 
     // Subsequent calls carry the bearer token
     await waitFor(() => expect(screen.getByText('4')).toBeInTheDocument())
-    const hivesCall = fetchSpy.mock.calls.find(([u]) => String(u).includes('/api/hives'))!
-    expect(new Headers(hivesCall[1]?.headers).get('Authorization')).toBe('Bearer tok')
+    const dashCall = fetchSpy.mock.calls.find(([u]) => String(u).includes('/api/dashboard'))!
+    expect(new Headers(dashCall[1]?.headers).get('Authorization')).toBe('Bearer tok')
   })
 
   it('shows a readable error when the backend rejects initData', async () => {

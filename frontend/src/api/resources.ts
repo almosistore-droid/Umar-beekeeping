@@ -3,7 +3,7 @@ import type {
   Apiary, AuditEntry, Family, FamilyOrigin, FamilyStatus, FamilyStrength, Hive, HiveListItem,
   HiveStatus, HiveType, Page, Queen, QueenAssignment, QueenOrigin, QueenStatus, User, UserRole,
 } from '../types/api'
-import type { HiveCheck, LabelsRequest, QrInfo, QrResolve, QrStatus } from '../types/api'
+import type { Dashboard, HiveCheck, LabelsRequest, QrInfo, QrResolve, QrStatus, ReportFormat, YearlyReport } from '../types/api'
 
 const json = (method: string, body: unknown): RequestInit => ({ method, body: JSON.stringify(body) })
 
@@ -169,4 +169,12 @@ export const qrApi = {
   resolve: (code: string) => api<QrResolve>(`/api/qr/resolve${qs({ code })}`),
   sendLabels: (body: LabelsRequest) => api<{ sent: boolean; labels: number }>('/api/qr/labels', json('POST', { ...body, delivery: 'telegram' })),
   downloadLabels: (body: LabelsRequest) => apiBlob('/api/qr/labels', json('POST', { ...body, delivery: 'download' })),
+}
+
+// ---------- stage 6: dashboard & reports ----------
+export const reportsApi = {
+  dashboard: (year?: number) => api<Dashboard>(`/api/dashboard${qs({ year })}`),
+  yearly: (year: number) => api<YearlyReport>(`/api/reports/yearly/${year}`),
+  download: (year: number, format: ReportFormat) => apiBlob(`/api/reports/yearly/${year}/export${qs({ format })}`),
+  send: (year: number, format: ReportFormat) => api<{ sent: boolean }>(`/api/reports/yearly/${year}/send${qs({ format })}`, { method: 'POST' }),
 }

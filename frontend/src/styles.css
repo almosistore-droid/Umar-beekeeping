@@ -504,3 +504,18 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; gap:
 .verdict--attention .verdict__mark { background: var(--amber); color: #1b1406; }
 .verdict--problem { border-color: color-mix(in srgb, var(--ember) 50%, transparent); background: color-mix(in srgb, var(--ember) 12%, var(--comb)); }
 .verdict--problem .verdict__mark { background: var(--ember); color: #1b0d06; }
+
+/* ---------- stage 6: dashboard & reports ---------- */
+.rank--plain .rank__row { grid-template-columns: 128px 1fr auto; }
+.section-title { margin: 8px 2px -4px; font-family: var(--font-display); font-weight: 400; font-size: 22px; color: var(--wax); }
+.finance-strip { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px 14px; border: 1px dashed var(--rim); border-radius: var(--radius); }
+.finance-strip__item { display: flex; flex-direction: column; gap: 2px; }
+.finance-strip__value { font-family: var(--font-display); font-size: 22px; color: var(--smoke); line-height: 1.1; }
+.finance-strip__note { position: absolute; top: 8px; right: 12px; }
+.tile__soon { font-size: 12px; color: var(--smoke); }
+.report-head { display: flex; flex-direction: column; gap: 6px; }
+.kv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.kv { background: var(--comb-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.kv__value { font-family: var(--font-display); font-size: 24px; color: var(--wax); line-height: 1.1; }
+.kv__label { font-size: 12px; color: var(--smoke); font-weight: 600; }
+.format-pills { margin-bottom: 4px; }

@@ -9,7 +9,7 @@ import { MorePage } from '../pages/MorePage'
 import { QueenDetailsPage } from '../pages/QueenDetailsPage'
 import { QueenFormPage } from '../pages/QueenFormPage'
 import { QueensPage } from '../pages/QueensPage'
-import { StagePendingPage } from '../pages/StagePendingPage'
+import { ReportsPage } from '../pages/ReportsPage'
 import { UsersPage } from '../pages/UsersPage'
 import { TasksPage } from '../pages/TasksPage'
 import { HoneyPage } from '../pages/HoneyPage'
@@ -47,7 +47,7 @@ export const routes = [
       { path: 'scan', element: <ScanPage /> },
       { path: 'open', element: <OpenQrPage /> },
       { path: 'qr-labels', element: <QrLabelsPage /> },
-      { path: 'reports', element: <StagePendingPage icon="chart" title="Отчёты" stage={6} /> },
+      { path: 'reports', element: <ReportsPage /> },
       { path: 'more', element: <MorePage /> },
       { path: '*', element: <MessageView icon="inspect" title="Страница не найдена" /> },
     ],

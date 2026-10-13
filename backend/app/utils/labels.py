@@ -32,3 +32,14 @@ HIVE_STATUS = {
     HiveStatus.QUEENLESS: "без матки", HiveStatus.EMPTY: "пустой", HiveStatus.QUARANTINE: "карантин",
     HiveStatus.MERGED: "объединён", HiveStatus.SPLIT: "разделён", HiveStatus.SOLD: "продан", HiveStatus.LOST: "потерян",
 }
+
+# ---------- stage 6: reports ----------
+from app.models.enums import ProductType  # noqa: E402
+
+PRODUCT_TYPE = {
+    ProductType.WAX: "Воск", ProductType.PROPOLIS: "Прополис", ProductType.BEE_BREAD: "Перга",
+    ProductType.POLLEN: "Пыльца", ProductType.ROYAL_JELLY: "Маточное молочко", ProductType.QUEENS: "Матки",
+    ProductType.COLONIES: "Пчелосемьи", ProductType.PACKAGES: "Пчелопакеты",
+}
+MONTHS = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь",
+          "Ноябрь", "Декабрь"]

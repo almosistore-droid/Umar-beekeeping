@@ -1,10 +1,10 @@
 import { useState } from 'react'
+import { ColumnChart } from '../components/charts/ColumnChart'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { harvestApi } from '../api/resources'
 import { Chips, ErrorBox } from '../components/ui'
 import { LoadingView } from '../components/StateViews'
-import type { HoneyStats } from '../types/api'
 import { MONTHS_SHORT, num } from '../utils/labels'
 
 export function HoneyPage() {
@@ -32,7 +32,8 @@ export function HoneyPage() {
           {Number(s.year_value) > 0 && <Stat label="Стоимость" value={num(s.year_value)} />}
         </div>
 
-        <MonthChart stats={s} />
+        <ColumnChart title="По месяцам, кг" unit="кг" labelHeader="Месяц" labels={MONTHS_SHORT} values={s.by_month.map(Number)}
+          shortLabels={MONTHS_SHORT.map((m) => m.slice(0, 1).toUpperCase() + m.slice(1, 3))} />
 
         <section className="card">
           <h2 className="card__title">Ульи по сбору</h2>
@@ -61,45 +62,4 @@ export function HoneyPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return <div className="stat"><span className="stat__value">{value}</span><span className="stat__label">{label}</span></div>
-}
-
-/** Kg by month — one series, so one hue and no legend; tap a bar for its value; table for exact numbers. */
-function MonthChart({ stats }: { stats: HoneyStats }) {
-  const [active, setActive] = useState<number | null>(null)
-  const [asTable, setAsTable] = useState(false)
-  const values = stats.by_month.map(Number)
-  const max = Math.max(...values, 0)
-  const peak = values.indexOf(max)
-  if (max === 0) return null
-  return (
-    <section className="card">
-      <div className="card__titlebar">
-        <h2 className="card__title">По месяцам, кг</h2>
-        <button type="button" className="link-btn small" onClick={() => setAsTable((v) => !v)}>{asTable ? 'График' : 'Таблица'}</button>
-      </div>
-      {asTable ? (
-        <table className="data-table">
-          <thead><tr><th>Месяц</th><th>кг</th></tr></thead>
-          <tbody>{values.map((v, i) => v > 0 && <tr key={i}><td>{MONTHS_SHORT[i]}</td><td>{num(v)}</td></tr>)}</tbody>
-        </table>
-      ) : (
-        <div className="bars" role="img" aria-label={`Сбор мёда по месяцам ${stats.year}: ` + values.map((v, i) => `${MONTHS_SHORT[i]} ${num(v)} кг`).filter((_, i) => values[i] > 0).join(', ')}>
-          {values.map((v, i) => {
-            const isActive = active === i
-            return (
-              <button key={i} type="button" className={`bars__col${isActive ? ' is-active' : ''}`}
-                onClick={() => setActive(isActive ? null : i)} onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)}
-                aria-label={`${MONTHS_SHORT[i]}: ${num(v)} кг`}>
-                <span className="bars__track">
-                  {(isActive || (active === null && i === peak)) && v > 0 && <span className="bars__tip">{num(v)}</span>}
-                  <span className="bars__bar" style={{ height: `${v ? Math.max(3, (v / max) * 100) : 0}%` }} />
-                </span>
-                <span className="bars__label">{MONTHS_SHORT[i].slice(0, 1).toUpperCase() + MONTHS_SHORT[i].slice(1, 3)}</span>
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </section>
-  )
 }

@@ -9,7 +9,8 @@ class TelegramUnavailable(DomainError):
     status_code = 502
 
 
-def send_document(chat_id: int, filename: str, content: bytes, caption: str | None = None) -> None:
+def send_document(chat_id: int, filename: str, content: bytes, caption: str | None = None,
+                  media_type: str = "application/pdf") -> None:
     token = get_settings().telegram_bot_token
     if not token:
         raise ConflictError("Бот не настроен (нет TELEGRAM_BOT_TOKEN) — скачайте файл в браузере")
@@ -17,7 +18,7 @@ def send_document(chat_id: int, filename: str, content: bytes, caption: str | No
         response = httpx.post(
             f"https://api.telegram.org/bot{token}/sendDocument",
             data={"chat_id": str(chat_id), **({"caption": caption} if caption else {})},
-            files={"document": (filename, content, "application/pdf")},
+            files={"document": (filename, content, media_type)},
             timeout=30,
         )
         ok = response.status_code == 200 and response.json().get("ok")

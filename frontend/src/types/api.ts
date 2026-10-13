@@ -319,3 +319,37 @@ export interface HiveCheck {
   open_tasks: { title: string; due_date: string; overdue: boolean }[]
   honey_year_kg: string
 }
+
+// ---------- stage 6: dashboard & yearly report ----------
+export interface Bucket { key: string; label: string; count: number }
+export interface DiseaseCount { name: string; cases: number; resolved: number; open: number }
+export interface Dashboard {
+  year: number
+  tiles: {
+    hives: number; queens_in_hives: number; strong: number; weak: number; sick: number; queenless: number
+    needs_inspection: number; open_tasks: number; overdue_tasks: number; honey_year_kg: string; best_hive: HiveRank | null
+  }
+  finance_ready: boolean
+  honey_by_month: string[]
+  honey_by_hive: HiveRank[]
+  strength: Bucket[]
+  diseases: DiseaseCount[]
+  queen_ages: Bucket[]
+}
+export interface YearlyReport {
+  year: number; period_end: string; is_partial: boolean
+  hives: { at_start: number; at_end: number; new: number; lost: number; sold: number; merged: number; split: number }
+  queens: {
+    in_hives: number; new: number; replaced: number; avg_age_months: string | null; age_unknown: number
+    best_families: { hive_id: string; hive_number: string; apiary_name: string; kg: string; queen_code: string | null }[]
+  }
+  honey: {
+    total_kg: string; avg_per_hive_kg: string; producing_hives: number; best_hive: HiveRank | null; worst_hive: HiveRank | null
+    by_month: string[]; by_hive: HiveRank[]; value: string
+    products: { product_type: ProductType; unit: FeedUnit; quantity: string; value: string }[]
+  }
+  diseases: { cases: number; resolved: number; open: number; by_disease: DiseaseCount[]; treatments: number; medications: { medication: string; count: number }[] }
+  finance: { production_value: string; ready: boolean }
+  available_years: number[]
+}
+export type ReportFormat = 'pdf' | 'xlsx' | 'csv'
