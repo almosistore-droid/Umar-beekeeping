@@ -9,6 +9,7 @@ export interface User {
   display_name: string
   role: UserRole
   is_active: boolean
+  last_seen_at?: string | null
   created_at: string
 }
 
@@ -400,3 +401,26 @@ export interface CrmSummary {
   income_by_category: AmountByKey[]; expenses_by_category: AmountByKey[]
 }
 export interface PayNowInput { payment: PayMode; paid_amount?: number | null; method: PaymentMethod }
+
+// ---------- admin panel ----------
+export type InviteStatus = 'PENDING' | 'USED' | 'REVOKED'
+export interface Invite {
+  id: string; telegram_id: number | null; username: string | null; role: UserRole; note: string | null
+  status: InviteStatus; expired: boolean; expires_at: string; created_at: string
+  created_by_name: string | null; used_by_name: string | null; used_at: string | null
+}
+export interface InviteResult { kind: 'invited' | 'updated'; invite: Invite | null; user: User | null; share_text: string | null }
+export interface AdminOverview {
+  system: {
+    environment: string; timezone: string; currency: string; server_time: string; bot_configured: boolean
+    bot_username: string | null; deep_links_ready: boolean; database_ok: boolean; database_size_mb: number | null; migration: string | null
+  }
+  users: Record<string, number>
+  counts: { section: string; label: string; value: string }[]
+}
+export interface AuditRow {
+  id: string; created_at: string; user_id: string | null; user_name: string | null; entity_type: string; entity_id: string
+  hive_id: string | null; hive_number: string | null; action: string
+  old_value: Record<string, unknown> | null; new_value: Record<string, unknown> | null; comment: string | null
+}
+export interface AuditPage { items: AuditRow[]; next_offset: number | null; entity_types: string[] }

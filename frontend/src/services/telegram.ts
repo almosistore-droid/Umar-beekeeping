@@ -102,3 +102,22 @@ export function takeStartParam(): string | null {
 export function resetStartParamForTests(): void {
   startParamUsed = false
 }
+
+/**
+ * Share a text message: Telegram's «send to a chat» picker inside the Mini App,
+ * the system share sheet or the clipboard elsewhere. Returns how it was shared.
+ */
+export async function shareText(text: string): Promise<'telegram' | 'system' | 'copied' | 'none'> {
+  const wa = getWebApp()
+  if (wa?.openTelegramLink) {
+    wa.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(text)}`)
+    return 'telegram'
+  }
+  try {
+    if (navigator.share) { await navigator.share({ text }); return 'system' }
+    await navigator.clipboard.writeText(text)
+    return 'copied'
+  } catch {
+    return 'none'
+  }
+}

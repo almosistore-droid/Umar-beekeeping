@@ -63,6 +63,11 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Income = sales by sale date; received = payments by date; profit = income − expenses. Honey stock = Σ harvest kg − Σ sold HONEY kg.
 - Currency label: `CURRENCY` setting (default «смн»), `GET /api/crm/settings`. Frontend forms in `components/crm/forms.tsx`, pages in `pages/crm/`.
 
+## Admin panel (specs/008-admin-panel) — ADMIN only
+- `/api/admin/overview` (system, users by role, counts per section), `/api/admin/invites` (create / list / revoke), `/api/admin/audit` (all audit_logs, filters user_id / entity_type, offset paging — not timestamp cursors: one transaction shares a timestamp).
+- Invitations (`user_invites`): by Telegram ID or lowercase username, 30 days, one PENDING per ID/username (partial unique indexes). `auth_service.upsert_telegram_user` claims one on a user's FIRST login (ID first, then username-only invites); ADMIN_TELEGRAM_IDS still wins. Inviting someone who already uses the app changes their role at once. `users.last_seen_at` is set on every login.
+- Frontend: «Ещё → Админ-панель» (`pages/admin/AdminPage`), `/users` (access + invite sheet with Telegram share), `/admin/log` (`describeLogEntry`, `logDetail`).
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client. The role is loaded from DB on every request (`get_current_user`).

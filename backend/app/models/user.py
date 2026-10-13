@@ -1,7 +1,10 @@
 import enum
+import uuid
+from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, Enum, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, DateTime, Enum, ForeignKey, Index, String, text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
@@ -25,8 +28,44 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Enum(UserRole, name="user_role"), nullable=False, default=UserRole.VIEWER
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Last successful login through Telegram (shown in the admin panel)
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     @property
     def display_name(self) -> str:
         full = " ".join(p for p in (self.first_name, self.last_name) if p)
         return full or (f"@{self.username}" if self.username else str(self.telegram_id))
+
+
+class InviteStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    USED = "USED"
+    REVOKED = "REVOKED"
+
+
+class UserInvite(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """A person added in advance by the admin: gets `role` on the first login (by Telegram ID or username)."""
+
+    __tablename__ = "user_invites"
+    __table_args__ = (
+        CheckConstraint("telegram_id IS NOT NULL OR username IS NOT NULL", name="id_or_username"),
+        CheckConstraint("username IS NULL OR username = lower(username)", name="username_lowercase"),
+        Index("uq_user_invites_pending_telegram_id", "telegram_id", unique=True,
+              postgresql_where=text("status = 'PENDING' AND telegram_id IS NOT NULL")),
+        Index("uq_user_invites_pending_username", "username", unique=True,
+              postgresql_where=text("status = 'PENDING' AND username IS NOT NULL")),
+    )
+
+    telegram_id: Mapped[int | None] = mapped_column(BigInteger)
+    username: Mapped[str | None] = mapped_column(String(64))
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole, name="user_role", create_type=False), nullable=False)
+    note: Mapped[str | None] = mapped_column(String(200))
+    status: Mapped[InviteStatus] = mapped_column(Enum(InviteStatus, name="invite_status"), nullable=False,
+                                                 default=InviteStatus.PENDING)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"))
+    used_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    author = relationship("User", foreign_keys=[created_by], lazy="joined")
+    joined = relationship("User", foreign_keys=[used_by], lazy="joined")

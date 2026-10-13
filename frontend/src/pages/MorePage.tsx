@@ -11,6 +11,11 @@ export function MorePage() {
   return (
     <div className="page">
       <h1 className="page__title">Ещё</h1>
+      {isAdmin && (
+        <nav className="menu">
+          <Link to="/admin" className="menu__item"><Icon name="shield" />Админ-панель<span className="chevron">›</span></Link>
+        </nav>
+      )}
       <nav className="menu">
         {canManage && <Link to="/queens" className="menu__item"><Icon name="crown" />Матки<span className="chevron">›</span></Link>}
         <Link to="/apiaries" className="menu__item"><Icon name="apiary" />Пасеки<span className="chevron">›</span></Link>
@@ -18,7 +23,6 @@ export function MorePage() {
         <Link to="/products" className="menu__item"><Icon name="feed" />Продукция<span className="chevron">›</span></Link>
         <Link to="/qr-labels" className="menu__item"><Icon name="qr" />QR-наклейки<span className="chevron">›</span></Link>
         <Link to="/tasks" className="menu__item"><Icon name="treat" />Напоминания<span className="chevron">›</span></Link>
-        {isAdmin && <Link to="/users" className="menu__item"><Icon name="users" />Пользователи<span className="chevron">›</span></Link>}
       </nav>
       <section className="card">
         <h2 className="card__title">Профиль</h2>

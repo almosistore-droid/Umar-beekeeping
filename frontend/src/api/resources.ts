@@ -7,7 +7,7 @@ import type {
   CrmSummary, Customer, CustomerDetails, Debtor, Expense, ExpenseCategory, LineInput, Order, OrderStatus, PayNowInput,
   PaymentMethod, Sale,
 } from '../types/api'
-import type { Dashboard, HiveCheck, LabelsRequest, QrInfo, QrResolve, QrStatus, ReportFormat, YearlyReport } from '../types/api'
+import type { AdminOverview, AuditPage, Invite, InviteResult, Dashboard, HiveCheck, LabelsRequest, QrInfo, QrResolve, QrStatus, ReportFormat, YearlyReport } from '../types/api'
 
 const json = (method: string, body: unknown): RequestInit => ({ method, body: JSON.stringify(body) })
 
@@ -214,4 +214,14 @@ export const crmApi = {
   deliver: (id: string, body: PayNowInput & { sale_date?: string | null }) => api<Sale>(`/api/crm/orders/${id}/deliver`, json('POST', body)),
   cancelOrder: (id: string, reason: string) => api<Order>(`/api/crm/orders/${id}/cancel`, json('POST', { reason })),
   debts: () => api<Debtor[]>('/api/crm/debts'),
+}
+
+// ---------- admin panel ----------
+export const adminApi = {
+  overview: () => api<AdminOverview>('/api/admin/overview'),
+  invites: () => api<Invite[]>('/api/admin/invites'),
+  invite: (body: { telegram_id?: number | null; username?: string | null; role: UserRole; note?: string | null }) =>
+    api<InviteResult>('/api/admin/invites', json('POST', body)),
+  revoke: (id: string) => api<Invite>(`/api/admin/invites/${id}/revoke`, { method: 'POST' }),
+  audit: (p: { user_id?: string; entity_type?: string; offset?: number; limit?: number }) => api<AuditPage>(`/api/admin/audit${qs(p)}`),
 }

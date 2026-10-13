@@ -10,6 +10,8 @@ import { QueenDetailsPage } from '../pages/QueenDetailsPage'
 import { QueenFormPage } from '../pages/QueenFormPage'
 import { QueensPage } from '../pages/QueensPage'
 import { ReportsPage } from '../pages/ReportsPage'
+import { AdminPage } from '../pages/admin/AdminPage'
+import { AuditLogPage } from '../pages/admin/AuditLogPage'
 import { CrmHomePage } from '../pages/crm/CrmHomePage'
 import { SaleDetailsPage, SalesPage } from '../pages/crm/SalesPages'
 import { ExpensesPage } from '../pages/crm/ExpensesPage'
@@ -47,6 +49,8 @@ export const routes = [
       { path: 'queens/:id/edit', element: <QueenFormPage /> },
       { path: 'apiaries', element: <ApiariesPage /> },
       { path: 'users', element: <UsersPage /> },
+      { path: 'admin', element: <AdminPage /> },
+      { path: 'admin/log', element: <AuditLogPage /> },
       { path: 'tasks', element: <TasksPage /> },
       { path: 'honey', element: <HoneyPage /> },
       { path: 'products', element: <ProductsPage /> },

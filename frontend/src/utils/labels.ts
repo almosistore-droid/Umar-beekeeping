@@ -1,7 +1,8 @@
 import type { IconName } from '../components/Icon'
 import type {
-  FamilyOrigin, FamilyStatus, FamilyStrength, HiveStatus, HiveType, QueenOrigin, QueenStatus,
+  FamilyOrigin, FamilyStatus, FamilyStrength, HiveStatus, HiveType, QueenOrigin, QueenStatus, UserRole,
 } from '../types/api'
+import { ROLE_LABELS } from '../types/api'
 
 export const HIVE_STATUS: Record<HiveStatus, { label: string; icon: string; tone: Tone }> = {
   ACTIVE: { label: 'Активный', icon: '🟢', tone: 'ok' },
@@ -244,4 +245,60 @@ export const SALE_STATE: Record<SaleState, { label: string; tone: Tone }> = {
 export function money(v: string | number | null | undefined, currency: string): string {
   if (v === null || v === undefined || v === '') return '—'
   return `${Number(v).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ${currency}`
+}
+
+// ---------- admin panel ----------
+export const ENTITY_LABEL: Record<string, string> = {
+  hive: 'Улей', bee_family: 'Семья', queen: 'Матка', apiary: 'Пасека', inspection: 'Осмотр', hive_disease: 'Болезнь',
+  disease: 'Справочник болезней', treatment: 'Обработка', feeding: 'Подкормка', task: 'Напоминание',
+  honey_harvest: 'Мёд', other_product: 'Продукция', swarm: 'Роение', hive_split: 'Отводок', hive_merge: 'Объединение',
+  wintering: 'Зимовка', qr_code: 'QR-код', user: 'Пользователь', user_invite: 'Приглашение', customer: 'Клиент',
+  sale: 'Продажа', payment: 'Оплата', expense: 'Расход', order: 'Заказ',
+}
+const ACTION_LABEL: Record<string, string> = {
+  created: 'создан(а)', updated: 'изменён(а)', corrected: 'исправлен(а)', cancelled: 'отменён(а)', delivered: 'выдан',
+  payment: 'принята оплата', invited: 'приглашён', invite_revoked: 'приглашение отозвано', joined_by_invite: 'вошёл по приглашению',
+  archived: 'в архиве', qr_printed: 'напечатан',
+}
+/** One line for the admin activity log: hive events reuse the hive timeline wording. */
+export function describeLogEntry(e: { entity_type: string; action: string; hive_id: string | null; old_value: Record<string, unknown> | null; new_value: Record<string, unknown> | null }): string {
+  if (e.hive_id && !['sale', 'order', 'expense', 'customer'].includes(e.entity_type)) {
+    return describeAudit(e.action, e.old_value, e.new_value).title
+  }
+  const what = ENTITY_LABEL[e.entity_type] ?? e.entity_type
+  const how = ACTION_LABEL[e.action] ?? e.action
+  if (e.entity_type === 'user' && e.action === 'updated' && e.new_value) {
+    const parts = []
+    if ('role' in e.new_value) parts.push(`роль: ${ROLE_LABELS[e.new_value.role as UserRole] ?? e.new_value.role}`)
+    if ('is_active' in e.new_value) parts.push(e.new_value.is_active ? 'доступ открыт' : 'доступ закрыт')
+    return `${what}: ${parts.join(', ') || how}`
+  }
+  return `${what} — ${how}`
+}
+
+/** «только что», «5 мин назад», «3 ч назад», «вчера», date */
+export function agoLabel(iso: string | null | undefined, now = new Date()): string {
+  if (!iso) return 'ещё не входил(а)'
+  const d = new Date(iso)
+  const min = Math.floor((now.getTime() - d.getTime()) / 60000)
+  if (min < 2) return 'только что'
+  if (min < 60) return `${min} мин назад`
+  if (min < 24 * 60) return `${Math.floor(min / 60)} ч назад`
+  if (min < 48 * 60) return 'вчера'
+  return formatDate(iso)
+}
+
+/** Second line for CRM/admin log entries: the essentials stored in the change (amount, customer, who). */
+export function logDetail(e: { entity_type: string; action: string; new_value: Record<string, unknown> | null }, currency = ''): string | null {
+  const v = e.new_value ?? {}
+  const money = (x: unknown) => `${num(x as string)}${currency ? ` ${currency}` : ''}`
+  const parts: (string | null | undefined | false)[] = []
+  if (e.entity_type === 'sale' && e.action === 'created') parts.push(v.total !== undefined && money(v.total), v.customer as string, Array.isArray(v.lines) && (v.lines as string[]).join(', '))
+  else if (e.entity_type === 'sale' && e.action === 'payment') parts.push(v.amount !== undefined && money(v.amount), v.debt_left !== undefined && Number(v.debt_left) > 0 && `осталось ${money(v.debt_left)}`)
+  else if (e.entity_type === 'order') parts.push(v.total !== undefined && money(v.total), v.customer as string, v.status === 'READY' && 'собран')
+  else if (e.entity_type === 'expense') parts.push(v.amount !== undefined && money(v.amount), EXPENSE_CATEGORY[v.category as ExpenseCategory], v.description as string)
+  else if (e.entity_type === 'customer' || e.entity_type === 'apiary') parts.push(v.name as string, v.city as string)
+  else if (e.entity_type === 'user_invite') parts.push(v.username ? `@${v.username}` : v.telegram_id ? `ID ${v.telegram_id}` : null, v.role ? ROLE_LABELS[v.role as UserRole] : null, v.note as string)
+  const out = parts.filter(Boolean).join(' · ')
+  return out || null
 }

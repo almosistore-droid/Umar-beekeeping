@@ -27,9 +27,11 @@ from app.models.operations import (
 )
 from app.models.crm import Customer, Expense, Order, OrderItem, Payment, Sale, SaleItem
 from app.models.qr import QrCode
-from app.models.user import User, UserRole
+from app.models.user import InviteStatus, User, UserInvite, UserRole
 
 __all__ = [
+    "InviteStatus",
+    "UserInvite",
     "Customer", "Expense", "Order", "OrderItem", "Payment", "Sale", "SaleItem",
     "QrCode",
     "HiveMerge",

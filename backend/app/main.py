@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
 from app.config import get_settings
-from app.routers import apiaries, auth, health, hives, queens, users
+from app.routers import admin, apiaries, auth, health, hives, queens, users
 from app.routers import crm, operations, qr, records, reports
 from app.utils.errors import DomainError
 from app.utils.validation_messages import humanize_errors
@@ -71,6 +71,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(users.router)
+    app.include_router(admin.router)
     app.include_router(apiaries.router)
     app.include_router(hives.router)
     app.include_router(queens.router)

@@ -1,9 +1,13 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.telegram import TelegramUser
 from app.config import Settings
 from app.models.user import User, UserRole
+from app.services import admin_service
+from app.services import audit_service as audit
 
 
 def upsert_telegram_user(db: Session, tg: TelegramUser, settings: Settings) -> User:
@@ -11,10 +15,12 @@ def upsert_telegram_user(db: Session, tg: TelegramUser, settings: Settings) -> U
 
     Roles are never taken from the client: new users get ADMIN only if their
     telegram id is listed in ADMIN_TELEGRAM_IDS, otherwise DEFAULT_USER_ROLE.
-    An existing user's role is never changed here.
+    An existing user's role is never changed here. A pending invitation from the admin
+    (by Telegram ID, then by username) sets the role of a new user.
     """
     user = db.scalar(select(User).where(User.telegram_id == tg.id))
-    if user is None:
+    is_new = user is None
+    if is_new:
         role = (
             UserRole.ADMIN
             if tg.id in settings.admin_telegram_ids
@@ -27,6 +33,17 @@ def upsert_telegram_user(db: Session, tg: TelegramUser, settings: Settings) -> U
     user.first_name = tg.first_name
     user.last_name = tg.last_name
     user.language_code = tg.language_code
+    user.last_seen_at = datetime.now(timezone.utc)
+
+    if is_new:
+        # A person the admin added in advance gets the chosen role (ADMIN_TELEGRAM_IDS still wins)
+        db.flush()
+        invite = admin_service.claim_invite(db, user)
+        if invite is not None:
+            if user.role != UserRole.ADMIN:
+                user.role = invite.role
+            audit.record(db, user=user, entity_type="user", entity_id=user.id, action="joined_by_invite",
+                         new={"role": user.role.value, "invite_id": str(invite.id)})
     db.commit()
     db.refresh(user)
     return user
