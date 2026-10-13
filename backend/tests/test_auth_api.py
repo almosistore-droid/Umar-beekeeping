@@ -147,3 +147,18 @@ def test_openapi_docs_available(client):
     r = client.get("/api/openapi.json")
     assert r.status_code == 200
     assert "/api/auth/telegram" in r.json()["paths"]
+
+
+def test_signature_mismatch_explains_cause_without_leaking_secret(client):
+    from app.config import get_settings
+    secret_part = get_settings().telegram_bot_token.split(":", 1)[1]
+    r = client.post("/api/auth/telegram", json={"init_data": make_init_data(2000, token="999:other-bot")})
+    assert r.status_code == 401
+    detail = r.json()["detail"]
+    assert "7000000000" in detail          # bot id is shown
+    assert secret_part not in detail       # the secret half never is
+
+
+def test_signature_hint_for_placeholder_token():
+    from app.routers.auth import signature_hint
+    assert "тестовым токеном" in signature_hint("1234567890:local-test-token")

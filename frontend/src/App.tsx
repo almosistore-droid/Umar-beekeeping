@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { LoadingView, MessageView } from './components/StateViews'
 import { useAuth } from './hooks/useAuth'
+import { isInsideTelegram } from './services/telegram'
 import { router } from './router'
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
@@ -24,7 +25,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       return (
         <>
           <MessageView icon="weak" title="Не удалось войти" text={state.message} action={{ label: 'Повторить', onClick: retry }} />
-          {import.meta.env.DEV && <DevLogin onSubmit={loginWithInitData} />}
+          {import.meta.env.DEV && !isInsideTelegram() && <DevLogin onSubmit={loginWithInitData} />}
         </>
       )
     case 'authenticated':
