@@ -1,0 +1,14 @@
+# Keep Unix line endings for files executed inside Linux containers,
+# even when the repository is cloned on Windows (core.autocrlf=true).
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.ini text eol=lf
+*.mako text eol=lf
+*.template text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+Dockerfile text eol=lf
+proxy_params_bee text eol=lf
+*.png binary
+*.svg text
