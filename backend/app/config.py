@@ -1,8 +1,9 @@
 """Application settings. All secrets come from the environment (.env), never from code."""
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -21,7 +22,8 @@ class Settings(BaseSettings):
     telegram_init_data_max_age_seconds: int = 86400
 
     # Telegram IDs that get the ADMIN role on first login (comma-separated in env)
-    admin_telegram_ids: list[int] = Field(default_factory=list)
+    # NoDecode: read "1,2,3" as plain text (split below) instead of expecting JSON
+    admin_telegram_ids: Annotated[list[int], NoDecode] = Field(default_factory=list)
     # Role assigned to any other new user
     default_user_role: str = "VIEWER"
 
@@ -31,13 +33,13 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60 * 12
 
     # CORS
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["http://localhost:5173"])
 
     @field_validator("admin_telegram_ids", mode="before")
     @classmethod
     def _split_ids(cls, v):
         if isinstance(v, str):
-            return [int(x) for x in v.replace(" ", "").split(",") if x]
+            return [int(x) for x in v.replace(" ", "").strip("[]").split(",") if x]
         if isinstance(v, int):
             return [v]
         return v
@@ -45,7 +47,11 @@ class Settings(BaseSettings):
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, v):
-        if isinstance(v, str) and not v.startswith("["):
+        if isinstance(v, str):
+            v = v.strip()
+            if v.startswith("["):
+                import json
+                return json.loads(v)
             return [x.strip() for x in v.split(",") if x.strip()]
         return v
 
