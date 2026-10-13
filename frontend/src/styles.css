@@ -231,3 +231,6 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .menu__item { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 0 16px; text-decoration: none; color: inherit; font-weight: 500; border-bottom: 1px solid var(--border); }
 .menu__item:last-child { border-bottom: 0; }
 .card--muted.small { gap: 4px; }
+
+.dev-login { max-width: 560px; margin: 0 16px 24px; } .dev-login code { font-size: 12px; word-break: break-all; }
+@media (min-width: 600px) { .dev-login { margin: 0 auto 24px; } }

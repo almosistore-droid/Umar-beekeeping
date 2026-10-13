@@ -1,3 +1,4 @@
+import userEvent from '@testing-library/user-event'
 import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -84,6 +85,26 @@ describe('Telegram authentication', () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'))
     renderApp()
     expect(await screen.findByText(/Нет соединения с сервером/)).toBeInTheDocument()
+  })
+})
+
+describe('Local dev login', () => {
+  it('logs in with a pasted signed initData when opened outside Telegram', async () => {
+    vi.stubEnv('VITE_DEV_INIT_DATA', '')
+    const fetchSpy = mockFetch((url) => {
+      if (url.endsWith('/api/auth/telegram'))
+        return json({ access_token: 'tok', token_type: 'bearer', expires_in: 60, user, start_param: null })
+      if (url.includes('/api/hives')) return json({ items: [], total: 0 })
+      if (url.includes('/api/queens')) return json({ items: [], total: 0 })
+      return json({}, 404)
+    })
+    renderApp()
+    const box = await screen.findByLabelText('Строка входа')
+    await userEvent.type(box, 'signed-by-dev-script')
+    await userEvent.click(screen.getByRole('button', { name: 'Войти' }))
+    expect(await screen.findByText(/Иван/)).toBeInTheDocument()
+    const [, init] = fetchSpy.mock.calls[0]
+    expect(JSON.parse(String(init?.body))).toEqual({ init_data: 'signed-by-dev-script' })
   })
 })
 

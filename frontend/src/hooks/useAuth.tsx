@@ -14,6 +14,8 @@ interface AuthContextValue {
   state: AuthState
   user: User | null
   retry: () => void
+  /** Local testing only: log in with a signed initData string pasted by the developer. */
+  loginWithInitData: (initData: string) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -21,10 +23,11 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: 'loading' })
   const inFlight = useRef(false)
+  const manualInitData = useRef<string | null>(null)
 
   const login = useCallback(async () => {
     if (inFlight.current) return
-    const initData = getInitData()
+    const initData = getInitData() ?? manualInitData.current
     if (!initData) {
       setState({ status: 'outside-telegram' })
       return
@@ -54,7 +57,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [login])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ state, user: state.status === 'authenticated' ? state.user : null, retry: login }),
+    () => ({
+      state,
+      user: state.status === 'authenticated' ? state.user : null,
+      retry: login,
+      loginWithInitData: (initData: string) => {
+        manualInitData.current = initData.trim()
+        void login()
+      },
+    }),
     [state, login],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
