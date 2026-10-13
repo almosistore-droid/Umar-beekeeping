@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { healthApi, hivesApi, queensApi } from '../api/resources'
+import { harvestApi, healthApi, hivesApi, queensApi } from '../api/resources'
 import { Icon, type IconName } from '../components/Icon'
 import { LOGO_SRC } from '../components/StateViews'
 import { useAuth } from '../hooks/useAuth'
 import { ROLE_LABELS, type FamilyStrength, type HiveStatus } from '../types/api'
 import { plural } from '../utils/plural'
+import { num } from '../utils/labels'
 
 /** Live counts from hives/queens. The full dashboard with charts arrives in stage 6. */
 export function HomePage() {
@@ -14,6 +15,8 @@ export function HomePage() {
   const queens = useQuery({ queryKey: ['queens', 'home'], queryFn: () => queensApi.list({ in_hive: true }) })
   const attention = useQuery({ queryKey: ['attention'], queryFn: healthApi.attention })
   const att = attention.data
+  const year = new Date().getFullYear()
+  const honey = useQuery({ queryKey: ['honey-stats', year], queryFn: () => harvestApi.stats(year) })
 
   const items = hives.data?.items ?? []
   const count = (...s: HiveStatus[]) => (hives.data ? items.filter((h) => s.includes(h.status)).length : undefined)
@@ -63,9 +66,17 @@ export function HomePage() {
         ))}
       </div>
 
+      <Link to="/honey" className="tile tile--honey">
+        <span className="tile__icon"><Icon name="honey" /></span>
+        <span>
+          <span className="tile__value" style={{ display: 'block' }}>{honey.data ? num(honey.data.year_kg) : '…'} <small>кг</small></span>
+          <span className="tile__label">мёда за {year} год{honey.data?.best_hive ? `, лучший улей №${honey.data.best_hive.hive_number}` : ''}</span>
+        </span>
+      </Link>
+
       <section className="card card--muted">
         <h2 className="card__title">Скоро здесь</h2>
-        <p className="hint">Мёд за год, доходы, расходы, прибыль и графики появятся на этапах 4–7.</p>
+        <p className="hint">Доходы, расходы, прибыль и графики появятся на этапах 6–7.</p>
       </section>
     </div>
   )

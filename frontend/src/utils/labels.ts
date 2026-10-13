@@ -124,6 +124,24 @@ export function describeAudit(action: string, oldV: Record<string, unknown> | nu
       }
     }
     case 'corrected': return { icon: 'edit', title: 'Исправлена запись', details: changes() }
+    case 'moved': return { icon: 'apiary', title: 'Перемещён на другую пасеку', details: [`${oldV?.apiary} → ${newV?.apiary}`, ...(oldV?.hive_number !== newV?.hive_number ? [`Номер: ${oldV?.hive_number} → ${newV?.hive_number}`] : [])] }
+    case 'swarmed': return {
+      icon: 'hive', title: `Роение${Number(newV?.swarm_count) > 1 ? ` (${newV?.swarm_count} роя)` : ''}`,
+      details: [newV?.captured ? (newV?.new_hive_number ? `Пойман, посажен в улей №${newV.new_hive_number}` : 'Рой пойман') : 'Рой улетел'],
+    }
+    case 'swarm_settled': return { icon: 'hive', title: `Посажен рой из улья №${newV?.from_hive_number}`, details: [] }
+    case 'split': return { icon: 'hive', title: `Сделан отводок: улей №${newV?.new_hive_number}`, details: [] }
+    case 'split_created': return {
+      icon: 'hive', title: `Отводок от улья №${newV?.source_hive_number}`,
+      details: [newV?.queen_code ? `Матка ${newV.queen_code}` : 'Без матки'],
+    }
+    case 'merged_into': return { icon: 'hive', title: `Объединён в улей №${newV?.target_hive_number}`, details: [] }
+    case 'merge_target': {
+      const nums = Array.isArray(newV?.source_hive_numbers) ? (newV?.source_hive_numbers as string[]).map((n) => `№${n}`).join(', ') : ''
+      return { icon: 'hive', title: `Присоединены ульи ${nums}`, details: newV?.queen_code ? [`Оставлена матка ${newV.queen_code}`] : [] }
+    }
+    case 'wintering_started': return { icon: 'apiary', title: `Ушёл в зимовку ${newV?.season ?? ''}`, details: [] }
+    case 'wintering_finished': return { icon: 'apiary', title: `Зимовка ${newV?.season ?? ''} завершена`, details: [WINTERING_RESULT[newV?.result as WinteringResult] ?? ''] }
     case 'task_done': return { icon: 'treat', title: `Выполнено: ${newV?.title ?? ''}`, details: [] }
     default: return { icon: 'edit', title: 'Изменения', details: changes() }
   }
@@ -166,4 +184,21 @@ export function addDaysIso(days: number, from = new Date()): string {
   const d = new Date(from)
   d.setDate(d.getDate() + days)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// ---------- stage 4 ----------
+import type { ProductType, WinteringResult } from '../types/api'
+
+export const PRODUCT_TYPE: Record<ProductType, string> = {
+  WAX: 'Воск', PROPOLIS: 'Прополис', BEE_BREAD: 'Перга', POLLEN: 'Пыльца', ROYAL_JELLY: 'Маточное молочко',
+  QUEENS: 'Матки', COLONIES: 'Пчелосемьи', PACKAGES: 'Пчелопакеты',
+}
+export const WINTERING_RESULT: Record<WinteringResult, string> = { STRONG: 'Перезимовала сильной', WEAK: 'Перезимовала, ослабла', DIED: 'Погибла' }
+export const HONEY_TYPES = ['Разнотравье', 'Акация', 'Липа', 'Гречиха', 'Подсолнечник', 'Горный', 'Хлопковый', 'Эспарцет']
+export const MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+
+/** 12.50 → "12,5"; keeps up to 2 decimals, Russian decimal comma, thin-space thousands. */
+export function num(v: string | number | null | undefined): string {
+  if (v === null || v === undefined || v === '') return '—'
+  return Number(v).toLocaleString('ru-RU', { maximumFractionDigits: 2 })
 }

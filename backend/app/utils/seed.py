@@ -47,6 +47,7 @@ def run(telegram_id: int | None) -> None:
         else:
             _seed_structure(db, user)
         _seed_health(db, user)
+        _seed_operations(db, user)
     finally:
         db.close()
 
@@ -155,6 +156,60 @@ def _seed_health(db, user) -> None:
             fed_at=today - timedelta(days=12), feed_type="SUGAR_SYRUP", quantity=2, unit="L",
             reason="Осенняя подкормка", next_feeding_date=today + timedelta(days=2)), user)
     print(f"Готово: осмотры для {len(hives)} ульев, варроатоз с обработками, подкормки.")
+
+
+def _seed_operations(db, user) -> None:
+    """Stage 4 demo: honey over two seasons, products, last winter, one split, one move."""
+    from app.models import Hive, HoneyHarvest
+    from app.schemas.operations import (HarvestCreate, MoveRequest, ProductCreate, SplitCreate, WinteringFinish,
+                                        WinteringStart)
+    from app.services import honey_service, operations_service
+
+    demo_ids = select(Apiary.id).where(Apiary.name.in_([a[0] for a in DEMO_APIARIES]))
+    hives = db.scalars(select(Hive).where(Hive.apiary_id.in_(demo_ids), Hive.current_family_id.is_not(None))
+                       .order_by(Hive.hive_number)).unique().all()
+    if not hives or db.scalar(select(HoneyHarvest.id).where(HoneyHarvest.hive_id.in_([h.id for h in hives])).limit(1)):
+        print("Демо-записи мёда уже есть." if hives else "Нет демо-ульев для мёда.")
+        return
+
+    rnd = random.Random(11)
+    today = date.today()
+    kinds = ["Разнотравье", "Акация", "Горный", "Подсолнечник", "Эспарцет"]
+    for year in (today.year - 1, today.year):
+        for hive in hives:
+            for month, day in ((6, 10), (7, 25), (8, 28)):
+                when = date(year, month, day)
+                if when > today or rnd.random() < 0.25:
+                    continue
+                honey_service.create_harvest(db, hive.id, HarvestCreate(
+                    harvest_date=when, honey_type=rnd.choice(kinds), frames_count=rnd.randint(3, 8),
+                    weight_kg=round(rnd.uniform(6, 18), 1), price_per_kg=rnd.choice([70, 80, 90])), user)
+
+    honey_service.create_product(db, ProductCreate(product_type="WAX", collected_at=date(today.year, 8, 30),
+                                                   quantity=3.5, unit="KG", price_per_unit=150,
+                                                   apiary_id=hives[0].apiary_id), user)
+    honey_service.create_product(db, ProductCreate(product_type="PROPOLIS", collected_at=date(today.year, 9, 5),
+                                                   quantity=240, unit="G", price_per_unit=2, hive_id=hives[0].id), user)
+
+    season = f"{today.year - 1}/{today.year}"
+    for hive in hives[:3]:
+        w = operations_service.start_wintering(db, hive.id, WinteringStart(
+            season=season, pre_winter_strength="STRONG", food_kg=18, frames_count=8, winter_location="На точке",
+            pre_winter_treatment="Щавелевая кислота", start_date=date(today.year - 1, 10, 25)), user)
+        operations_service.finish_wintering(db, w.id, WinteringFinish(
+            end_date=date(today.year, 3, 20), result="STRONG"), user)
+
+    source = hives[2]
+    if not db.scalar(select(Hive.id).where(Hive.apiary_id == source.apiary_id, Hive.hive_number == "11")):
+        operations_service.split_hive(db, source.id, SplitCreate(
+            new_hive_number="11", split_date=today - timedelta(days=40), notes="Отводок на плодную матку"), user)
+
+    mountain = db.scalar(select(Apiary).where(Apiary.name == DEMO_APIARIES[1][0]))
+    mover = next((h for h in hives if h.apiary_id != mountain.id and h.hive_number == "7"), None)
+    if mover:
+        operations_service.move_hive(db, mover.id, MoveRequest(to_apiary_id=mountain.id, reason="Кочёвка на горное разнотравье",
+                                                               movement_date=today - timedelta(days=30)), user)
+    print("Готово: мёд за два сезона, воск и прополис, зимовка, отводок, кочёвка.")
 
 
 if __name__ == "__main__":

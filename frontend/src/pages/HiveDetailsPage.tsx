@@ -7,6 +7,8 @@ import { Icon, type IconName } from '../components/Icon'
 import { InspectionForm } from '../components/health/InspectionForm'
 import { DiseaseForm, FeedingForm, TreatmentForm } from '../components/health/RecordForms'
 import { OpenCasesCard, RemindersCard, Timeline } from '../components/health/HealthCards'
+import { HoneyForm, MergeForm, MoveForm, SplitForm, SwarmForm, WinteringForm } from '../components/operations/OperationForms'
+import { HoneyCard } from '../components/operations/HoneyCard'
 import { Badge, ErrorBox, Field, InfoRow, Select, Sheet, StrengthBars, SubmitButton } from '../components/ui'
 import { LoadingView, MessageView } from '../components/StateViews'
 import { usePermissions } from '../hooks/usePermissions'
@@ -17,11 +19,19 @@ import {
   REMOVED_QUEEN_STATUSES, STRENGTH, formatDate, todayIso,
 } from '../utils/labels'
 
-type SheetKind = null | 'queen' | 'removeQueen' | 'family' | 'endFamily' | 'strength' | 'inspection' | 'disease' | 'treatment' | 'feeding'
+type SheetKind = null | 'queen' | 'removeQueen' | 'family' | 'endFamily' | 'strength' | 'inspection' | 'disease' | 'treatment' | 'feeding' | 'honey' | 'move' | 'swarm' | 'split' | 'merge' | 'wintering'
 
 // Actions arriving in later stages are shown, but disabled, so the layout is final
+const OPERATIONS: { sheet: SheetKind; label: string; icon: IconName; needsFamily: boolean }[] = [
+  { sheet: 'move', label: 'Переместить', icon: 'apiary', needsFamily: false },
+  { sheet: 'swarm', label: 'Роение', icon: 'hive', needsFamily: true },
+  { sheet: 'split', label: 'Отводок', icon: 'plus', needsFamily: true },
+  { sheet: 'merge', label: 'Объединить', icon: 'hive', needsFamily: true },
+  { sheet: 'wintering', label: 'Зимовка', icon: 'weak', needsFamily: true },
+]
+
 const QUICK_ACTIONS: { icon: IconName; label: string; sheet?: SheetKind; stage?: number }[] = [
-  { icon: 'inspect', label: 'Осмотр', sheet: 'inspection' }, { icon: 'honey', label: 'Мёд', stage: 4 },
+  { icon: 'inspect', label: 'Осмотр', sheet: 'inspection' }, { icon: 'honey', label: 'Мёд', sheet: 'honey' },
   { icon: 'health', label: 'Болезнь', sheet: 'disease' }, { icon: 'treat', label: 'Лечение', sheet: 'treatment' },
   { icon: 'feed', label: 'Подкормка', sheet: 'feeding' }, { icon: 'photo', label: 'Фото', stage: 9 },
 ]
@@ -66,7 +76,7 @@ export function HiveDetailsPage() {
       {editable && (
         <div className="quick-grid">
           {QUICK_ACTIONS.map((a) => {
-            const ready = !!a.sheet && canWrite && !!family
+            const ready = !!a.sheet && canWrite && (!!family || a.sheet === 'honey')
             return (
               <button key={a.label} type="button" className="quick" disabled={!ready}
                 title={a.stage ? `Появится на этапе ${a.stage}` : !family ? 'Сначала заселите семью' : undefined}
@@ -79,6 +89,7 @@ export function HiveDetailsPage() {
         </div>
       )}
 
+      <HoneyCard hiveId={h.id} />
       <OpenCasesCard hive={h} canWrite={canWrite && editable} />
       <RemindersCard hive={h} canWrite={canWrite && editable} />
 
@@ -125,6 +136,18 @@ export function HiveDetailsPage() {
         )}
       </section>
 
+      {canManage && editable && (
+        <section className="card">
+          <h2 className="card__title">Операции</h2>
+          <div className="ops-grid">
+            {OPERATIONS.map((o) => (
+              <button key={o.sheet} type="button" className="btn btn--secondary" disabled={o.needsFamily && !family}
+                onClick={() => setSheet(o.sheet)}><Icon name={o.icon} size={18} />{o.label}</button>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="card">
         <InfoRow label="Установлен">{formatDate(h.installation_date)}</InfoRow>
         <InfoRow label="Последний осмотр">{h.last_inspection_at ? formatDate(h.last_inspection_at) : '—'}</InfoRow>
@@ -153,6 +176,12 @@ export function HiveDetailsPage() {
       <Sheet open={sheet === 'disease'} title="Болезнь" onClose={close}><DiseaseForm hive={h} onDone={close} /></Sheet>
       <Sheet open={sheet === 'treatment'} title="Лечение" onClose={close}><TreatmentForm hive={h} onDone={close} /></Sheet>
       <Sheet open={sheet === 'feeding'} title="Подкормка" onClose={close}><FeedingForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'honey'} title={`Мёд, улей №${h.hive_number}`} onClose={close}><HoneyForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'move'} title="Переместить улей" onClose={close}><MoveForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'swarm'} title="Роение" onClose={close}><SwarmForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'split'} title="Отводок" onClose={close}><SplitForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'merge'} title="Объединить семьи" onClose={close}><MergeForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'wintering'} title="Зимовка" onClose={close}><WinteringForm hive={h} onDone={close} /></Sheet>
     </div>
   )
 }

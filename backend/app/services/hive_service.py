@@ -91,6 +91,7 @@ def to_list_item(hive: Hive) -> HiveListItem:
         status=hive.status,
         is_archived=hive.status in ARCHIVED_HIVE_STATUSES,
         strength=hive.current_family.strength if hive.current_family else None,
+        queen_id=queen.id if queen else None,
         queen_code=queen.queen_code if queen else None,
         queen_age_label=queen.age_label if queen else None,
         last_inspection_at=hive.last_inspection_at,
@@ -144,7 +145,7 @@ def _end_family(db: Session, family: BeeFamily, status: FamilyStatus, when: date
 
 # ---------- hives ----------
 
-def create_hive(db: Session, data: HiveCreate, user: User) -> Hive:
+def create_hive(db: Session, data: HiveCreate, user: User, *, commit: bool = True) -> Hive:
     apiary = get_apiary(db, data.apiary_id)
     if apiary.is_archived:
         raise ConflictError("Пасека в архиве — в неё нельзя добавить улей")
@@ -175,8 +176,11 @@ def create_hive(db: Session, data: HiveCreate, user: User) -> Hive:
             raise ValidationFailed("Улей отмечен «Без матки», но выбрана матка")
         queen_service.assign_queen(db, hive, AssignQueenRequest(queen_id=data.queen_id), user, commit=False)
 
-    db.commit()
-    db.refresh(hive)
+    if commit:
+        db.commit()
+        db.refresh(hive)
+    else:
+        db.flush()
     return hive
 
 
@@ -242,7 +246,7 @@ def _archive(db: Session, hive: Hive, status: HiveStatus, user: User, comment: s
 
 # ---------- families ----------
 
-def replace_family(db: Session, hive: Hive, data: ReplaceFamilyRequest, user: User) -> Hive:
+def replace_family(db: Session, hive: Hive, data: ReplaceFamilyRequest, user: User, *, commit: bool = True) -> Hive:
     """Settle a new family. If one lives there, it ends with `previous_status`."""
     _ensure_not_archived(hive)
     start = data.start_date or today()
@@ -270,12 +274,15 @@ def replace_family(db: Session, hive: Hive, data: ReplaceFamilyRequest, user: Us
                  new={"family_id": str(family.id), "strength": family.strength.value,
                       "origin": family.origin.value, "start_date": start.isoformat()},
                  comment=data.comment)
-    db.commit()
-    db.refresh(hive)
+    if commit:
+        db.commit()
+        db.refresh(hive)
+    else:
+        db.flush()
     return hive
 
 
-def end_family(db: Session, hive: Hive, data: EndFamilyRequest, user: User) -> Hive:
+def end_family(db: Session, hive: Hive, data: EndFamilyRequest, user: User, *, commit: bool = True) -> Hive:
     _ensure_not_archived(hive)
     family = hive.current_family
     if family is None:
@@ -297,8 +304,11 @@ def end_family(db: Session, hive: Hive, data: EndFamilyRequest, user: User) -> H
                  old={"family_id": str(family.id), "status": old_status.value},
                  new={"family_status": data.status.value, "status": HiveStatus.EMPTY.value},
                  comment=data.end_reason)
-    db.commit()
-    db.refresh(hive)
+    if commit:
+        db.commit()
+        db.refresh(hive)
+    else:
+        db.flush()
     return hive
 
 

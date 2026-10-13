@@ -30,6 +30,15 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - `GET /api/hives/{id}/timeline` merges records with audit events; the frontend describes events with `describeAudit` in `src/utils/labels.ts`.
 - Health records are written by CAN_WRITE (assistants included); the disease catalog by CAN_MANAGE.
 
+## Domain rules (stage 4 — specs/004-harvest-and-colony-operations)
+- `total_value` on honey_harvests/other_products is a PostgreSQL generated column (weight×price); never write it.
+- Harvest number = next per (hive, calendar year), assigned under a row lock on the hive; `apiary_id` stores where the hive stood at harvest time.
+- Colony operations live in `operations_service` and run in one transaction; stage 2 helpers `create_hive`, `replace_family`, `end_family` accept `commit=False` for that.
+- Merge: non-target sources → MERGED (archived), families closed MERGED, queens not kept → REPLACED; target without a queen → QUEENLESS. Sources in `hive_merge_sources`.
+- Split without a queen → new hive QUEENLESS. Wintering result DIED → `end_family(DEAD)`.
+- Operations are shown in timelines through audit actions (moved, swarmed, swarm_settled, split, split_created, merged_into, merge_target, wintering_*), described in `describeAudit`.
+- Chart colour for honey bars `#c08918` (validated in-band on the dark card surface); highlight uses `--gold`.
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client. The role is loaded from DB on every request (`get_current_user`).

@@ -15,9 +15,27 @@ from app.models.enums import (
 )
 from app.models.health import Disease, Feeding, HiveDisease, Inspection, Task, Treatment
 from app.models.hive import BeeFamily, Hive, Queen, QueenAssignment
+from app.models.operations import (
+    HiveMerge,
+    HiveMovement,
+    HiveSplit,
+    HoneyHarvest,
+    OtherProduct,
+    Swarm,
+    Wintering,
+    hive_merge_sources,
+)
 from app.models.user import User, UserRole
 
 __all__ = [
+    "HiveMerge",
+    "HiveMovement",
+    "HiveSplit",
+    "HoneyHarvest",
+    "OtherProduct",
+    "Swarm",
+    "Wintering",
+    "hive_merge_sources",
     "Disease",
     "Feeding",
     "HiveDisease",

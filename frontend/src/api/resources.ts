@@ -130,3 +130,32 @@ export const healthApi = {
   completeTask: (taskId: string) => api<TaskItem>(`/api/tasks/${taskId}/done`, { method: 'POST' }),
   attention: () => api<Attention>('/api/dashboard/attention'),
 }
+
+// ---------- stage 4: harvest & operations ----------
+import type { Harvest, HiveHoney, HoneyStats, Product, ProductType, Wintering, WinteringResult } from '../types/api'
+
+export const harvestApi = {
+  hiveHoney: (hiveId: string) => api<HiveHoney>(`/api/hives/${hiveId}/honey`),
+  harvest: (hiveId: string, body: { harvest_date?: string | null; honey_type?: string | null; frames_count: number; weight_kg: number; price_per_kg?: number | null; notes?: string | null }) =>
+    api<Harvest>(`/api/hives/${hiveId}/honey`, json('POST', body)),
+  stats: (year: number, apiaryId?: string) => api<HoneyStats>(`/api/honey/stats${qs({ year, apiary_id: apiaryId })}`),
+  products: (year?: number) => api<Product[]>(`/api/products${qs({ year })}`),
+  addProduct: (body: { product_type: ProductType; quantity: number; unit: FeedUnit; collected_at?: string | null; hive_id?: string | null; apiary_id?: string | null; price_per_unit?: number | null; notes?: string | null }) =>
+    api<Product>('/api/products', json('POST', body)),
+}
+
+export const operationsApi = {
+  move: (hiveId: string, body: { to_apiary_id: string; movement_date?: string | null; reason?: string | null; new_hive_number?: string | null }) =>
+    api<Hive>(`/api/hives/${hiveId}/move`, json('POST', body)),
+  swarm: (hiveId: string, body: { swarm_date?: string | null; swarm_count: number; captured: boolean; settle_into_hive_id?: string | null; new_hive_number?: string | null; queen_id?: string | null; actions?: string | null }) =>
+    api<{ hive: Hive; new_hive: Hive | null }>(`/api/hives/${hiveId}/swarms`, json('POST', body)),
+  split: (hiveId: string, body: { split_date?: string | null; new_hive_number?: string | null; target_hive_id?: string | null; queen_id?: string | null; strength?: FamilyStrength; notes?: string | null }) =>
+    api<{ source: Hive; new_hive: Hive }>(`/api/hives/${hiveId}/split`, json('POST', body)),
+  merge: (body: { source_hive_ids: string[]; target_hive_id?: string | null; new_hive_number?: string | null; keep_queen_id?: string | null; merge_date?: string | null; notes?: string | null }) =>
+    api<Hive>('/api/merges', json('POST', body)),
+  winterings: (hiveId: string) => api<Wintering[]>(`/api/hives/${hiveId}/winterings`),
+  startWintering: (hiveId: string, body: { season: string; pre_winter_strength?: FamilyStrength | null; food_kg?: number | null; frames_count?: number | null; queen_condition?: string | null; pre_winter_treatment?: string | null; winter_location?: string | null; start_date?: string | null }) =>
+    api<Wintering>(`/api/hives/${hiveId}/winterings`, json('POST', body)),
+  finishWintering: (id: string, body: { end_date?: string | null; spring_strength?: FamilyStrength | null; result: WinteringResult; notes?: string | null }) =>
+    api<{ wintering: Wintering; hive: Hive }>(`/api/winterings/${id}/finish`, json('PUT', body)),
+}

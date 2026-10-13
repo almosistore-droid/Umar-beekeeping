@@ -13,6 +13,9 @@ export function MorePage() {
       <h1 className="page__title">Ещё</h1>
       <nav className="menu">
         <Link to="/apiaries" className="menu__item"><Icon name="apiary" />Пасеки<span className="chevron">›</span></Link>
+        <Link to="/honey" className="menu__item"><Icon name="honey" />Мёд<span className="chevron">›</span></Link>
+        <Link to="/products" className="menu__item"><Icon name="feed" />Продукция<span className="chevron">›</span></Link>
+        <Link to="/tasks" className="menu__item"><Icon name="treat" />Напоминания<span className="chevron">›</span></Link>
         {isAdmin && <Link to="/users" className="menu__item"><Icon name="users" />Пользователи<span className="chevron">›</span></Link>}
       </nav>
       <section className="card">

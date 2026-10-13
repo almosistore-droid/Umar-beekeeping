@@ -15,7 +15,7 @@ export function useHiveRecordMutation<R extends { hive: Hive } | Hive, V = void>
       haptic('success')
       const updated = 'hive' in res ? res.hive : res
       qc.setQueryData(['hive', hive.id], updated)
-      for (const key of ['hives', 'hive-timeline', 'hive-history', 'hive-inspections', 'hive-cases', 'hive-tasks', 'tasks', 'attention']) {
+      for (const key of ['hives', 'hive-timeline', 'hive-history', 'hive-inspections', 'hive-cases', 'hive-tasks', 'tasks', 'attention', 'hive-honey', 'honey-stats', 'hive-winterings', 'queens', 'hive-families', 'hive-queens', 'apiaries']) {
         qc.invalidateQueries({ queryKey: [key] })
       }
       onSuccess(res)

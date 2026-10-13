@@ -10,7 +10,7 @@ from decimal import Decimal
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from app.models import AuditLog, Feeding, HiveDisease, Inspection, Treatment
+from app.models import AuditLog, Feeding, HiveDisease, HoneyHarvest, Inspection, OtherProduct, Treatment
 from app.models.enums import DiseaseCaseStatus
 from app.schemas.health import TimelineItem
 from app.utils import labels as L
@@ -86,6 +86,26 @@ def _feeding(f: Feeding) -> TimelineItem:
                         author=f.author.display_name if f.author else None, ref_id=f.id)
 
 
+PRODUCT = {"WAX": "Воск", "PROPOLIS": "Прополис", "BEE_BREAD": "Перга", "POLLEN": "Пыльца",
+           "ROYAL_JELLY": "Маточное молочко", "QUEENS": "Матки", "COLONIES": "Пчелосемьи", "PACKAGES": "Пчелопакеты"}
+
+
+def _honey(h: HoneyHarvest) -> TimelineItem:
+    details = [f"{_qty(h.weight_kg)} кг" + (f", {h.honey_type}" if h.honey_type else "")]
+    if h.frames_count:
+        details.append(f"Рамок: {h.frames_count}")
+    if h.total_value is not None:
+        details.append(f"Сумма: {_qty(h.total_value)}")
+    return TimelineItem(kind="honey", at=_at(h.harvest_date), title=f"Откачка мёда №{h.harvest_number}",
+                        details=details, author=h.author.display_name if h.author else None, ref_id=h.id)
+
+
+def _product(p: OtherProduct) -> TimelineItem:
+    return TimelineItem(kind="product", at=_at(p.collected_at), title=PRODUCT[p.product_type.value],
+                        details=[f"{_qty(p.quantity)} {L.FEED_UNIT[p.unit]}"],
+                        author=p.author.display_name if p.author else None, ref_id=p.id)
+
+
 def _event(e: AuditLog) -> TimelineItem:
     return TimelineItem(kind="event", at=e.created_at, title=e.action, details=[],
                         author=e.user.display_name if e.user else None, ref_id=e.entity_id,
@@ -100,6 +120,8 @@ def hive_timeline(db: Session, hive_id: uuid.UUID, limit: int = 300) -> list[Tim
         items += _case_items(c)
     items += [_treatment(t) for t in db.scalars(select(Treatment).where(Treatment.hive_id == hive_id)).unique()]
     items += [_feeding(f) for f in db.scalars(select(Feeding).where(Feeding.hive_id == hive_id)).unique()]
+    items += [_honey(h) for h in db.scalars(select(HoneyHarvest).where(HoneyHarvest.hive_id == hive_id)).unique()]
+    items += [_product(p) for p in db.scalars(select(OtherProduct).where(OtherProduct.hive_id == hive_id)).unique()]
     events = db.scalars(select(AuditLog).where(or_(AuditLog.hive_id == hive_id, AuditLog.entity_id == hive_id))
                         .order_by(AuditLog.created_at.desc()).limit(limit)).unique()
     for e in events:

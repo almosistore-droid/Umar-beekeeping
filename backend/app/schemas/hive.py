@@ -205,6 +205,7 @@ class HiveListItem(BaseModel):
     status: HiveStatus
     is_archived: bool
     strength: FamilyStrength | None
+    queen_id: uuid.UUID | None = None
     queen_code: str | None
     queen_age_label: str | None
     last_inspection_at: datetime | None

@@ -10,6 +10,12 @@ FIELD_LABELS = {
     "egg_laying_quality": "Яйценоскость", "swarming_tendency": "Ройливость",
     "temperament": "Миролюбие", "queen_id": "Матка", "init_data": "Данные Telegram",
     "role": "Роль", "version": "Версия",
+    "weight_kg": "Вес", "price_per_kg": "Цена за кг", "frames_count": "Рамок", "quantity": "Количество",
+    "price_per_unit": "Цена", "food_kg": "Корм", "frames_total": "Всего рамок", "brood_frames": "Расплод",
+    "honey_frames": "Мёд", "pollen_frames": "Перга", "queen_cells": "Маточники", "aggressiveness": "Агрессивность",
+    "medication": "Препарат", "swarm_count": "Количество роёв", "season": "Сезон", "source_hive_ids": "Ульи",
+    "new_hive_number": "Номер нового улья", "inspected_at": "Дата осмотра", "unit": "Единица",
+    "feed_type": "Корм", "product_type": "Продукция", "result": "Итог",
 }
 
 
@@ -19,10 +25,16 @@ def _message(err: dict[str, Any]) -> str:
         return str(ctx.get("error", err.get("msg", ""))).removeprefix("Value error, ")
     if t == "missing":
         return "обязательное поле"
-    if t in ("greater_than_equal", "greater_than"):
-        return f"должно быть не меньше {ctx.get('ge', ctx.get('gt'))}"
-    if t in ("less_than_equal", "less_than"):
-        return f"должно быть не больше {ctx.get('le', ctx.get('lt'))}"
+    if t == "greater_than":
+        return f"должно быть больше {ctx.get('gt')}"
+    if t == "greater_than_equal":
+        return f"должно быть не меньше {ctx.get('ge')}"
+    if t == "less_than":
+        return f"должно быть меньше {ctx.get('lt')}"
+    if t == "less_than_equal":
+        return f"должно быть не больше {ctx.get('le')}"
+    if t == "too_short":
+        return f"нужно не меньше {ctx.get('min_length')}"
     if t == "string_too_short":
         return "не может быть пустым"
     if t == "string_too_long":

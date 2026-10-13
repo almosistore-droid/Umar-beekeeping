@@ -160,3 +160,22 @@ class TaskStatus(str, enum.Enum):
     OPEN = "OPEN"
     DONE = "DONE"
     CANCELLED = "CANCELLED"
+
+
+# ---------- stage 4: harvest & colony operations ----------
+
+class ProductType(str, enum.Enum):
+    WAX = "WAX"
+    PROPOLIS = "PROPOLIS"
+    BEE_BREAD = "BEE_BREAD"
+    POLLEN = "POLLEN"
+    ROYAL_JELLY = "ROYAL_JELLY"
+    QUEENS = "QUEENS"
+    COLONIES = "COLONIES"
+    PACKAGES = "PACKAGES"
+
+
+class WinteringResult(str, enum.Enum):
+    STRONG = "STRONG"   # перезимовала сильной
+    WEAK = "WEAK"       # перезимовала, ослабла
+    DIED = "DIED"       # погибла

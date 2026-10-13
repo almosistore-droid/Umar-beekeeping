@@ -8,7 +8,7 @@ def test_seed_is_valid_and_idempotent(db):
     seed.run(None)
     seed.run(None)
     assert db.scalar(select(func.count()).select_from(Apiary)) == 2
-    assert db.scalar(select(func.count()).select_from(Hive)) == 10
+    assert db.scalar(select(func.count()).select_from(Hive)) == 11  # + split
     assert db.scalar(select(func.count()).select_from(Queen)) == 10
 
 
@@ -20,3 +20,12 @@ def test_seed_adds_health_records_once(db):
     again = [db.scalar(select(func.count()).select_from(m)) for m in (Inspection, HiveDisease, Treatment, Feeding)]
     assert counts == again and all(counts)
     assert db.scalar(select(func.count()).select_from(Task).where(Task.status == "OPEN")) >= 2
+
+
+def test_seed_adds_operations_once(db):
+    from app.models import HiveMovement, HiveSplit, HoneyHarvest, OtherProduct, Wintering
+    seed.run(None)
+    models = (HoneyHarvest, OtherProduct, Wintering, HiveSplit, HiveMovement)
+    counts = [db.scalar(select(func.count()).select_from(m)) for m in models]
+    seed.run(None)
+    assert counts == [db.scalar(select(func.count()).select_from(m)) for m in models] and all(counts)

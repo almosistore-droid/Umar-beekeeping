@@ -98,6 +98,7 @@ export interface HiveListItem {
   status: HiveStatus
   is_archived: boolean
   strength: FamilyStrength | null
+  queen_id?: string | null
   queen_code: string | null
   queen_age_label: string | null
   last_inspection_at: string | null
@@ -250,3 +251,38 @@ export interface TimelineItem {
 
 export interface RecordWarning { code: string; message: string }
 export interface Attention { needs_inspection: number; open_tasks: number; overdue_tasks: number; sick: number }
+
+// ---------- stage 4: harvest & operations ----------
+export type ProductType = 'WAX' | 'PROPOLIS' | 'BEE_BREAD' | 'POLLEN' | 'ROYAL_JELLY' | 'QUEENS' | 'COLONIES' | 'PACKAGES'
+export type WinteringResult = 'STRONG' | 'WEAK' | 'DIED'
+
+export interface Harvest {
+  id: string
+  hive_id: string
+  apiary_id: string
+  harvest_date: string
+  harvest_year: number
+  harvest_number: number
+  honey_type: string | null
+  frames_count: number
+  weight_kg: string
+  price_per_kg: string | null
+  total_value: string | null
+  notes: string | null
+}
+export interface HiveHoney { items: Harvest[]; year: number; year_kg: string; year_value: string; all_time_kg: string }
+export interface HiveRank { hive_id: string; hive_number: string; apiary_name: string; kg: string; harvests: number }
+export interface HoneyStats {
+  year: number; month_kg: string; year_kg: string; season_kg: string; all_time_kg: string; year_value: string
+  producing_hives: number; avg_per_hive_kg: string; best_hive: HiveRank | null; by_month: string[]; by_hive: HiveRank[]
+}
+export interface Product {
+  id: string; product_type: ProductType; collected_at: string; quantity: string; unit: FeedUnit
+  hive_id: string | null; apiary_id: string | null; price_per_unit: string | null; total_value: string | null; notes: string | null
+}
+export interface Wintering {
+  id: string; hive_id: string; season: string; pre_winter_strength: FamilyStrength | null; food_kg: string | null
+  frames_count: number | null; queen_condition: string | null; pre_winter_treatment: string | null
+  winter_location: string | null; start_date: string; end_date: string | null; spring_strength: FamilyStrength | null
+  result: WinteringResult | null; notes: string | null
+}
