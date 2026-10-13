@@ -84,3 +84,79 @@ class QueenOrigin(str, enum.Enum):
     SUPERSEDURE = "SUPERSEDURE"  # тихая смена
     EMERGENCY = "EMERGENCY"  # свищевая
     UNKNOWN = "UNKNOWN"
+
+
+# ---------- stage 3: health records ----------
+
+class QueenCondition(str, enum.Enum):
+    GOOD = "GOOD"
+    NORMAL = "NORMAL"
+    POOR = "POOR"
+    NOT_SEEN = "NOT_SEEN"
+
+
+class FoodLevel(str, enum.Enum):
+    CRITICAL = "CRITICAL"
+    LOW = "LOW"
+    NORMAL = "NORMAL"
+    ABUNDANT = "ABUNDANT"
+
+
+class InspectionHealth(str, enum.Enum):
+    HEALTHY = "HEALTHY"
+    SUSPICIOUS = "SUSPICIOUS"
+    SICK = "SICK"
+
+
+class DiseaseSeverity(str, enum.Enum):
+    LIGHT = "LIGHT"
+    MODERATE = "MODERATE"
+    SEVERE = "SEVERE"
+
+
+class DiseaseCaseStatus(str, enum.Enum):
+    SUSPECTED = "SUSPECTED"
+    CONFIRMED = "CONFIRMED"
+    TREATING = "TREATING"
+    RESOLVED = "RESOLVED"
+
+
+# Order used to forbid going backwards (RESOLVED is final)
+CASE_STATUS_ORDER = {
+    DiseaseCaseStatus.SUSPECTED: 0,
+    DiseaseCaseStatus.CONFIRMED: 1,
+    DiseaseCaseStatus.TREATING: 2,
+    DiseaseCaseStatus.RESOLVED: 3,
+}
+ACTIVE_CASE_STATUSES = frozenset({DiseaseCaseStatus.CONFIRMED, DiseaseCaseStatus.TREATING})
+
+
+class FeedType(str, enum.Enum):
+    SUGAR_SYRUP = "SUGAR_SYRUP"
+    CANDY = "CANDY"
+    HONEY = "HONEY"
+    PROTEIN = "PROTEIN"
+    POLLEN_SUBSTITUTE = "POLLEN_SUBSTITUTE"
+    MEDICATED = "MEDICATED"
+    OTHER = "OTHER"
+
+
+class FeedUnit(str, enum.Enum):
+    KG = "KG"
+    G = "G"
+    L = "L"
+    ML = "ML"
+    PCS = "PCS"
+
+
+class TaskKind(str, enum.Enum):
+    INSPECTION = "INSPECTION"
+    TREATMENT = "TREATMENT"
+    FEEDING = "FEEDING"
+    OTHER = "OTHER"
+
+
+class TaskStatus(str, enum.Enum):
+    OPEN = "OPEN"
+    DONE = "DONE"
+    CANCELLED = "CANCELLED"

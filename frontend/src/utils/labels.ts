@@ -70,10 +70,17 @@ export const MARKING: Record<string, { label: string; color: string }> = {
   BLUE: { label: 'Синяя', color: '#2f6fe0' },
 }
 
+const CASE_STATUS_LABEL: Record<string, string> = {
+  SUSPECTED: 'подозрение', CONFIRMED: 'подтверждено', TREATING: 'лечение', RESOLVED: 'вылечено',
+}
+
 const FIELD_NAMES: Record<string, string> = {
   hive_number: 'Номер', status: 'Статус', hive_type: 'Тип', notes: 'Заметки', strength: 'Сила',
   installation_date: 'Установлен', colonization_date: 'Заселён', next_inspection_at: 'След. осмотр',
   queen_code: 'Матка', role: 'Роль', is_active: 'Активен', name: 'Название',
+  frames_total: 'Рамок', brood_frames: 'Расплод', honey_frames: 'Мёд', pollen_frames: 'Перга',
+  medication: 'Препарат', dosage: 'Доза', treated_at: 'Дата', fed_at: 'Дата', quantity: 'Количество',
+  next_treatment_date: 'Следующая', next_feeding_date: 'Следующая', inspected_at: 'Дата осмотра',
 }
 
 /** Human-readable one-liner for a history (audit) entry. */
@@ -105,6 +112,19 @@ export function describeAudit(action: string, oldV: Record<string, unknown> | nu
     }
     case 'family_ended': return { icon: 'weak', title: 'Семья выбыла', details: [FAMILY_STATUS[newV?.family_status as FamilyStatus] ?? ''] }
     case 'number_changed': return { icon: 'edit', title: 'Изменён номер', details: changes() }
+    case 'health_status': return {
+      icon: 'health', title: 'Состояние улья',
+      details: [`${val('status', oldV?.status)} → ${val('status', newV?.status)}`],
+    }
+    case 'disease_updated': {
+      const st = (v: unknown) => (typeof v === 'string' && v in CASE_STATUS_LABEL ? CASE_STATUS_LABEL[v] : '—')
+      return {
+        icon: 'health', title: `Болезнь: ${newV?.disease ?? ''}`,
+        details: newV?.status ? [`${st(oldV?.status)} → ${st(newV?.status)}`] : [],
+      }
+    }
+    case 'corrected': return { icon: 'edit', title: 'Исправлена запись', details: changes() }
+    case 'task_done': return { icon: 'treat', title: `Выполнено: ${newV?.title ?? ''}`, details: [] }
     default: return { icon: 'edit', title: 'Изменения', details: changes() }
   }
 }
@@ -121,5 +141,29 @@ export function formatDateTime(iso: string): string {
 
 export function todayIso(): string {
   const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// ---------- stage 3 ----------
+import type { CaseStatus, DiseaseSeverity, FeedType, FeedUnit, FoodLevel, InspectionHealth } from '../types/api'
+
+export const FOOD_LEVEL: Record<FoodLevel, string> = { CRITICAL: 'Критично', LOW: 'Мало', NORMAL: 'Норма', ABUNDANT: 'Много' }
+export const INSPECTION_HEALTH: Record<InspectionHealth, string> = { HEALTHY: 'Здорова', SUSPICIOUS: 'Подозрение', SICK: 'Болеет' }
+export const SEVERITY: Record<DiseaseSeverity, string> = { LIGHT: 'Лёгкая', MODERATE: 'Средняя', SEVERE: 'Тяжёлая' }
+export const CASE_STATUS: Record<CaseStatus, { label: string; tone: Tone }> = {
+  SUSPECTED: { label: 'Подозрение', tone: 'warn' },
+  CONFIRMED: { label: 'Подтверждено', tone: 'bad' },
+  TREATING: { label: 'Лечение', tone: 'warn' },
+  RESOLVED: { label: 'Вылечено', tone: 'ok' },
+}
+export const FEED_TYPE: Record<FeedType, string> = {
+  SUGAR_SYRUP: 'Сахарный сироп', CANDY: 'Канди', HONEY: 'Мёд', PROTEIN: 'Белковая',
+  POLLEN_SUBSTITUTE: 'Заменитель перги', MEDICATED: 'Лечебная', OTHER: 'Другое',
+}
+export const FEED_UNIT: Record<FeedUnit, string> = { KG: 'кг', G: 'г', L: 'л', ML: 'мл', PCS: 'шт' }
+
+export function addDaysIso(days: number, from = new Date()): string {
+  const d = new Date(from)
+  d.setDate(d.getDate() + days)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }

@@ -1,0 +1,34 @@
+"""Russian labels used in server-built texts (timeline summaries, reminder titles)."""
+from app.models.enums import (
+    DiseaseCaseStatus,
+    DiseaseSeverity,
+    FamilyStrength,
+    FeedType,
+    FeedUnit,
+    FoodLevel,
+    HiveStatus,
+    InspectionHealth,
+)
+
+STRENGTH = {
+    FamilyStrength.VERY_WEAK: "очень слабая", FamilyStrength.WEAK: "слабая", FamilyStrength.MEDIUM: "средняя",
+    FamilyStrength.STRONG: "сильная", FamilyStrength.VERY_STRONG: "очень сильная",
+}
+FEED_TYPE = {
+    FeedType.SUGAR_SYRUP: "Сахарный сироп", FeedType.CANDY: "Канди", FeedType.HONEY: "Мёд",
+    FeedType.PROTEIN: "Белковая подкормка", FeedType.POLLEN_SUBSTITUTE: "Заменитель перги",
+    FeedType.MEDICATED: "Лечебная подкормка", FeedType.OTHER: "Другое",
+}
+FEED_UNIT = {FeedUnit.KG: "кг", FeedUnit.G: "г", FeedUnit.L: "л", FeedUnit.ML: "мл", FeedUnit.PCS: "шт"}
+FOOD_LEVEL = {FoodLevel.CRITICAL: "критически мало", FoodLevel.LOW: "мало", FoodLevel.NORMAL: "достаточно",
+              FoodLevel.ABUNDANT: "много"}
+HEALTH = {InspectionHealth.HEALTHY: "здорова", InspectionHealth.SUSPICIOUS: "есть подозрения",
+          InspectionHealth.SICK: "болеет"}
+SEVERITY = {DiseaseSeverity.LIGHT: "лёгкая", DiseaseSeverity.MODERATE: "средняя", DiseaseSeverity.SEVERE: "тяжёлая"}
+CASE_STATUS = {DiseaseCaseStatus.SUSPECTED: "подозрение", DiseaseCaseStatus.CONFIRMED: "подтверждено",
+               DiseaseCaseStatus.TREATING: "лечение", DiseaseCaseStatus.RESOLVED: "вылечено"}
+HIVE_STATUS = {
+    HiveStatus.ACTIVE: "активный", HiveStatus.WEAK: "слабый", HiveStatus.STRONG: "сильный", HiveStatus.SICK: "болеет",
+    HiveStatus.QUEENLESS: "без матки", HiveStatus.EMPTY: "пустой", HiveStatus.QUARANTINE: "карантин",
+    HiveStatus.MERGED: "объединён", HiveStatus.SPLIT: "разделён", HiveStatus.SOLD: "продан", HiveStatus.LOST: "потерян",
+}

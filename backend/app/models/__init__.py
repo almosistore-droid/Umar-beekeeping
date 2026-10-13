@@ -13,10 +13,17 @@ from app.models.enums import (
     QueenOrigin,
     QueenStatus,
 )
+from app.models.health import Disease, Feeding, HiveDisease, Inspection, Task, Treatment
 from app.models.hive import BeeFamily, Hive, Queen, QueenAssignment
 from app.models.user import User, UserRole
 
 __all__ = [
+    "Disease",
+    "Feeding",
+    "HiveDisease",
+    "Inspection",
+    "Task",
+    "Treatment",
     "ARCHIVED_HIVE_STATUSES",
     "REMOVED_QUEEN_STATUSES",
     "Apiary",

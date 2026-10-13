@@ -43,11 +43,14 @@ def migrated_db():
 def clean_tables():
     yield
     with engine.begin() as conn:
+        # Reference data seeded by migrations (disease catalog) is kept; only custom entries are removed
         tables = conn.execute(
-            text("SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename <> 'alembic_version'")
+            text("SELECT tablename FROM pg_tables WHERE schemaname='public' "
+                 "AND tablename NOT IN ('alembic_version', 'diseases')")
         ).scalars().all()
         if tables:
             conn.execute(text(f"TRUNCATE {', '.join(tables)} RESTART IDENTITY CASCADE"))
+        conn.execute(text("DELETE FROM diseases WHERE code LIKE 'CUSTOM_%'"))
 
 
 @pytest.fixture

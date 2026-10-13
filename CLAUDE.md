@@ -22,6 +22,14 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Hives carry `version`; PUT with a stale version returns 409.
 - `app/utils/seed.py` creates demo data through the services; extend it in each stage.
 
+## Domain rules (stage 3 — specs/003-hive-health-records)
+- Inspections recompute hive state in `inspection_service._recompute_hive`: last/next inspection from the latest inspection (default +7 days, stored at 12:00 UTC), current family strength from it.
+- Disease cases: SUSPECTED → CONFIRMED → TREATING → RESOLVED, never backwards; `health_service.sync_hive_health_status` sets SICK/QUARANTINE (quarantine diseases) while CONFIRMED/TREATING cases exist and returns to ACTIVE only from SICK/QUARANTINE.
+- Disease catalog is seeded by migration 0003; tests keep it (conftest truncates everything except `diseases`).
+- Next treatment/feeding dates create `tasks` (reminders); a new record of the same kind closes older open ones. Stage 8 will send them via the bot.
+- `GET /api/hives/{id}/timeline` merges records with audit events; the frontend describes events with `describeAudit` in `src/utils/labels.ts`.
+- Health records are written by CAN_WRITE (assistants included); the disease catalog by CAN_MANAGE.
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client. The role is loaded from DB on every request (`get_current_user`).

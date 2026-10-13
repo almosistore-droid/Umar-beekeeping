@@ -4,6 +4,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../api/client'
 import { hivesApi, queensApi } from '../api/resources'
 import { Icon, type IconName } from '../components/Icon'
+import { InspectionForm } from '../components/health/InspectionForm'
+import { DiseaseForm, FeedingForm, TreatmentForm } from '../components/health/RecordForms'
+import { OpenCasesCard, RemindersCard, Timeline } from '../components/health/HealthCards'
 import { Badge, ErrorBox, Field, InfoRow, Select, Sheet, StrengthBars, SubmitButton } from '../components/ui'
 import { LoadingView, MessageView } from '../components/StateViews'
 import { usePermissions } from '../hooks/usePermissions'
@@ -11,23 +14,23 @@ import { haptic } from '../services/telegram'
 import type { FamilyOrigin, FamilyStatus, FamilyStrength, Hive, QueenStatus } from '../types/api'
 import {
   FAMILY_ORIGIN, FAMILY_STATUS, HIVE_STATUS, HIVE_TYPE, MARKING, QUEEN_STATUS,
-  REMOVED_QUEEN_STATUSES, STRENGTH, describeAudit, formatDate, formatDateTime, todayIso,
+  REMOVED_QUEEN_STATUSES, STRENGTH, formatDate, todayIso,
 } from '../utils/labels'
 
-type SheetKind = null | 'queen' | 'removeQueen' | 'family' | 'endFamily' | 'strength'
+type SheetKind = null | 'queen' | 'removeQueen' | 'family' | 'endFamily' | 'strength' | 'inspection' | 'disease' | 'treatment' | 'feeding'
 
 // Actions arriving in later stages are shown, but disabled, so the layout is final
-const QUICK_ACTIONS: { icon: IconName; label: string; stage: number }[] = [
-  { icon: 'inspect', label: 'Осмотр', stage: 3 }, { icon: 'honey', label: 'Мёд', stage: 4 },
-  { icon: 'health', label: 'Болезнь', stage: 3 }, { icon: 'treat', label: 'Лечение', stage: 3 },
-  { icon: 'feed', label: 'Подкормка', stage: 3 }, { icon: 'photo', label: 'Фото', stage: 9 },
+const QUICK_ACTIONS: { icon: IconName; label: string; sheet?: SheetKind; stage?: number }[] = [
+  { icon: 'inspect', label: 'Осмотр', sheet: 'inspection' }, { icon: 'honey', label: 'Мёд', stage: 4 },
+  { icon: 'health', label: 'Болезнь', sheet: 'disease' }, { icon: 'treat', label: 'Лечение', sheet: 'treatment' },
+  { icon: 'feed', label: 'Подкормка', sheet: 'feeding' }, { icon: 'photo', label: 'Фото', stage: 9 },
 ]
 
 export function HiveDetailsPage() {
   const { id = '' } = useParams()
   const { canManage, canWrite } = usePermissions()
   const [sheet, setSheet] = useState<SheetKind>(null)
-  const [tab, setTab] = useState<'history' | 'families' | 'queens'>('history')
+  const [tab, setTab] = useState<'timeline' | 'families' | 'queens'>('timeline')
   const hive = useQuery({ queryKey: ['hive', id], queryFn: () => hivesApi.get(id) })
 
   if (hive.isLoading) return <LoadingView />
@@ -62,13 +65,22 @@ export function HiveDetailsPage() {
 
       {editable && (
         <div className="quick-grid">
-          {QUICK_ACTIONS.map((a) => (
-            <button key={a.label} type="button" className="quick" disabled title={`Появится на этапе ${a.stage}`}>
-              <span className="quick__icon"><Icon name={a.icon} /></span>{a.label}<small>скоро</small>
-            </button>
-          ))}
+          {QUICK_ACTIONS.map((a) => {
+            const ready = !!a.sheet && canWrite && !!family
+            return (
+              <button key={a.label} type="button" className="quick" disabled={!ready}
+                title={a.stage ? `Появится на этапе ${a.stage}` : !family ? 'Сначала заселите семью' : undefined}
+                onClick={() => a.sheet && setSheet(a.sheet)}>
+                <span className="quick__icon"><Icon name={a.icon} /></span>{a.label}
+                {a.stage ? <small>скоро</small> : !canWrite ? <small>только просмотр</small> : null}
+              </button>
+            )
+          })}
         </div>
       )}
+
+      <OpenCasesCard hive={h} canWrite={canWrite && editable} />
+      <RemindersCard hive={h} canWrite={canWrite && editable} />
 
       {/* Family */}
       <section className="card">
@@ -123,11 +135,11 @@ export function HiveDetailsPage() {
       {/* History */}
       <section className="card">
         <div className="segmented">
-          {([['history', 'История'], ['families', 'Семьи'], ['queens', 'Матки']] as const).map(([k, l]) => (
+          {([['timeline', 'Хронология'], ['families', 'Семьи'], ['queens', 'Матки']] as const).map(([k, l]) => (
             <button key={k} type="button" className={tab === k ? 'is-active' : ''} onClick={() => setTab(k)}>{l}</button>
           ))}
         </div>
-        {tab === 'history' && <HistoryList hiveId={h.id} />}
+        {tab === 'timeline' && <Timeline hiveId={h.id} />}
         {tab === 'families' && <FamilyList hiveId={h.id} />}
         {tab === 'queens' && <QueenPeriods hiveId={h.id} />}
       </section>
@@ -137,35 +149,15 @@ export function HiveDetailsPage() {
       <Sheet open={sheet === 'family'} title={family ? 'Сменить семью' : 'Заселить семью'} onClose={close}><SettleFamilyForm hive={h} onDone={close} /></Sheet>
       <Sheet open={sheet === 'endFamily'} title="Семья выбыла" onClose={close}><EndFamilyForm hive={h} onDone={close} /></Sheet>
       <Sheet open={sheet === 'strength'} title="Сила семьи" onClose={close}><StrengthForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'inspection'} title={`Осмотр улья №${h.hive_number}`} onClose={close}><InspectionForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'disease'} title="Болезнь" onClose={close}><DiseaseForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'treatment'} title="Лечение" onClose={close}><TreatmentForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'feeding'} title="Подкормка" onClose={close}><FeedingForm hive={h} onDone={close} /></Sheet>
     </div>
   )
 }
 
 // ---------- history lists ----------
-
-function HistoryList({ hiveId }: { hiveId: string }) {
-  const q = useQuery({ queryKey: ['hive-history', hiveId], queryFn: () => hivesApi.history(hiveId) })
-  if (q.isLoading) return <p className="hint">Загрузка…</p>
-  if (!q.data?.length) return <p className="hint">Записей пока нет</p>
-  return (
-    <ol className="timeline">
-      {q.data.map((e) => {
-        const d = describeAudit(e.action, e.old_value, e.new_value)
-        return (
-          <li key={e.id}>
-            <span className="timeline__icon" aria-hidden><Icon name={d.icon} size={16} /></span>
-            <div>
-              <div className="timeline__title">{d.title}</div>
-              {d.details.filter(Boolean).map((x) => <div key={x} className="small">{x}</div>)}
-              {e.comment && <div className="small hint">«{e.comment}»</div>}
-              <div className="small hint">{formatDateTime(e.created_at)}{e.user_name && ` · ${e.user_name}`}</div>
-            </div>
-          </li>
-        )
-      })}
-    </ol>
-  )
-}
 
 function FamilyList({ hiveId }: { hiveId: string }) {
   const q = useQuery({ queryKey: ['hive-families', hiveId], queryFn: () => hivesApi.families(hiveId) })

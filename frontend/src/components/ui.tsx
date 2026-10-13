@@ -105,3 +105,43 @@ export function SubmitButton({ pending, children, danger }: { pending: boolean; 
 export function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   return <div className="row"><span className="hint">{label}</span><span className="row__value">{children}</span></div>
 }
+
+/** − value + control for counts; big touch targets for use with gloves. */
+export function Stepper({ label, value, onChange, min = 0, max = 60 }: {
+  label: string; value: number; onChange: (v: number) => void; min?: number; max?: number
+}) {
+  const set = (v: number) => { haptic('light'); onChange(Math.max(min, Math.min(max, v))) }
+  return (
+    <div className="stepper">
+      <span className="stepper__label">{label}</span>
+      <div className="stepper__ctrl">
+        <button type="button" aria-label={`${label}: меньше`} onClick={() => set(value - 1)} disabled={value <= min}>−</button>
+        <output aria-label={label}>{value}</output>
+        <button type="button" aria-label={`${label}: больше`} onClick={() => set(value + 1)} disabled={value >= max}>+</button>
+      </div>
+    </div>
+  )
+}
+
+/** Single choice as a row of pills; value null = nothing chosen. */
+export function Choice<T extends string | boolean>({ label, options, value, onChange, allowNone }: {
+  label?: string; options: { value: T; label: string }[]; value: T | null; onChange: (v: T | null) => void; allowNone?: boolean
+}) {
+  return (
+    <div className="choice-field" role="radiogroup" aria-label={label}>
+      {label && <span className="field__label">{label}</span>}
+      <div className="pills">
+        {options.map((o) => {
+          const active = o.value === value
+          return (
+            <button key={String(o.value)} type="button" role="radio" aria-checked={active}
+              className={`pill${active ? ' is-active' : ''}`}
+              onClick={() => { haptic('light'); onChange(active && allowNone ? null : o.value) }}>
+              {o.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}

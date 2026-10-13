@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { hivesApi, queensApi } from '../api/resources'
+import { healthApi, hivesApi, queensApi } from '../api/resources'
 import { Icon, type IconName } from '../components/Icon'
 import { LOGO_SRC } from '../components/StateViews'
 import { useAuth } from '../hooks/useAuth'
@@ -12,18 +12,22 @@ export function HomePage() {
   const { user } = useAuth()
   const hives = useQuery({ queryKey: ['hives', 'home'], queryFn: () => hivesApi.list({ include_archived: false }) })
   const queens = useQuery({ queryKey: ['queens', 'home'], queryFn: () => queensApi.list({ in_hive: true }) })
+  const attention = useQuery({ queryKey: ['attention'], queryFn: healthApi.attention })
+  const att = attention.data
 
   const items = hives.data?.items ?? []
   const count = (...s: HiveStatus[]) => (hives.data ? items.filter((h) => s.includes(h.status)).length : undefined)
   const strong = (s: FamilyStrength[]) => (hives.data ? items.filter((h) => h.strength && s.includes(h.strength)).length : undefined)
   const total = hives.data?.total
 
-  const tiles: { icon: IconName; label: string; value: number | undefined; alert?: boolean }[] = [
-    { icon: 'crown', label: 'Маток в ульях', value: queens.data?.total },
+  const tiles: { icon: IconName; label: string; value: number | undefined; alert?: boolean; to?: string }[] = [
+    { icon: 'inspect', label: 'Требуют осмотра', value: att?.needs_inspection, alert: true, to: '/hives?filter=inspection' },
+    { icon: 'treat', label: att?.overdue_tasks ? `Напоминания, просрочено ${att.overdue_tasks}` : 'Напоминания', value: att?.open_tasks, alert: !!att?.overdue_tasks, to: '/tasks' },
     { icon: 'strong', label: 'Сильные семьи', value: strong(['STRONG', 'VERY_STRONG']) },
     { icon: 'weak', label: 'Слабые семьи', value: strong(['WEAK', 'VERY_WEAK']), alert: true },
-    { icon: 'sick', label: 'Больные', value: count('SICK', 'QUARANTINE'), alert: true },
+    { icon: 'sick', label: 'Больные', value: att?.sick ?? count('SICK', 'QUARANTINE'), alert: true },
     { icon: 'queenless', label: 'Без матки', value: count('QUEENLESS'), alert: true },
+    { icon: 'crown', label: 'Маток в ульях', value: queens.data?.total, to: '/queens' },
   ]
 
   return (
@@ -50,7 +54,7 @@ export function HomePage() {
           </span>
         </Link>
         {tiles.map((t) => (
-          <Link key={t.label} to={t.label.includes('Мат') ? '/queens' : '/hives'}
+          <Link key={t.icon} to={t.to ?? '/hives'}
             className={`tile${t.alert && t.value ? ' tile--alert' : ''}`}>
             <span className="tile__icon"><Icon name={t.icon} /></span>
             <span className="tile__value">{t.value ?? '…'}</span>

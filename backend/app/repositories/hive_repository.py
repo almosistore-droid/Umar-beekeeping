@@ -30,6 +30,7 @@ def list_hives(
     apiary_id: uuid.UUID | None = None,
     statuses: Sequence[HiveStatus] | None = None,
     strengths: Sequence[FamilyStrength] | None = None,
+    needs_inspection: bool = False,
     q: str | None = None,
     include_archived: bool = False,
     limit: int = 200,
@@ -42,6 +43,13 @@ def list_hives(
         stmt = stmt.where(Hive.status.in_(statuses))
     elif not include_archived:
         stmt = stmt.where(Hive.status.not_in(ARCHIVED_HIVE_STATUSES))
+    if needs_inspection:
+        from datetime import datetime, timezone
+        stmt = stmt.where(
+            Hive.current_family_id.is_not(None),
+            (Hive.next_inspection_at <= datetime.now(timezone.utc))
+            | (Hive.next_inspection_at.is_(None) & Hive.last_inspection_at.is_(None)),
+        )
     if strengths:
         strong_families = select(BeeFamily.id).where(BeeFamily.strength.in_(strengths))
         stmt = stmt.where(Hive.current_family_id.in_(strong_families))

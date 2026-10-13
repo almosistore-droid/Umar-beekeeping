@@ -148,3 +148,105 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   ASSISTANT: 'Помощник',
   VIEWER: 'Наблюдатель',
 }
+
+// ---------- stage 3: health records ----------
+export type QueenCondition = 'GOOD' | 'NORMAL' | 'POOR' | 'NOT_SEEN'
+export type FoodLevel = 'CRITICAL' | 'LOW' | 'NORMAL' | 'ABUNDANT'
+export type InspectionHealth = 'HEALTHY' | 'SUSPICIOUS' | 'SICK'
+export type DiseaseSeverity = 'LIGHT' | 'MODERATE' | 'SEVERE'
+export type CaseStatus = 'SUSPECTED' | 'CONFIRMED' | 'TREATING' | 'RESOLVED'
+export type FeedType = 'SUGAR_SYRUP' | 'CANDY' | 'HONEY' | 'PROTEIN' | 'POLLEN_SUBSTITUTE' | 'MEDICATED' | 'OTHER'
+export type FeedUnit = 'KG' | 'G' | 'L' | 'ML' | 'PCS'
+export type TaskKind = 'INSPECTION' | 'TREATMENT' | 'FEEDING' | 'OTHER'
+
+export interface Inspection {
+  id: string
+  hive_id: string
+  user_name: string | null
+  inspected_at: string
+  strength: FamilyStrength
+  frames_total: number
+  brood_frames: number
+  honey_frames: number
+  pollen_frames: number
+  queen_present: boolean | null
+  queen_condition: QueenCondition | null
+  egg_laying: boolean | null
+  queen_cells: number
+  swarming_signs: boolean
+  food_level: FoodLevel | null
+  aggressiveness: number | null
+  health_status: InspectionHealth
+  next_inspection_at: string | null
+  notes: string | null
+}
+
+export interface Disease { id: string; code: string; name: string; is_quarantine: boolean; is_active: boolean }
+
+export interface DiseaseCase {
+  id: string
+  hive_id: string
+  disease: Disease
+  detected_at: string
+  severity: DiseaseSeverity
+  symptoms: string | null
+  diagnosis: string | null
+  status: CaseStatus
+  resolved_at: string | null
+  notes: string | null
+}
+
+export interface Treatment {
+  id: string
+  hive_id: string
+  disease: Disease | null
+  hive_disease_id: string | null
+  treated_at: string
+  medication: string
+  dosage: string | null
+  method: string | null
+  performed_by_name: string | null
+  result: string | null
+  next_treatment_date: string | null
+  notes: string | null
+}
+
+export interface Feeding {
+  id: string
+  hive_id: string
+  fed_at: string
+  feed_type: FeedType
+  quantity: string
+  unit: FeedUnit
+  reason: string | null
+  result: string | null
+  next_feeding_date: string | null
+  notes: string | null
+}
+
+export interface TaskItem {
+  id: string
+  hive_id: string | null
+  hive_number: string | null
+  kind: TaskKind
+  title: string
+  due_date: string
+  status: 'OPEN' | 'DONE' | 'CANCELLED'
+}
+
+export interface TimelineItem {
+  kind: 'inspection' | 'disease_opened' | 'disease_resolved' | 'treatment' | 'feeding' | 'event'
+  at: string
+  title: string
+  details: string[]
+  author: string | null
+  ref_id: string | null
+  action?: string | null
+  entity_type?: string | null
+  old_value?: Record<string, unknown> | null
+  new_value?: Record<string, unknown> | null
+  comment?: string | null
+}
+
+export interface RecordWarning { code: string; message: string }
+export interface Attention { needs_inspection: number; open_tasks: number; overdue_tasks: number; sick: number }

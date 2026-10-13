@@ -11,6 +11,7 @@ import { QueenFormPage } from '../pages/QueenFormPage'
 import { QueensPage } from '../pages/QueensPage'
 import { StagePendingPage } from '../pages/StagePendingPage'
 import { UsersPage } from '../pages/UsersPage'
+import { TasksPage } from '../pages/TasksPage'
 import { MessageView } from '../components/StateViews'
 
 export const routes = [
@@ -29,6 +30,7 @@ export const routes = [
       { path: 'queens/:id/edit', element: <QueenFormPage /> },
       { path: 'apiaries', element: <ApiariesPage /> },
       { path: 'users', element: <UsersPage /> },
+      { path: 'tasks', element: <TasksPage /> },
       { path: 'scan', element: <StagePendingPage icon="scan" title="Сканер" stage={5} /> },
       { path: 'reports', element: <StagePendingPage icon="chart" title="Отчёты" stage={6} /> },
       { path: 'more', element: <MorePage /> },

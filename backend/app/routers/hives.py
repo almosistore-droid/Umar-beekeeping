@@ -36,12 +36,13 @@ def list_hives(
     apiary_id: uuid.UUID | None = None,
     status_: Annotated[list[HiveStatus] | None, Query(alias="status")] = None,
     strength: Annotated[list[FamilyStrength] | None, Query()] = None,
+    needs_inspection: bool = False,
     q: Annotated[str | None, Query(max_length=100)] = None,
     include_archived: bool = False,
     limit: Annotated[int, Query(ge=1, le=500)] = 200,
     offset: Annotated[int, Query(ge=0)] = 0,
 ):
-    hives, total = repo.list_hives(db, apiary_id=apiary_id, statuses=status_, strengths=strength, q=q,
+    hives, total = repo.list_hives(db, apiary_id=apiary_id, statuses=status_, strengths=strength, needs_inspection=needs_inspection, q=q,
                                    include_archived=include_archived, limit=limit, offset=offset)
     return HiveListResponse(items=[svc.to_list_item(h) for h in hives], total=total)
 

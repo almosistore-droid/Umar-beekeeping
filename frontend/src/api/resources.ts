@@ -29,7 +29,7 @@ export const apiariesApi = {
 }
 
 // ---------- hives ----------
-export interface HiveFilters { apiary_id?: string; status?: HiveStatus[]; strength?: FamilyStrength[]; q?: string; include_archived?: boolean }
+export interface HiveFilters { apiary_id?: string; status?: HiveStatus[]; strength?: FamilyStrength[]; needs_inspection?: boolean; q?: string; include_archived?: boolean }
 export interface FamilyInput { strength: FamilyStrength; origin: FamilyOrigin; start_date?: string | null; notes?: string | null }
 export interface HiveCreateInput {
   apiary_id: string; hive_number: string; hive_type: HiveType; status?: HiveStatus | null
@@ -81,4 +81,52 @@ export const queensApi = {
 export const usersApi = {
   list: () => api<User[]>('/api/users'),
   update: (id: string, body: { role?: UserRole; is_active?: boolean }) => api<User>(`/api/users/${id}`, json('PATCH', body)),
+}
+
+// ---------- stage 3: health records ----------
+import type {
+  Attention, CaseStatus, Disease, DiseaseCase, DiseaseSeverity, Feeding, FeedType, FeedUnit, FoodLevel,
+  Inspection, InspectionHealth, QueenCondition, RecordWarning, TaskItem, TimelineItem, Treatment,
+} from '../types/api'
+
+export interface InspectionInput {
+  inspected_at?: string | null; strength: FamilyStrength; frames_total: number; brood_frames: number
+  honey_frames: number; pollen_frames: number; queen_present: boolean | null; queen_condition?: QueenCondition | null
+  egg_laying: boolean | null; queen_cells: number; swarming_signs: boolean; food_level: FoodLevel | null
+  aggressiveness: number | null; health_status: InspectionHealth; next_inspection_at: string | null; notes: string | null
+}
+export interface CaseInput {
+  disease_id: string; detected_at?: string | null; severity: DiseaseSeverity; status: CaseStatus
+  symptoms?: string | null; diagnosis?: string | null; notes?: string | null
+}
+export interface TreatmentInput {
+  treated_at?: string | null; disease_id?: string | null; hive_disease_id?: string | null; medication: string
+  dosage?: string | null; method?: string | null; result?: string | null; next_treatment_date?: string | null
+  notes?: string | null
+}
+export interface FeedingInput {
+  fed_at?: string | null; feed_type: FeedType; quantity: number; unit: FeedUnit; reason?: string | null
+  result?: string | null; next_feeding_date?: string | null; notes?: string | null
+}
+
+export const healthApi = {
+  inspections: (hiveId: string) => api<Inspection[]>(`/api/hives/${hiveId}/inspections`),
+  inspect: (hiveId: string, body: InspectionInput) =>
+    api<{ inspection: Inspection; hive: Hive; warnings: RecordWarning[] }>(`/api/hives/${hiveId}/inspections`, json('POST', body)),
+  diseases: () => api<Disease[]>('/api/diseases'),
+  cases: (hiveId: string) => api<DiseaseCase[]>(`/api/hives/${hiveId}/diseases`),
+  openCase: (hiveId: string, body: CaseInput) =>
+    api<{ case: DiseaseCase; hive: Hive }>(`/api/hives/${hiveId}/diseases`, json('POST', body)),
+  updateCase: (caseId: string, body: { status?: CaseStatus; resolved_at?: string | null; notes?: string | null }) =>
+    api<{ case: DiseaseCase; hive: Hive }>(`/api/disease-cases/${caseId}`, json('PUT', body)),
+  treatments: (hiveId: string) => api<Treatment[]>(`/api/hives/${hiveId}/treatments`),
+  treat: (hiveId: string, body: TreatmentInput) =>
+    api<{ treatment: Treatment; hive: Hive }>(`/api/hives/${hiveId}/treatments`, json('POST', body)),
+  feedings: (hiveId: string) => api<Feeding[]>(`/api/hives/${hiveId}/feedings`),
+  feed: (hiveId: string, body: FeedingInput) =>
+    api<{ feeding: Feeding; hive: Hive }>(`/api/hives/${hiveId}/feedings`, json('POST', body)),
+  timeline: (hiveId: string) => api<TimelineItem[]>(`/api/hives/${hiveId}/timeline`),
+  tasks: (params: { hive_id?: string; status?: string } = {}) => api<TaskItem[]>(`/api/tasks${qs(params)}`),
+  completeTask: (taskId: string) => api<TaskItem>(`/api/tasks/${taskId}/done`, { method: 'POST' }),
+  attention: () => api<Attention>('/api/dashboard/attention'),
 }

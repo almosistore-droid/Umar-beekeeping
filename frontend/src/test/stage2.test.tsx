@@ -90,8 +90,9 @@ describe('Hive details', () => {
   it('shows the hive passport with queen age and history', async () => {
     setup('BEEKEEPER', (url) => {
       if (url.endsWith('/api/hives/h1')) return json(hive)
-      if (url.endsWith('/api/hives/h1/history'))
-        return json([{ id: 'e1', created_at: '2026-10-06T10:00:00Z', user_name: 'Иван', entity_type: 'hive', entity_id: 'h1', action: 'queen_replaced', old_value: { queen_code: 'M-105' }, new_value: { queen_code: 'M-205' }, comment: null }])
+      if (url.endsWith('/api/hives/h1/timeline'))
+        return json([{ kind: 'event', at: '2026-10-06T10:00:00Z', title: 'queen_replaced', details: [], author: 'Иван', ref_id: 'h1', entity_type: 'hive', action: 'queen_replaced', old_value: { queen_code: 'M-105' }, new_value: { queen_code: 'M-205' }, comment: null }])
+      if (url.includes('/api/hives/h1/diseases') || url.includes('/api/tasks')) return json([])
     }, '/hives/h1', <HiveDetailsPage />, '/hives/:id')
     expect(await screen.findByText('Улей №27')).toBeInTheDocument()
     expect(screen.getByText('2 года 3 месяца')).toBeInTheDocument()
@@ -110,7 +111,7 @@ describe('Hive details', () => {
   it('viewers see no management buttons', async () => {
     setup('VIEWER', (url) => {
       if (url.endsWith('/api/hives/h1')) return json(hive)
-      if (url.endsWith('/history')) return json([])
+      if (url.endsWith('/timeline') || url.includes('/diseases') || url.includes('/api/tasks')) return json([])
     }, '/hives/h1', <HiveDetailsPage />, '/hives/:id')
     await screen.findByText('Улей №27')
     expect(screen.queryByRole('button', { name: /Заменить матку/ })).not.toBeInTheDocument()

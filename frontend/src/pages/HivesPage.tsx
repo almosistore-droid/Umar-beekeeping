@@ -9,9 +9,10 @@ import { usePermissions } from '../hooks/usePermissions'
 import type { FamilyStrength, HiveStatus } from '../types/api'
 import { HIVE_STATUS, STRENGTH } from '../utils/labels'
 
-type Filter = 'all' | 'strong' | 'weak' | 'queenless' | 'sick' | 'empty' | 'archive'
-const FILTERS: { value: Filter; label: string; statuses?: HiveStatus[]; strengths?: FamilyStrength[] }[] = [
+type Filter = 'all' | 'inspection' | 'strong' | 'weak' | 'queenless' | 'sick' | 'empty' | 'archive'
+const FILTERS: { value: Filter; label: string; statuses?: HiveStatus[]; strengths?: FamilyStrength[]; needsInspection?: boolean }[] = [
   { value: 'all', label: 'Все' },
+  { value: 'inspection', label: 'Требуют осмотра', needsInspection: true },
   { value: 'strong', label: 'Сильные', strengths: ['STRONG', 'VERY_STRONG'] },
   { value: 'weak', label: 'Слабые', strengths: ['WEAK', 'VERY_WEAK'] },
   { value: 'queenless', label: 'Без матки', statuses: ['QUEENLESS'] },
@@ -24,7 +25,7 @@ export function HivesPage() {
   const { canManage } = usePermissions()
   const [params] = useSearchParams()
   const [apiaryId, setApiaryId] = useState<string>(params.get('apiary') ?? 'all')
-  const [filter, setFilter] = useState<Filter>('all')
+  const [filter, setFilter] = useState<Filter>((params.get('filter') as Filter) ?? 'all')
   const [q, setQ] = useState('')
 
   const apiaries = useQuery({ queryKey: ['apiaries'], queryFn: () => apiariesApi.list() })
@@ -32,7 +33,7 @@ export function HivesPage() {
   const hives = useQuery({
     queryKey: ['hives', apiaryId, filter, q],
     queryFn: () => hivesApi.list({
-      apiary_id: apiaryId === 'all' ? undefined : apiaryId, status: current?.statuses, strength: current?.strengths, q: q || undefined,
+      apiary_id: apiaryId === 'all' ? undefined : apiaryId, status: current?.statuses, strength: current?.strengths, needs_inspection: current?.needsInspection, q: q || undefined,
     }),
   })
 
