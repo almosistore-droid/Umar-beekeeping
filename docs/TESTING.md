@@ -93,14 +93,17 @@ Telegram открывает Mini App только по **HTTPS-адресу из
    ADMIN_TELEGRAM_IDS=ваш_id
    ```
    и перезапустите: `docker compose -f docker-compose.dev.yml up --build`
-2. Установите [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)
-   и запустите:
+2. Запустите систему вместе с туннелем (вместо обычной команды):
    ```bash
-   cloudflared tunnel --url http://localhost:5173
+   docker compose -f docker-compose.dev.yml --profile telegram up --build
    ```
-   Он покажет адрес вида `https://xxxx-xxxx.trycloudflare.com`.
+   Когда всё запустится, во **втором** окне найдите адрес:
+   ```bash
+   docker compose -f docker-compose.dev.yml logs tunnel | findstr trycloudflare
+   ```
+   (на Mac/Linux вместо `findstr` — `grep`). Адрес вида `https://xxxx-xxxx.trycloudflare.com`.
 3. В Telegram → **@BotFather** → `/mybots` → ваш бот → **Bot Settings → Menu Button** →
-   вставьте этот адрес. (Или `/newapp`, если ещё не создавали Mini App.)
+   первым сообщением отправьте адрес, вторым — название кнопки, например `Пасека`.
 4. Откройте бота на телефоне и нажмите кнопку меню → приложение откроется внутри Telegram,
    вход произойдёт автоматически.
 
@@ -126,6 +129,7 @@ Telegram открывает Mini App только по **HTTPS-адресу из
 | Порт 5173, 8000 или 5432 занят | Закройте другую программу или перезагрузите компьютер |
 | «Не удалось войти: signature is invalid» | Строку входа нужно сгенерировать заново после смены токена в `.env` |
 | «initData has expired» | Сгенерируйте новую строку (действует 7 дней) |
+| В Telegram «Bad gateway 502» | Туннель работает, а приложение нет: проверьте, открывается ли http://localhost:5173. Запускайте туннель через `--profile telegram`, а не отдельно |
 | Белый экран | `docker compose -f docker-compose.dev.yml logs frontend --tail=50` |
 | Ошибки сервера | `docker compose -f docker-compose.dev.yml logs backend --tail=50` |
 
