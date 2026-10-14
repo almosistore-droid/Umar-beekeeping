@@ -93,6 +93,16 @@ def test_admin_ids_still_win(client, login, as_role):
     assert me(login, 1000)["role"] == "ADMIN"
 
 
+def test_admin_ids_promote_someone_who_already_logged_in(client, login, as_role, db):
+    from app.models import User, UserRole
+    me(login, 1000)
+    db.query(User).filter_by(telegram_id=1000).update({"role": UserRole.VIEWER})  # logged in before being listed
+    db.commit()
+    assert me(login, 1000)["role"] == "ADMIN"
+    log = client.get("/api/admin/audit", params={"entity_type": "user"}, headers=as_role("ADMIN", 999)).json()["items"]
+    assert any(e["action"] == "role_from_config" and e["old_value"]["role"] == "VIEWER" for e in log)
+
+
 @pytest.mark.parametrize("body, fragment", [
     ({"role": "VIEWER"}, "Telegram ID или имя"),
     ({"username": "a b", "role": "VIEWER"}, "латинские буквы"),

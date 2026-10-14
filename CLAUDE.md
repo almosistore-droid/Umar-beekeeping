@@ -65,7 +65,7 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 
 ## Admin panel (specs/008-admin-panel) — ADMIN only
 - `/api/admin/overview` (system, users by role, counts per section), `/api/admin/invites` (create / list / revoke), `/api/admin/audit` (all audit_logs, filters user_id / entity_type, offset paging — not timestamp cursors: one transaction shares a timestamp).
-- Invitations (`user_invites`): by Telegram ID or lowercase username, 30 days, one PENDING per ID/username (partial unique indexes). `auth_service.upsert_telegram_user` claims one on a user's FIRST login (ID first, then username-only invites); ADMIN_TELEGRAM_IDS still wins. Inviting someone who already uses the app changes their role at once. `users.last_seen_at` is set on every login.
+- Invitations (`user_invites`): by Telegram ID or lowercase username, 30 days, one PENDING per ID/username (partial unique indexes). `auth_service.upsert_telegram_user` claims one on a user's FIRST login (ID first, then username-only invites); ADMIN_TELEGRAM_IDS still wins. An ID listed in ADMIN_TELEGRAM_IDS is promoted to ADMIN on every login (audit `role_from_config`), even if the person logged in before. Inviting someone who already uses the app changes their role at once. `users.last_seen_at` is set on every login.
 - Frontend: «Ещё → Админ-панель» (`pages/admin/AdminPage`), `/users` (access + invite sheet with Telegram share), `/admin/log` (`describeLogEntry`, `logDetail`).
 
 ## Languages (specs/009-i18n-tajik) — Russian + Tajik
