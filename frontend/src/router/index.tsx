@@ -29,6 +29,7 @@ import { QrLabelsPage } from '../pages/QrLabelsPage'
 import { HiveVisitPage } from '../pages/HiveVisitPage'
 import { HiveInspectPage } from '../pages/HiveInspectPage'
 import { HiveCheckPage } from '../pages/HiveCheckPage'
+import { tr } from '../i18n'
 
 export const routes = [
   {
@@ -68,7 +69,7 @@ export const routes = [
       { path: 'crm/customers/:id', element: <CustomerDetailsPage /> },
       { path: 'crm/debts', element: <DebtsPage /> },
       { path: 'more', element: <MorePage /> },
-      { path: '*', element: <MessageView icon="inspect" title="Страница не найдена" /> },
+      { path: '*', element: <MessageView icon="inspect" title={tr("Страница не найдена")} /> },
     ],
   },
 ]

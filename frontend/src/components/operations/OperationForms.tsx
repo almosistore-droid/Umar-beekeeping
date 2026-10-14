@@ -6,6 +6,7 @@ import type { FamilyStrength, Hive, WinteringResult } from '../../types/api'
 import { HONEY_TYPES, STRENGTH, WINTERING_RESULT, num, todayIso } from '../../utils/labels'
 import { Choice, ErrorBox, Field, Select, Stepper, SubmitButton, fieldError } from '../ui'
 import { useHiveRecordMutation } from '../health/useHiveRecordMutation'
+import { tr } from '../../i18n'
 
 const strengthOpts = (Object.keys(STRENGTH) as FamilyStrength[]).map((k) => ({ value: k, label: STRENGTH[k].label }))
 const decimal = (v: string) => (v.trim() === '' ? null : Number(v.replace(',', '.')))
@@ -30,18 +31,18 @@ export function HoneyForm({ hive, onDone }: { hive: Hive; onDone: () => void }) 
   return (
     <form className="form" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate() }}>
       <ErrorBox error={save.error} />
-      <Field label="Вес, кг" error={fieldError(save.error, 'weight_kg')}>
+      <Field label={tr("Вес, кг")} error={fieldError(save.error, 'weight_kg')}>
         <input className="input input--big" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="0" required autoFocus />
       </Field>
-      <Stepper label="Рамок откачано" value={frames} max={500} onChange={setFrames} />
-      <Choice label="Мёд" options={HONEY_TYPES.map((t) => ({ value: t, label: t }))} value={type} onChange={setType} allowNone />
-      <Field label="Цена за кг" error={fieldError(save.error, 'price_per_kg')} hint={value ? `Сумма: ${num(value)}` : 'Можно не указывать'}>
+      <Stepper label={tr("Рамок откачано")} value={frames} max={500} onChange={setFrames} />
+      <Choice label={tr("Мёд")} options={HONEY_TYPES.map((t) => ({ value: t, label: t }))} value={type} onChange={setType} allowNone />
+      <Field label={tr("Цена за кг")} error={fieldError(save.error, 'price_per_kg')} hint={value ? tr("Сумма: {0}", num(value)) : tr("Можно не указывать")}>
         <input className="input" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
       </Field>
-      <Field label="Дата откачки" error={fieldError(save.error, 'harvest_date')}>
+      <Field label={tr("Дата откачки")} error={fieldError(save.error, 'harvest_date')}>
         <input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} />
       </Field>
-      <div className="submit-bar"><SubmitButton pending={save.isPending}>Записать мёд</SubmitButton></div>
+      <div className="submit-bar"><SubmitButton pending={save.isPending}>{tr("Записать мёд")}</SubmitButton></div>
     </form>
   )
 }
@@ -60,17 +61,17 @@ export function MoveForm({ hive, onDone }: { hive: Hive; onDone: () => void }) {
   }), onDone)
   const needsNumber = save.error && /новый номер/.test(String((save.error as Error).message))
 
-  if (apiaries.data && !others.length) return <p className="hint">Нет другой пасеки. Сначала создайте её в разделе «Пасеки».</p>
+  if (apiaries.data && !others.length) return <p className="hint">{tr("Нет другой пасеки. Сначала создайте её в разделе «Пасеки».")}</p>
   return (
     <form className="form" onSubmit={(e: FormEvent) => { e.preventDefault(); if (to) save.mutate() }}>
       <ErrorBox error={save.error} />
-      <Choice label="Куда" options={others.map((a) => ({ value: a.id, label: a.name }))} value={to} onChange={setTo} />
-      <Field label="Причина"><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Например: кочёвка на акацию" maxLength={255} /></Field>
-      <Field label="Новый номер улья" hint={needsNumber ? 'Номер занят на той пасеке — укажите другой' : 'Если оставить пустым, номер не изменится'}>
+      <Choice label={tr("Куда")} options={others.map((a) => ({ value: a.id, label: a.name }))} value={to} onChange={setTo} />
+      <Field label={tr("Причина")}><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder={tr("Например: кочёвка на акацию")} maxLength={255} /></Field>
+      <Field label={tr("Новый номер улья")} hint={needsNumber ? tr("Номер занят на той пасеке — укажите другой") : tr("Если оставить пустым, номер не изменится")}>
         <input className="input" value={number} onChange={(e) => setNumber(e.target.value)} placeholder={hive.hive_number} maxLength={20} />
       </Field>
-      <Field label="Дата"><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
-      <div className="submit-bar"><SubmitButton pending={save.isPending}>{to ? 'Переместить' : 'Выберите пасеку'}</SubmitButton></div>
+      <Field label={tr("Дата")}><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
+      <div className="submit-bar"><SubmitButton pending={save.isPending}>{to ? tr("Переместить") : tr("Выберите пасеку")}</SubmitButton></div>
     </form>
   )
 }
@@ -90,12 +91,12 @@ function TargetPicker({ apiaryId, mode, setMode, number, setNumber, emptyId, set
 }) {
   const empty = useEmptyHives(apiaryId)
   return <>
-    <Choice label="Куда" options={[{ value: 'new', label: 'Новый улей' }, { value: 'empty', label: 'Пустой улей' }]} value={mode} onChange={(v) => v && setMode(v as 'new' | 'empty')} />
+    <Choice label={tr("Куда")} options={[{ value: 'new', label: tr("Новый улей") }, { value: 'empty', label: tr("Пустой улей") }]} value={mode} onChange={(v) => v && setMode(v as 'new' | 'empty')} />
     {mode === 'new' ? (
-      <Field label="Номер нового улья"><input className="input" value={number} onChange={(e) => setNumber(e.target.value)} required maxLength={20} /></Field>
+      <Field label={tr("Номер нового улья")}><input className="input" value={number} onChange={(e) => setNumber(e.target.value)} required maxLength={20} /></Field>
     ) : (
-      <Field label="Пустой улей" hint={empty.data?.items.length ? undefined : 'Пустых ульев на этой пасеке нет'}>
-        <Select value={emptyId} onChange={setEmptyId} placeholder="— выберите —" options={(empty.data?.items ?? []).map((h) => ({ value: h.id, label: `№${h.hive_number}` }))} />
+      <Field label={tr("Пустой улей")} hint={empty.data?.items.length ? undefined : tr("Пустых ульев на этой пасеке нет")}>
+        <Select value={emptyId} onChange={setEmptyId} placeholder={tr("— выберите —")} options={(empty.data?.items ?? []).map((h) => ({ value: h.id, label: `№${h.hive_number}` }))} />
       </Field>
     )}
   </>
@@ -122,15 +123,15 @@ export function SwarmForm({ hive, onDone }: { hive: Hive; onDone: () => void }) 
   return (
     <form className="form" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate() }}>
       <ErrorBox error={save.error} />
-      <Stepper label="Сколько роёв" value={count} min={1} max={20} onChange={setCount} />
-      <Choice label="Рой" options={[{ value: true, label: 'Пойман' }, { value: false, label: 'Улетел' }]} value={captured} onChange={(v) => setCaptured(v ?? false)} />
+      <Stepper label={tr("Сколько роёв")} value={count} min={1} max={20} onChange={setCount} />
+      <Choice label={tr("Рой")} options={[{ value: true, label: tr("Пойман") }, { value: false, label: tr("Улетел") }]} value={captured} onChange={(v) => setCaptured(v ?? false)} />
       {captured && <>
-        <label className="switch"><input type="checkbox" checked={settle} onChange={(e) => setSettle(e.target.checked)} /><span>Посадить в улей</span></label>
+        <label className="switch"><input type="checkbox" checked={settle} onChange={(e) => setSettle(e.target.checked)} /><span>{tr("Посадить в улей")}</span></label>
         {settle && <TargetPicker apiaryId={hive.apiary.id} mode={mode} setMode={setMode} number={number} setNumber={setNumber} emptyId={emptyId} setEmptyId={setEmptyId} />}
       </>}
-      <Field label="Что сделали"><textarea className="input" rows={2} value={actions} onChange={(e) => setActions(e.target.value)} placeholder="Например: снят с яблони, посажен на вощину" /></Field>
-      <Field label="Дата"><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
-      <div className="submit-bar"><SubmitButton pending={save.isPending}>Записать роение</SubmitButton></div>
+      <Field label={tr("Что сделали")}><textarea className="input" rows={2} value={actions} onChange={(e) => setActions(e.target.value)} placeholder={tr("Например: снят с яблони, посажен на вощину")} /></Field>
+      <Field label={tr("Дата")}><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
+      <div className="submit-bar"><SubmitButton pending={save.isPending}>{tr("Записать роение")}</SubmitButton></div>
     </form>
   )
 }
@@ -157,15 +158,15 @@ export function SplitForm({ hive, onDone }: { hive: Hive; onDone: () => void }) 
   return (
     <form className="form" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate() }}>
       <ErrorBox error={save.error} />
-      <p className="hint">Из улья №{hive.hive_number} будет сделан отводок. Исходный улей продолжит жить.</p>
+      <p className="hint">{tr("Из улья №{0} будет сделан отводок. Исходный улей продолжит жить.", hive.hive_number)}</p>
       <TargetPicker apiaryId={hive.apiary.id} mode={mode} setMode={setMode} number={number} setNumber={setNumber} emptyId={emptyId} setEmptyId={setEmptyId} />
-      <Choice label="Сила отводка" options={strengthOpts} value={strength} onChange={(v) => v && setStrength(v)} />
-      <Field label="Матка" hint="Если не выбрать, отводок будет отмечен «Без матки»">
-        <Select value={queenId} onChange={setQueenId} placeholder="— выведут сами —"
+      <Choice label={tr("Сила отводка")} options={strengthOpts} value={strength} onChange={(v) => v && setStrength(v)} />
+      <Field label={tr("Матка")} hint={tr("Если не выбрать, отводок будет отмечен «Без матки»")}>
+        <Select value={queenId} onChange={setQueenId} placeholder={tr("— выведут сами —")}
           options={(queens.data?.items ?? []).map((q) => ({ value: q.id, label: `${q.queen_code}${q.breed ? `, ${q.breed}` : ''}` }))} />
       </Field>
-      <Field label="Дата"><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
-      <div className="submit-bar"><SubmitButton pending={save.isPending}>Сделать отводок</SubmitButton></div>
+      <Field label={tr("Дата")}><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
+      <div className="submit-bar"><SubmitButton pending={save.isPending}>{tr("Сделать отводок")}</SubmitButton></div>
     </form>
   )
 }
@@ -183,8 +184,8 @@ export function MergeForm({ hive, onDone }: { hive: Hive; onDone: () => void }) 
   const [date, setDate] = useState(todayIso())
   const sources = [hive.id, ...others]
   const queenOptions = [
-    ...(hive.current_queen ? [{ value: hive.current_queen.id, label: `${hive.current_queen.queen_code} (улей №${hive.hive_number})` }] : []),
-    ...candidates.filter((c) => others.includes(c.id) && c.queen_id).map((c) => ({ value: c.queen_id!, label: `${c.queen_code} (улей №${c.hive_number})` })),
+    ...(hive.current_queen ? [{ value: hive.current_queen.id, label: tr("{0} (улей №{1})", hive.current_queen.queen_code, hive.hive_number) }] : []),
+    ...candidates.filter((c) => others.includes(c.id) && c.queen_id).map((c) => ({ value: c.queen_id!, label: tr("{0} (улей №{1})", c.queen_code, c.hive_number) })),
   ]
 
   const save = useHiveRecordMutation(hive, async () => {
@@ -199,24 +200,24 @@ export function MergeForm({ hive, onDone }: { hive: Hive; onDone: () => void }) 
   return (
     <form className="form" onSubmit={(e: FormEvent) => { e.preventDefault(); if (others.length) save.mutate() }}>
       <ErrorBox error={save.error} />
-      <span className="field__label">С какими ульями объединить улей №{hive.hive_number}</span>
+      <span className="field__label">{tr("С какими ульями объединить улей №{0}", hive.hive_number)}</span>
       <div className="pills">
         {candidates.map((c) => (
           <button key={c.id} type="button" className={`pill${others.includes(c.id) ? ' is-active' : ''}`} onClick={() => toggle(c.id)}>№{c.hive_number}</button>
         ))}
-        {!candidates.length && <span className="hint">На этой пасеке нет других ульев с семьёй</span>}
+        {!candidates.length && <span className="hint">{tr("На этой пасеке нет других ульев с семьёй")}</span>}
       </div>
       {others.length > 0 && <>
-        <Choice label="Куда объединить" value={target} onChange={(v) => v && setTarget(v)}
-          options={[...sources.map((id) => ({ value: id, label: `№${id === hive.id ? hive.hive_number : candidates.find((c) => c.id === id)?.hive_number}` })), { value: 'new', label: 'В новый улей' }]} />
-        {target === 'new' && <Field label="Номер нового улья"><input className="input" value={number} onChange={(e) => setNumber(e.target.value)} required maxLength={20} /></Field>}
-        <Field label="Какую матку оставить" hint="Остальные будут отмечены «Заменена»">
-          <Select value={keepQueen} onChange={setKeepQueen} placeholder="— не важно / нет маток —" options={queenOptions} />
+        <Choice label={tr("Куда объединить")} value={target} onChange={(v) => v && setTarget(v)}
+          options={[...sources.map((id) => ({ value: id, label: `№${id === hive.id ? hive.hive_number : candidates.find((c) => c.id === id)?.hive_number}` })), { value: 'new', label: tr("В новый улей") }]} />
+        {target === 'new' && <Field label={tr("Номер нового улья")}><input className="input" value={number} onChange={(e) => setNumber(e.target.value)} required maxLength={20} /></Field>}
+        <Field label={tr("Какую матку оставить")} hint={tr("Остальные будут отмечены «Заменена»")}>
+          <Select value={keepQueen} onChange={setKeepQueen} placeholder={tr("— не важно / нет маток —")} options={queenOptions} />
         </Field>
-        <div className="warn-box">Остальные ульи уйдут в архив «Объединён». Их история сохранится.</div>
+        <div className="warn-box">{tr("Остальные ульи уйдут в архив «Объединён». Их история сохранится.")}</div>
       </>}
-      <Field label="Дата"><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
-      <div className="submit-bar"><SubmitButton pending={save.isPending} danger={others.length > 0}>{others.length ? 'Объединить' : 'Выберите ульи'}</SubmitButton></div>
+      <Field label={tr("Дата")}><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
+      <div className="submit-bar"><SubmitButton pending={save.isPending} danger={others.length > 0}>{others.length ? tr("Объединить") : tr("Выберите ульи")}</SubmitButton></div>
     </form>
   )
 }
@@ -232,7 +233,7 @@ function defaultSeason(): string {
 export function WinteringForm({ hive, onDone }: { hive: Hive; onDone: () => void }) {
   const list = useQuery({ queryKey: ['hive-winterings', hive.id], queryFn: () => operationsApi.winterings(hive.id) })
   const open = list.data?.find((w) => !w.end_date)
-  if (list.isLoading) return <p className="hint">Загрузка…</p>
+  if (list.isLoading) return <p className="hint">{tr("Загрузка…")}</p>
   return open ? <FinishWintering hive={hive} id={open.id} season={open.season} onDone={onDone} /> : <StartWintering hive={hive} onDone={onDone} />
 }
 
@@ -251,13 +252,13 @@ function StartWintering({ hive, onDone }: { hive: Hive; onDone: () => void }) {
   return (
     <form className="form" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate() }}>
       <ErrorBox error={save.error} />
-      <Field label="Сезон" error={fieldError(save.error, 'season')}><input className="input" value={season} onChange={(e) => setSeason(e.target.value)} placeholder="2026/2027" /></Field>
-      <Choice label="Сила перед зимой" options={strengthOpts} value={strength} onChange={(v) => v && setStrength(v)} />
-      <Field label="Корма, кг"><input className="input" inputMode="decimal" value={food} onChange={(e) => setFood(e.target.value)} /></Field>
-      <Stepper label="Рамок" value={frames} onChange={setFrames} />
-      <Field label="Обработка перед зимой"><input className="input" value={treatment} onChange={(e) => setTreatment(e.target.value)} maxLength={255} /></Field>
-      <Field label="Где зимует"><input className="input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="На точке, в зимовнике…" maxLength={255} /></Field>
-      <div className="submit-bar"><SubmitButton pending={save.isPending}>Начать зимовку</SubmitButton></div>
+      <Field label={tr("Сезон")} error={fieldError(save.error, 'season')}><input className="input" value={season} onChange={(e) => setSeason(e.target.value)} placeholder="2026/2027" /></Field>
+      <Choice label={tr("Сила перед зимой")} options={strengthOpts} value={strength} onChange={(v) => v && setStrength(v)} />
+      <Field label={tr("Корма, кг")}><input className="input" inputMode="decimal" value={food} onChange={(e) => setFood(e.target.value)} /></Field>
+      <Stepper label={tr("Рамок")} value={frames} onChange={setFrames} />
+      <Field label={tr("Обработка перед зимой")}><input className="input" value={treatment} onChange={(e) => setTreatment(e.target.value)} maxLength={255} /></Field>
+      <Field label={tr("Где зимует")}><input className="input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder={tr("На точке, в зимовнике…")} maxLength={255} /></Field>
+      <div className="submit-bar"><SubmitButton pending={save.isPending}>{tr("Начать зимовку")}</SubmitButton></div>
     </form>
   )
 }
@@ -270,12 +271,12 @@ function FinishWintering({ hive, id, season, onDone }: { hive: Hive; id: string;
   return (
     <form className="form" onSubmit={(e: FormEvent) => { e.preventDefault(); if (result) save.mutate() }}>
       <ErrorBox error={save.error} />
-      <p className="hint">Улей зимует, сезон {season}. Отметьте, как прошла зимовка.</p>
-      <Choice label="Итог" options={(Object.keys(WINTERING_RESULT) as WinteringResult[]).map((k) => ({ value: k, label: WINTERING_RESULT[k] }))} value={result} onChange={setResult} />
-      {result === 'DIED' && <div className="warn-box">Семья будет отмечена погибшей, улей станет пустым. История сохранится.</div>}
-      {result && result !== 'DIED' && <Choice label="Сила весной" options={strengthOpts} value={strength} onChange={setStrength} allowNone />}
-      <Field label="Дата окончания"><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
-      <div className="submit-bar"><SubmitButton pending={save.isPending} danger={result === 'DIED'}>{result ? 'Завершить зимовку' : 'Выберите итог'}</SubmitButton></div>
+      <p className="hint">{tr("Улей зимует, сезон {0}. Отметьте, как прошла зимовка.", season)}</p>
+      <Choice label={tr("Итог")} options={(Object.keys(WINTERING_RESULT) as WinteringResult[]).map((k) => ({ value: k, label: WINTERING_RESULT[k] }))} value={result} onChange={setResult} />
+      {result === 'DIED' && <div className="warn-box">{tr("Семья будет отмечена погибшей, улей станет пустым. История сохранится.")}</div>}
+      {result && result !== 'DIED' && <Choice label={tr("Сила весной")} options={strengthOpts} value={strength} onChange={setStrength} allowNone />}
+      <Field label={tr("Дата окончания")}><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
+      <div className="submit-bar"><SubmitButton pending={save.isPending} danger={result === 'DIED'}>{result ? tr("Завершить зимовку") : tr("Выберите итог")}</SubmitButton></div>
     </form>
   )
 }

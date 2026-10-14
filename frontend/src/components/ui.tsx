@@ -4,6 +4,7 @@ import { ApiError } from '../api/client'
 import { Icon } from './Icon'
 import type { Tone } from '../utils/labels'
 import { haptic } from '../services/telegram'
+import { tr } from '../i18n'
 
 export function Badge({ tone, children }: { tone: Tone; children: ReactNode }) {
   return <span className={`badge badge--${tone}`}>{children}</span>
@@ -57,7 +58,7 @@ export function Select<T extends string>({ value, onChange, options, placeholder
 
 export function ErrorBox({ error }: { error: unknown }) {
   if (!error) return null
-  const message = error instanceof ApiError || error instanceof Error ? error.message : 'Что-то пошло не так'
+  const message = error instanceof ApiError || error instanceof Error ? error.message : tr("Что-то пошло не так")
   return <div className="error-box" role="alert">{message}</div>
 }
 
@@ -86,7 +87,7 @@ export function Sheet({ open, title, onClose, children }: { open: boolean; title
       <div className="sheet__panel">
         <div className="sheet__head">
           <h2>{title}</h2>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="Закрыть">✕</button>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label={tr("Закрыть")}>✕</button>
         </div>
         <div className="sheet__body">{children}</div>
       </div>
@@ -97,7 +98,7 @@ export function Sheet({ open, title, onClose, children }: { open: boolean; title
 export function SubmitButton({ pending, children, danger }: { pending: boolean; children: ReactNode; danger?: boolean }) {
   return (
     <button type="submit" className={`btn btn--block ${danger ? 'btn--danger' : 'btn--primary'}`} disabled={pending}>
-      {pending ? 'Сохранение…' : children}
+      {pending ? tr("Сохранение…") : children}
     </button>
   )
 }
@@ -115,9 +116,9 @@ export function Stepper({ label, value, onChange, min = 0, max = 60 }: {
     <div className="stepper">
       <span className="stepper__label">{label}</span>
       <div className="stepper__ctrl">
-        <button type="button" aria-label={`${label}: меньше`} onClick={() => set(value - 1)} disabled={value <= min}>−</button>
+        <button type="button" aria-label={tr("{0}: меньше", label)} onClick={() => set(value - 1)} disabled={value <= min}>−</button>
         <output aria-label={label}>{value}</output>
-        <button type="button" aria-label={`${label}: больше`} onClick={() => set(value + 1)} disabled={value >= max}>+</button>
+        <button type="button" aria-label={tr("{0}: больше", label)} onClick={() => set(value + 1)} disabled={value >= max}>+</button>
       </div>
     </div>
   )

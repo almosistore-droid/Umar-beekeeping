@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
+import { tr } from '../i18n'
 
 export const LOGO_SRC = '/logo.webp'
 
-export function LoadingView({ text = 'Загрузка…' }: { text?: string }) {
+export function LoadingView({ text = tr("Загрузка…") }: { text?: string }) {
   return (
     <div className="state" role="status">
       <div className="spinner" aria-hidden />

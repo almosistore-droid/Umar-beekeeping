@@ -1,3 +1,5 @@
+import { tr } from '../i18n'
+
 export type UserRole = 'ADMIN' | 'BEEKEEPER' | 'ASSISTANT' | 'VIEWER'
 
 export interface User {
@@ -10,6 +12,7 @@ export interface User {
   role: UserRole
   is_active: boolean
   last_seen_at?: string | null
+  language?: 'ru' | 'tg' | null
   created_at: string
 }
 
@@ -145,10 +148,10 @@ export interface AuditEntry {
 }
 
 export const ROLE_LABELS: Record<UserRole, string> = {
-  ADMIN: 'Администратор',
-  BEEKEEPER: 'Пчеловод',
-  ASSISTANT: 'Помощник',
-  VIEWER: 'Наблюдатель',
+  ADMIN: tr("Администратор"),
+  BEEKEEPER: tr("Пчеловод"),
+  ASSISTANT: tr("Помощник"),
+  VIEWER: tr("Наблюдатель"),
 }
 
 // ---------- stage 3: health records ----------

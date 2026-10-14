@@ -6,14 +6,15 @@ import type { FamilyStrength, FoodLevel, Hive, InspectionHealth, QueenCondition,
 import { FOOD_LEVEL, INSPECTION_HEALTH, QUEEN_CONDITION, STRENGTH, addDaysIso, formatDate, todayIso } from '../../utils/labels'
 import { Choice, ErrorBox, Field, Stepper, SubmitButton } from '../ui'
 import { useHiveRecordMutation } from './useHiveRecordMutation'
+import { tr } from '../../i18n'
 
 const strengthOpts = (Object.keys(STRENGTH) as FamilyStrength[]).map((k) => ({ value: k, label: STRENGTH[k].label }))
 const foodOpts = (Object.keys(FOOD_LEVEL) as FoodLevel[]).map((k) => ({ value: k, label: FOOD_LEVEL[k] }))
 const healthOpts = (Object.keys(INSPECTION_HEALTH) as InspectionHealth[]).map((k) => ({ value: k, label: INSPECTION_HEALTH[k] }))
-const seenOpts = [{ value: true, label: 'Видна' }, { value: false, label: 'Не найдена' }]
-const eggOpts = [{ value: true, label: 'Есть' }, { value: false, label: 'Нет' }]
+const seenOpts = [{ value: true, label: tr("Видна") }, { value: false, label: tr("Не найдена") }]
+const eggOpts = [{ value: true, label: tr("Есть") }, { value: false, label: tr("Нет") }]
 const conditionOpts = (Object.keys(QUEEN_CONDITION) as QueenCondition[]).map((k) => ({ value: k, label: QUEEN_CONDITION[k] }))
-const yesNo = [{ value: true, label: 'Да' }, { value: false, label: 'Нет' }]
+const yesNo = [{ value: true, label: tr("Да") }, { value: false, label: tr("Нет") }]
 const NEXT = [3, 7, 14]
 
 /** Past days are stored at noon UTC so they stay on the same calendar day in any time zone. */
@@ -47,7 +48,7 @@ export function InspectionForm({ hive, onDone, doneActions }: { hive: Hive; onDo
     if (res.warnings.length || doneActions) setWarnings(res.warnings)
     else onDone()
   })
-  const markQueenless = useHiveRecordMutation(hive, () => hivesApi.update(hive.id, { status: 'QUEENLESS', comment: 'По результатам осмотра' }), onDone)
+  const markQueenless = useHiveRecordMutation(hive, () => hivesApi.update(hive.id, { status: 'QUEENLESS', comment: tr("По результатам осмотра") }), onDone)
 
   const set = (patch: Partial<InspectionInput>) => setF((s) => ({ ...s, ...patch }))
   const used = f.brood_frames + f.honey_frames + f.pollen_frames
@@ -57,16 +58,14 @@ export function InspectionForm({ hive, onDone, doneActions }: { hive: Hive; onDo
     const canMarkQueenless = warnings.some((w) => w.code === 'possible_queenless') && !hive.current_queen && hive.status !== 'QUEENLESS'
     return (
       <div className="form">
-        <div className="result-ok"><span className="result-ok__mark" aria-hidden>✓</span><b>Осмотр сохранён</b>
-          <span className="hint small">{day === todayIso() ? 'Сегодня' : formatDate(day)}, улей №{hive.hive_number}</span></div>
+        <div className="result-ok"><span className="result-ok__mark" aria-hidden>✓</span><b>{tr("Осмотр сохранён")}</b>
+          <span className="hint small">{day === todayIso() ? tr("Сегодня") : formatDate(day)}{tr(", улей №{0}", hive.hive_number)}</span></div>
         {warnings.map((w) => <div key={w.code} className="warn-box">{w.message}</div>)}
         <ErrorBox error={markQueenless.error} />
         {canMarkQueenless && (
-          <button type="button" className="btn btn--secondary btn--block" disabled={markQueenless.isPending} onClick={() => markQueenless.mutate(undefined)}>
-            Отметить «Без матки»
-          </button>
+          <button type="button" className="btn btn--secondary btn--block" disabled={markQueenless.isPending} onClick={() => markQueenless.mutate(undefined)}>{tr("Отметить «Без матки»")}</button>
         )}
-        {doneActions ?? <button type="button" className="btn btn--primary btn--block" onClick={onDone}>Готово</button>}
+        {doneActions ?? <button type="button" className="btn btn--primary btn--block" onClick={onDone}>{tr("Готово")}</button>}
       </div>
     )
   }
@@ -80,57 +79,57 @@ export function InspectionForm({ hive, onDone, doneActions }: { hive: Hive; onDo
   return (
     <form className="form" onSubmit={submit}>
       <ErrorBox error={save.error} />
-      <Choice label="Дата осмотра" value={day === todayIso() ? 'today' : day === addDaysIso(-1) ? 'yesterday' : null}
-        options={[{ value: 'today', label: 'Сегодня' }, { value: 'yesterday', label: 'Вчера' }]}
+      <Choice label={tr("Дата осмотра")} value={day === todayIso() ? 'today' : day === addDaysIso(-1) ? 'yesterday' : null}
+        options={[{ value: 'today', label: tr("Сегодня") }, { value: 'yesterday', label: tr("Вчера") }]}
         onChange={(v) => v && setDay(v === 'today' ? todayIso() : addDaysIso(-1))} />
-      {day !== todayIso() && day !== addDaysIso(-1) && <p className="hint small">Дата: {formatDate(day)}</p>}
-      <input className="input" type="date" aria-label="Другая дата осмотра" max={todayIso()} value={day}
+      {day !== todayIso() && day !== addDaysIso(-1) && <p className="hint small">{tr("Дата: {0}", formatDate(day))}</p>}
+      <input className="input" type="date" aria-label={tr("Другая дата осмотра")} max={todayIso()} value={day}
         onChange={(e) => e.target.value && setDay(e.target.value)} />
-      <Choice label="Сила семьи" options={strengthOpts} value={f.strength} onChange={(v) => v && set({ strength: v })} />
+      <Choice label={tr("Сила семьи")} options={strengthOpts} value={f.strength} onChange={(v) => v && set({ strength: v })} />
 
-      <span className="form-section-title">Рамки</span>
+      <span className="form-section-title">{tr("Рамки")}</span>
       <div className="frames-grid">
-        <Stepper label="Всего" value={f.frames_total} onChange={(v) => set({ frames_total: v })} />
-        <Stepper label="Расплод" value={f.brood_frames} onChange={(v) => set({ brood_frames: v })} />
-        <Stepper label="Мёд" value={f.honey_frames} onChange={(v) => set({ honey_frames: v })} />
-        <Stepper label="Перга" value={f.pollen_frames} onChange={(v) => set({ pollen_frames: v })} />
+        <Stepper label={tr("Всего")} value={f.frames_total} onChange={(v) => set({ frames_total: v })} />
+        <Stepper label={tr("Расплод")} value={f.brood_frames} onChange={(v) => set({ brood_frames: v })} />
+        <Stepper label={tr("Мёд")} value={f.honey_frames} onChange={(v) => set({ honey_frames: v })} />
+        <Stepper label={tr("Перга")} value={f.pollen_frames} onChange={(v) => set({ pollen_frames: v })} />
       </div>
       <p className={`frames-note${overflow ? ' is-bad' : ''}`} role={overflow ? 'alert' : undefined}>
-        {overflow ? `Занято ${used} из ${f.frames_total} — больше, чем всего рамок` : `Занято ${used} из ${f.frames_total}`}
+        {overflow ? tr("Занято {0} из {1} — больше, чем всего рамок", used, f.frames_total) : tr("Занято {0} из {1}", used, f.frames_total)}
       </p>
 
-      <span className="form-section-title">Матка</span>
-      <Choice label="Матка" options={seenOpts} value={f.queen_present}
+      <span className="form-section-title">{tr("Матка")}</span>
+      <Choice label={tr("Матка")} options={seenOpts} value={f.queen_present}
         onChange={(v) => set({ queen_present: v, queen_condition: v === false ? 'NOT_SEEN' : v ? f.queen_condition === 'NOT_SEEN' ? null : f.queen_condition : null })} allowNone />
       {f.queen_present && (
-        <Choice label="Состояние матки" options={conditionOpts.filter((o) => o.value !== 'NOT_SEEN')} value={f.queen_condition ?? null}
+        <Choice label={tr("Состояние матки")} options={conditionOpts.filter((o) => o.value !== 'NOT_SEEN')} value={f.queen_condition ?? null}
           onChange={(v) => set({ queen_condition: v })} allowNone />
       )}
-      <Choice label="Яйца" options={eggOpts} value={f.egg_laying} onChange={(v) => set({ egg_laying: v })} allowNone />
-      <Stepper label="Маточники" value={f.queen_cells} max={100} onChange={(v) => set({ queen_cells: v })} />
-      <Choice label="Признаки роения" options={yesNo} value={f.swarming_signs} onChange={(v) => v !== null && set({ swarming_signs: v })} />
+      <Choice label={tr("Яйца")} options={eggOpts} value={f.egg_laying} onChange={(v) => set({ egg_laying: v })} allowNone />
+      <Stepper label={tr("Маточники")} value={f.queen_cells} max={100} onChange={(v) => set({ queen_cells: v })} />
+      <Choice label={tr("Признаки роения")} options={yesNo} value={f.swarming_signs} onChange={(v) => v !== null && set({ swarming_signs: v })} />
 
-      <span className="form-section-title">Состояние</span>
-      <Choice label="Корм" options={foodOpts} value={f.food_level} onChange={(v) => set({ food_level: v })} allowNone />
-      <Choice label="Агрессивность (1 — спокойные)" value={f.aggressiveness === null ? null : String(f.aggressiveness)}
+      <span className="form-section-title">{tr("Состояние")}</span>
+      <Choice label={tr("Корм")} options={foodOpts} value={f.food_level} onChange={(v) => set({ food_level: v })} allowNone />
+      <Choice label={tr("Агрессивность (1 — спокойные)")} value={f.aggressiveness === null ? null : String(f.aggressiveness)}
         options={['1', '2', '3', '4', '5'].map((v) => ({ value: v, label: v }))}
         onChange={(v) => set({ aggressiveness: v === null ? null : Number(v) })} allowNone />
-      <Choice label="Здоровье" options={healthOpts} value={f.health_status} onChange={(v) => v && set({ health_status: v })} />
+      <Choice label={tr("Здоровье")} options={healthOpts} value={f.health_status} onChange={(v) => v && set({ health_status: v })} />
 
-      <span className="form-section-title">Следующий осмотр</span>
+      <span className="form-section-title">{tr("Следующий осмотр")}</span>
       <div className="pills">
         {NEXT.map((d) => (
           <button key={d} type="button" className={`pill${f.next_inspection_at === addDaysIso(d) ? ' is-active' : ''}`}
-            onClick={() => set({ next_inspection_at: addDaysIso(d) })}>через {d} дн.</button>
+            onClick={() => set({ next_inspection_at: addDaysIso(d) })}>{tr("через {0} дн.", d)}</button>
         ))}
       </div>
-      <input className="input" type="date" aria-label="Дата следующего осмотра" min={todayIso()}
+      <input className="input" type="date" aria-label={tr("Дата следующего осмотра")} min={todayIso()}
         value={f.next_inspection_at ?? ''} onChange={(e) => set({ next_inspection_at: e.target.value || null })} />
 
-      <Field label="Заметки" hint="Можно не заполнять">
+      <Field label={tr("Заметки")} hint={tr("Можно не заполнять")}>
         <textarea className="input" rows={2} value={f.notes ?? ''} onChange={(e) => set({ notes: e.target.value || null })} maxLength={5000} />
       </Field>
-      <div className="submit-bar"><SubmitButton pending={save.isPending}>Сохранить осмотр</SubmitButton></div>
+      <div className="submit-bar"><SubmitButton pending={save.isPending}>{tr("Сохранить осмотр")}</SubmitButton></div>
     </form>
   )
 }

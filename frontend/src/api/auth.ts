@@ -8,4 +8,6 @@ export const authApi = {
       body: JSON.stringify({ init_data: initData }),
     }),
   me: () => api<User>('/api/auth/me'),
+  setLanguage: (language: 'ru' | 'tg') =>
+    api<User>('/api/auth/me/language', { method: 'PUT', body: JSON.stringify({ language }) }),
 }

@@ -7,6 +7,7 @@ import { LoadingView } from '../components/StateViews'
 import { Choice, ErrorBox, Stepper } from '../components/ui'
 import { usePermissions } from '../hooks/usePermissions'
 import { plural } from '../utils/plural'
+import { tr } from '../i18n'
 
 /** Ещё → QR-наклейки: an A4 sheet for a whole apiary, plus blank labels for future hives. */
 export function QrLabelsPage() {
@@ -27,27 +28,25 @@ export function QrLabelsPage() {
   if (apiaries.isLoading) return <LoadingView />
   return (
     <div className="page">
-      <h1 className="page__title">QR-наклейки</h1>
+      <h1 className="page__title">{tr("QR-наклейки")}</h1>
       <ErrorBox error={apiaries.error ?? hives.error} />
       {status.data && !status.data.deep_link_ready && <DeepLinkWarning />}
       <section className="card form">
         {(apiaries.data?.length ?? 0) > 1 && (
-          <Choice label="Пасека" options={(apiaries.data ?? []).map((a) => ({ value: a.id, label: a.name }))}
+          <Choice label={tr("Пасека")} options={(apiaries.data ?? []).map((a) => ({ value: a.id, label: a.name }))}
             value={apiaryId} onChange={(v) => v && setPicked(v)} />
         )}
         <p className="hint">
-          {hives.isLoading ? 'Считаем ульи…' : `${count} ${plural(count, 'улей', 'улья', 'ульев')} — по одной наклейке на каждый, по номерам.`}
+          {hives.isLoading ? tr("Считаем ульи…") : tr("{0} {1} — по одной наклейке на каждый, по номерам.", count, plural(count, tr("улей"), tr("улья"), tr("ульев")))}
         </p>
-        <Stepper label="Пустые наклейки для новых ульев" value={blank} onChange={setBlank} max={60} />
-        <p className="hint small">
-          Пустую наклейку можно приклеить заранее: при первом сканировании приложение предложит зарегистрировать улей.
-        </p>
+        <Stepper label={tr("Пустые наклейки для новых ульев")} value={blank} onChange={setBlank} max={60} />
+        <p className="hint small">{tr("Пустую наклейку можно приклеить заранее: при первом сканировании приложение предложит зарегистрировать улей.")}</p>
       </section>
       <section className="card form">
-        <h2 className="card__title">{total} {plural(total, 'наклейка', 'наклейки', 'наклеек')}, 12 на листе A4</h2>
+        <h2 className="card__title">{tr("{0} {1}, 12 на листе A4", total, plural(total, tr("наклейка"), tr("наклейки"), tr("наклеек")))}</h2>
         {canWrite
           ? <LabelsActions request={{ apiary_id: count ? apiaryId : null, blank_count: blank }} disabled={!total} />
-          : <p className="hint">Печать доступна пчеловоду и помощнику.</p>}
+          : <p className="hint">{tr("Печать доступна пчеловоду и помощнику.")}</p>}
       </section>
     </div>
   )

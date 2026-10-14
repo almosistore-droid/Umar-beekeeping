@@ -10,6 +10,7 @@ import { Badge, Chips, ErrorBox, InfoRow, Sheet } from '../../components/ui'
 import { haptic } from '../../services/telegram'
 import type { OrderStatus } from '../../types/api'
 import { FEED_UNIT, ORDER_STATUS, SALE_CATEGORY, SALE_STATE, formatDate, money, num } from '../../utils/labels'
+import { tr } from '../../i18n'
 
 type Filter = 'open' | 'DELIVERED' | 'CANCELLED'
 
@@ -25,16 +26,16 @@ export function OrdersPage() {
   return (
     <div className="page">
       <div className="page__titlebar">
-        <h1 className="page__title">Заказы</h1>
-        <button className="btn btn--primary btn--sm" onClick={() => setOpen(true)}>＋ Заказ</button>
+        <h1 className="page__title">{tr("Заказы")}</h1>
+        <button className="btn btn--primary btn--sm" onClick={() => setOpen(true)}>{tr("＋ Заказ")}</button>
       </div>
-      <Chips options={[{ value: 'open', label: 'Открытые' }, { value: 'DELIVERED', label: 'Выданные' }, { value: 'CANCELLED', label: 'Отменённые' }]}
+      <Chips options={[{ value: 'open', label: tr("Открытые") }, { value: 'DELIVERED', label: tr("Выданные") }, { value: 'CANCELLED', label: tr("Отменённые") }]}
         value={filter} onChange={setFilter} />
       <ErrorBox error={orders.error} />
       {orders.isLoading ? <LoadingView /> : !orders.data?.length ? (
-        <MessageView icon="box" title={filter === 'open' ? 'Открытых заказов нет' : 'Заказов нет'} />
+        <MessageView icon="box" title={filter === 'open' ? tr("Открытых заказов нет") : tr("Заказов нет")} />
       ) : <section className="card card--list">{orders.data.map((o) => <OrderRow key={o.id} o={o} currency={currency} />)}</section>}
-      <Sheet open={open} title="Новый заказ" onClose={() => setOpen(false)}>
+      <Sheet open={open} title={tr("Новый заказ")} onClose={() => setOpen(false)}>
         {open && <OrderForm onDone={(o) => { setOpen(false); navigate(`/crm/orders/${o.id}`) }} />}
       </Sheet>
     </div>
@@ -63,16 +64,16 @@ export function OrderDetailsPage() {
     <div className="page">
       <header className="page__titlebar">
         <div>
-          <h1 className="page__title">Заказ</h1>
-          <p className="hint">от {formatDate(o.order_date)}{o.due_date ? ` · отдать ${formatDate(o.due_date)}` : ''}</p>
+          <h1 className="page__title">{tr("Заказ")}</h1>
+          <p className="hint">{tr("от {0}", formatDate(o.order_date))}{o.due_date ? tr(" · отдать {0}", formatDate(o.due_date)) : ''}</p>
         </div>
         <Badge tone={ORDER_STATUS[o.status].tone}>{ORDER_STATUS[o.status].label}</Badge>
       </header>
-      {o.overdue && <p className="warn-box">Срок выдачи прошёл</p>}
-      {o.status === 'CANCELLED' && <p className="warn-box">Отменён: {o.cancel_reason}</p>}
+      {o.overdue && <p className="warn-box">{tr("Срок выдачи прошёл")}</p>}
+      {o.status === 'CANCELLED' && <p className="warn-box">{tr("Отменён: {0}", o.cancel_reason)}</p>}
 
       {o.status !== 'CANCELLED' && (
-        <ol className="steps" aria-label="Статус заказа">
+        <ol className="steps" aria-label={tr("Статус заказа")}>
           {STEPS.map((st, i) => (
             <li key={st} className={STEPS.indexOf(o.status) >= i ? 'is-done' : ''}>{ORDER_STATUS[st].label}</li>
           ))}
@@ -80,40 +81,40 @@ export function OrderDetailsPage() {
       )}
 
       <section className="card">
-        <InfoRow label="Клиент"><Link className="link" to={`/crm/customers/${o.customer.id}`}>{o.customer.name}</Link></InfoRow>
-        {o.customer.phone && <InfoRow label="Телефон"><a className="link" href={`tel:${o.customer.phone}`}><Icon name="phone" size={14} /> {o.customer.phone}</a></InfoRow>}
+        <InfoRow label={tr("Клиент")}><Link className="link" to={`/crm/customers/${o.customer.id}`}>{o.customer.name}</Link></InfoRow>
+        {o.customer.phone && <InfoRow label={tr("Телефон")}><a className="link" href={`tel:${o.customer.phone}`}><Icon name="phone" size={14} /> {o.customer.phone}</a></InfoRow>}
         {o.items.map((i) => (
           <InfoRow key={i.id} label={`${SALE_CATEGORY[i.category]}, ${num(i.quantity)} ${FEED_UNIT[i.unit]} × ${num(i.price_per_unit)}`}>{money(i.total, currency)}</InfoRow>
         ))}
-        <InfoRow label="Итого"><b>{money(o.total, currency)}</b></InfoRow>
+        <InfoRow label={tr("Итого")}><b>{money(o.total, currency)}</b></InfoRow>
         {o.notes && <p className="notes">{o.notes}</p>}
       </section>
 
       {o.sale_id && o.sale_state && (
         <section className="card">
-          <InfoRow label="Продажа"><Link className="link" to={`/crm/sales/${o.sale_id}`}>{SALE_STATE[o.sale_state].label}</Link></InfoRow>
-          {o.sale_debt && Number(o.sale_debt) > 0 && <InfoRow label="Долг"><span className="warn">{money(o.sale_debt, currency)}</span></InfoRow>}
+          <InfoRow label={tr("Продажа")}><Link className="link" to={`/crm/sales/${o.sale_id}`}>{SALE_STATE[o.sale_state].label}</Link></InfoRow>
+          {o.sale_debt && Number(o.sale_debt) > 0 && <InfoRow label={tr("Долг")}><span className="warn">{money(o.sale_debt, currency)}</span></InfoRow>}
         </section>
       )}
 
       <ErrorBox error={ready.error} />
       {isOpen && <>
-        <button type="button" className="btn btn--primary btn--block" onClick={() => setSheet('deliver')}><Icon name="cart" size={18} />Выдать заказ</button>
+        <button type="button" className="btn btn--primary btn--block" onClick={() => setSheet('deliver')}><Icon name="cart" size={18} />{tr("Выдать заказ")}</button>
         <div className="btn-row">
-          {o.status === 'NEW' && <button type="button" className="btn btn--secondary" disabled={ready.isPending} onClick={() => ready.mutate()}>Собран</button>}
-          <button type="button" className="btn btn--secondary" onClick={() => setSheet('edit')}>Изменить</button>
+          {o.status === 'NEW' && <button type="button" className="btn btn--secondary" disabled={ready.isPending} onClick={() => ready.mutate()}>{tr("Собран")}</button>}
+          <button type="button" className="btn btn--secondary" onClick={() => setSheet('edit')}>{tr("Изменить")}</button>
         </div>
       </>}
       {o.status !== 'CANCELLED' && (!o.sale_id || o.sale_state === 'unpaid') && (
-        <button type="button" className="btn btn--ghost btn--block" onClick={() => setSheet('cancel')}>Отменить заказ</button>
+        <button type="button" className="btn btn--ghost btn--block" onClick={() => setSheet('cancel')}>{tr("Отменить заказ")}</button>
       )}
 
-      <Sheet open={sheet === 'edit'} title="Изменить заказ" onClose={close}>{sheet === 'edit' && <OrderForm order={o} onDone={close} />}</Sheet>
-      <Sheet open={sheet === 'deliver'} title="Выдать заказ" onClose={close}>
+      <Sheet open={sheet === 'edit'} title={tr("Изменить заказ")} onClose={close}>{sheet === 'edit' && <OrderForm order={o} onDone={close} />}</Sheet>
+      <Sheet open={sheet === 'deliver'} title={tr("Выдать заказ")} onClose={close}>
         {sheet === 'deliver' && <DeliverForm order={o} onDone={(s) => { close(); navigate(`/crm/sales/${s.id}`) }} />}
       </Sheet>
-      <Sheet open={sheet === 'cancel'} title="Отменить заказ" onClose={close}>
-        {sheet === 'cancel' && <CancelForm what="Заказ" cancel={(r) => crmApi.cancelOrder(o.id, r)} onDone={close} />}
+      <Sheet open={sheet === 'cancel'} title={tr("Отменить заказ")} onClose={close}>
+        {sheet === 'cancel' && <CancelForm what={tr("Заказ")} cancel={(r) => crmApi.cancelOrder(o.id, r)} onDone={close} />}
       </Sheet>
     </div>
   )

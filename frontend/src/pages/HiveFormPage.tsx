@@ -7,6 +7,7 @@ import { LoadingView } from '../components/StateViews'
 import { haptic } from '../services/telegram'
 import type { FamilyOrigin, FamilyStrength, HiveStatus, HiveType } from '../types/api'
 import { EDITABLE_HIVE_STATUSES, FAMILY_ORIGIN, HIVE_STATUS, HIVE_TYPE, STRENGTH, todayIso } from '../utils/labels'
+import { tr } from '../i18n'
 
 const opts = <T extends string>(rec: Record<T, string>) => (Object.keys(rec) as T[]).map((k) => ({ value: k, label: rec[k] }))
 const strengthOpts = (Object.keys(STRENGTH) as FamilyStrength[]).map((k) => ({ value: k, label: STRENGTH[k].label }))
@@ -62,22 +63,22 @@ function CreateHive() {
 
   return (
     <form className="page form" onSubmit={submit}>
-      <h1 className="page__title">Новый улей</h1>
+      <h1 className="page__title">{tr("Новый улей")}</h1>
       {qrId && (
-        <p className="ok-box">Улей будет привязан к отсканированному QR-коду — наклейка на нём сразу начнёт открывать этот улей.</p>
+        <p className="ok-box">{tr("Улей будет привязан к отсканированному QR-коду — наклейка на нём сразу начнёт открывать этот улей.")}</p>
       )}
       <ErrorBox error={create.error} />
       <section className="card">
-        <Field label="Пасека" error={fieldError(create.error, 'apiary_id')}>
+        <Field label={tr("Пасека")} error={fieldError(create.error, 'apiary_id')}>
           <Select value={apiaryId} onChange={setApiaryId} options={(apiaries.data ?? []).map((a) => ({ value: a.id, label: a.name }))} />
         </Field>
-        <Field label="Номер улья" error={fieldError(create.error, 'hive_number')} hint="Например 27 или А-12">
+        <Field label={tr("Номер улья")} error={fieldError(create.error, 'hive_number')} hint={tr("Например 27 или А-12")}>
           <input className="input" inputMode="text" value={number} onChange={(e) => setNumber(e.target.value)} required maxLength={20} autoFocus />
         </Field>
-        <Field label="Тип улья">
+        <Field label={tr("Тип улья")}>
           <Select value={type} onChange={setType} options={opts(HIVE_TYPE)} />
         </Field>
-        <Field label="Дата установки" error={fieldError(create.error, 'installation_date')}>
+        <Field label={tr("Дата установки")} error={fieldError(create.error, 'installation_date')}>
           <input className="input" type="date" value={installDate} max={todayIso()} onChange={(e) => setInstallDate(e.target.value)} />
         </Field>
       </section>
@@ -85,27 +86,27 @@ function CreateHive() {
       <section className="card">
         <label className="switch">
           <input type="checkbox" checked={populated} onChange={(e) => setPopulated(e.target.checked)} />
-          <span>В улье живёт семья</span>
+          <span>{tr("В улье живёт семья")}</span>
         </label>
         {populated && <>
-          <Field label="Сила семьи"><Select value={strength} onChange={setStrength} options={strengthOpts} /></Field>
-          <Field label="Происхождение"><Select value={origin} onChange={setOrigin} options={opts(FAMILY_ORIGIN)} /></Field>
-          <Field label="Дата заселения" error={fieldError(create.error, 'start_date')}>
+          <Field label={tr("Сила семьи")}><Select value={strength} onChange={setStrength} options={strengthOpts} /></Field>
+          <Field label={tr("Происхождение")}><Select value={origin} onChange={setOrigin} options={opts(FAMILY_ORIGIN)} /></Field>
+          <Field label={tr("Дата заселения")} error={fieldError(create.error, 'start_date')}>
             <input className="input" type="date" value={startDate} max={todayIso()} onChange={(e) => setStartDate(e.target.value)} />
           </Field>
-          <Field label="Матка" hint={freeQueens.data?.items.length ? 'Свободные матки из реестра' : 'Свободных маток нет — можно добавить позже'}>
-            <Select value={queenId} onChange={setQueenId} placeholder="— не указывать —"
+          <Field label={tr("Матка")} hint={freeQueens.data?.items.length ? tr("Свободные матки из реестра") : tr("Свободных маток нет — можно добавить позже")}>
+            <Select value={queenId} onChange={setQueenId} placeholder={tr("— не указывать —")}
               options={(freeQueens.data?.items ?? []).map((q) => ({ value: q.id, label: `${q.queen_code}${q.age_label ? ` · ${q.age_label}` : ''}` }))} />
           </Field>
         </>}
       </section>
 
       <section className="card">
-        <Field label="Заметки">
+        <Field label={tr("Заметки")}>
           <textarea className="input" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={5000} />
         </Field>
       </section>
-      <div className="submit-bar"><SubmitButton pending={create.isPending}>Создать улей</SubmitButton></div>
+      <div className="submit-bar"><SubmitButton pending={create.isPending}>{tr("Создать улей")}</SubmitButton></div>
     </form>
   )
 }
@@ -152,29 +153,29 @@ function EditHive({ id }: { id: string }) {
 
   return (
     <form className="page form" onSubmit={(e) => { e.preventDefault(); save.mutate() }}>
-      <h1 className="page__title">Улей №{hive.data?.hive_number}</h1>
+      <h1 className="page__title">{tr("Улей №{0}", hive.data?.hive_number)}</h1>
       <ErrorBox error={save.error} />
       <section className="card">
-        <Field label="Номер улья" error={fieldError(save.error, 'hive_number')} hint="QR-код не изменится">
+        <Field label={tr("Номер улья")} error={fieldError(save.error, 'hive_number')} hint={tr("QR-код не изменится")}>
           <input className="input" value={form.number} onChange={(e) => set({ number: e.target.value })} required maxLength={20} />
         </Field>
-        <Field label="Тип улья"><Select value={form.type} onChange={(v) => set({ type: v })} options={opts(HIVE_TYPE)} /></Field>
-        <Field label="Статус">
+        <Field label={tr("Тип улья")}><Select value={form.type} onChange={(v) => set({ type: v })} options={opts(HIVE_TYPE)} /></Field>
+        <Field label={tr("Статус")}>
           <Select value={form.status} onChange={(v) => set({ status: v })}
             options={EDITABLE_HIVE_STATUSES.map((s) => ({ value: s, label: HIVE_STATUS[s].label }))} />
         </Field>
-        {archiving && <div className="warn-box">Улей уйдёт в архив. Семья и матка будут отмечены как {form.status === 'SOLD' ? 'проданные' : 'погибшие'}. История сохранится.</div>}
-        <Field label="Дата установки">
+        {archiving && <div className="warn-box">{tr("Улей уйдёт в архив. Семья и матка будут отмечены как")}{" "}{form.status === 'SOLD' ? tr("проданные") : tr("погибшие")}{tr(". История сохранится.")}</div>}
+        <Field label={tr("Дата установки")}>
           <input className="input" type="date" value={form.installation} max={todayIso()} onChange={(e) => set({ installation: e.target.value })} />
         </Field>
-        <Field label="Заметки">
+        <Field label={tr("Заметки")}>
           <textarea className="input" rows={3} value={form.notes} onChange={(e) => set({ notes: e.target.value })} />
         </Field>
-        <Field label="Комментарий к изменению" hint="Попадёт в историю улья">
+        <Field label={tr("Комментарий к изменению")} hint={tr("Попадёт в историю улья")}>
           <input className="input" value={form.comment} onChange={(e) => set({ comment: e.target.value })} maxLength={1000} />
         </Field>
       </section>
-      <div className="submit-bar"><SubmitButton pending={save.isPending} danger={archiving}>Сохранить</SubmitButton></div>
+      <div className="submit-bar"><SubmitButton pending={save.isPending} danger={archiving}>{tr("Сохранить")}</SubmitButton></div>
     </form>
   )
 }

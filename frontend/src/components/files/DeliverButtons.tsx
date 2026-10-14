@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { haptic, isInsideTelegram } from '../../services/telegram'
 import { Icon } from '../Icon'
 import { ErrorBox } from '../ui'
+import { tr } from '../../i18n'
 
 export function saveBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
@@ -38,13 +39,13 @@ export function DeliverButtons<S>({ fileLabel, send, download, sentNote, onDone,
   const sendBtn = (
     <button key="send" type="button" className={`btn ${inTelegram ? 'btn--primary' : 'btn--secondary'}`} disabled={disabled || pending}
       onClick={() => { dlM.reset(); sendM.mutate() }}>
-      <Icon name="send" size={18} />{sendM.isPending ? 'Отправляем…' : `Отправить ${fileLabel} в чат`}
+      <Icon name="send" size={18} />{sendM.isPending ? tr("Отправляем…") : tr("Отправить {0} в чат", fileLabel)}
     </button>
   )
   const downloadBtn = (
     <button key="download" type="button" className={`btn ${inTelegram ? 'btn--secondary' : 'btn--primary'}`} disabled={disabled || pending}
       onClick={() => { sendM.reset(); dlM.mutate() }}>
-      <Icon name="download" size={18} />{dlM.isPending ? 'Готовим…' : `Скачать ${fileLabel}`}
+      <Icon name="download" size={18} />{dlM.isPending ? tr("Готовим…") : tr("Скачать {0}", fileLabel)}
     </button>
   )
   return (

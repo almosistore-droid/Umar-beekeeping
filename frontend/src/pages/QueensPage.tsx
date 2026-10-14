@@ -7,13 +7,14 @@ import { Badge, Chips, ErrorBox, Fab } from '../components/ui'
 import { LoadingView, MessageView } from '../components/StateViews'
 import { usePermissions } from '../hooks/usePermissions'
 import { MARKING, QUEEN_STATUS, REMOVED_QUEEN_STATUSES } from '../utils/labels'
+import { tr } from '../i18n'
 
 type Filter = 'all' | 'in_hive' | 'free' | 'removed'
 const FILTERS: { value: Filter; label: string; params: QueenFilters }[] = [
-  { value: 'all', label: 'Работают', params: {} },
-  { value: 'in_hive', label: 'В ульях', params: { in_hive: true } },
-  { value: 'free', label: 'Свободные', params: { in_hive: false } },
-  { value: 'removed', label: 'Выбывшие', params: { status: REMOVED_QUEEN_STATUSES } },
+  { value: 'all', label: tr("Работают"), params: {} },
+  { value: 'in_hive', label: tr("В ульях"), params: { in_hive: true } },
+  { value: 'free', label: tr("Свободные"), params: { in_hive: false } },
+  { value: 'removed', label: tr("Выбывшие"), params: { status: REMOVED_QUEEN_STATUSES } },
 ]
 
 export function QueensPage() {
@@ -26,14 +27,14 @@ export function QueensPage() {
   return (
     <div className="page">
       <div className="page__titlebar">
-        <h1 className="page__title">Матки</h1>
+        <h1 className="page__title">{tr("Матки")}</h1>
         {queens.data && <span className="hint">{queens.data.total}</span>}
       </div>
-      <input className="input input--search" type="search" placeholder="Код или порода" value={q} onChange={(e) => setQ(e.target.value)} />
+      <input className="input input--search" type="search" placeholder={tr("Код или порода")} value={q} onChange={(e) => setQ(e.target.value)} />
       <Chips options={FILTERS} value={filter} onChange={setFilter} />
       <ErrorBox error={queens.error} />
       {queens.isLoading ? <LoadingView /> : queens.data?.items.length === 0 ? (
-        <MessageView icon="crown" title="Маток не найдено" />
+        <MessageView icon="crown" title={tr("Маток не найдено")} />
       ) : (
         <ul className="list">
           {queens.data?.items.map((m) => (
@@ -49,7 +50,7 @@ export function QueensPage() {
                     <Badge tone={QUEEN_STATUS[m.status].tone}>{QUEEN_STATUS[m.status].label}</Badge>
                   </div>
                   <div className="small">{[m.breed, m.age_label].filter(Boolean).join(' · ') || '—'}</div>
-                  <div className="small hint">{m.current_hive ? `Улей №${m.current_hive.hive_number} · ${m.current_hive.apiary_name}` : 'Не в улье'}</div>
+                  <div className="small hint">{m.current_hive ? tr("Улей №{0} · {1}", m.current_hive.hive_number, m.current_hive.apiary_name) : tr("Не в улье")}</div>
                 </div>
                 <span className="chevron" aria-hidden>›</span>
               </Link>
@@ -57,7 +58,7 @@ export function QueensPage() {
           ))}
         </ul>
       )}
-      {canManage && <Fab to="/queens/new" label="Матка" />}
+      {canManage && <Fab to="/queens/new" label={tr("Матка")} />}
     </div>
   )
 }

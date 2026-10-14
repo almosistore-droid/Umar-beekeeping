@@ -7,6 +7,7 @@ import { LoadingView, MessageView } from '../../components/StateViews'
 import { ErrorBox, Select } from '../../components/ui'
 import { usePermissions } from '../../hooks/usePermissions'
 import { ENTITY_LABEL, describeLogEntry, formatDateTime, logDetail } from '../../utils/labels'
+import { tr } from '../../i18n'
 
 const PAGE = 50
 
@@ -23,21 +24,21 @@ export function AuditLogPage() {
     getNextPageParam: (last) => last.next_offset ?? undefined,
     enabled: isAdmin,
   })
-  if (!isAdmin) return <MessageView icon="shield" title="Только для администратора" />
+  if (!isAdmin) return <MessageView icon="shield" title={tr("Только для администратора")} />
   const items = log.data?.pages.flatMap((p) => p.items) ?? []
   const types = log.data?.pages[0]?.entity_types ?? []
 
   return (
     <div className="page">
-      <h1 className="page__title">Журнал действий</h1>
+      <h1 className="page__title">{tr("Журнал действий")}</h1>
       <div className="filter-row">
-        <Select value={userId} onChange={setUserId} placeholder="Все пользователи"
+        <Select value={userId} onChange={setUserId} placeholder={tr("Все пользователи")}
           options={(users.data ?? []).map((u) => ({ value: u.id, label: u.display_name }))} />
-        <Select value={entity} onChange={setEntity} placeholder="Все разделы"
+        <Select value={entity} onChange={setEntity} placeholder={tr("Все разделы")}
           options={types.map((t) => ({ value: t, label: ENTITY_LABEL[t] ?? t }))} />
       </div>
       <ErrorBox error={log.error} />
-      {log.isLoading ? <LoadingView /> : !items.length ? <MessageView icon="log" title="Записей нет" /> : (
+      {log.isLoading ? <LoadingView /> : !items.length ? <MessageView icon="log" title={tr("Записей нет")} /> : (
         <section className="card">
           {items.map((e) => (
             <div key={e.id} className="log-row">
@@ -47,8 +48,8 @@ export function AuditLogPage() {
                 {!e.hive_id && logDetail(e) && <div className="small">{logDetail(e)}</div>}
                 {e.comment && <div className="small hint">«{e.comment}»</div>}
                 <div className="log-row__meta">
-                  {formatDateTime(e.created_at)} · {e.user_name ?? 'система'} · {e.hive_id && e.hive_number
-                    ? <Link className="link" to={`/hives/${e.hive_id}`}>улей №{e.hive_number}</Link>
+                  {formatDateTime(e.created_at)} · {e.user_name ?? tr("система")} · {e.hive_id && e.hive_number
+                    ? <Link className="link" to={`/hives/${e.hive_id}`}>{tr("улей №{0}", e.hive_number)}</Link>
                     : ENTITY_LABEL[e.entity_type] ?? e.entity_type}
                 </div>
               </div>
@@ -58,7 +59,7 @@ export function AuditLogPage() {
       )}
       {log.hasNextPage && (
         <button type="button" className="btn btn--secondary btn--block" disabled={log.isFetchingNextPage} onClick={() => log.fetchNextPage()}>
-          {log.isFetchingNextPage ? 'Загружаем…' : 'Показать ещё'}
+          {log.isFetchingNextPage ? tr("Загружаем…") : tr("Показать ещё")}
         </button>
       )}
     </div>

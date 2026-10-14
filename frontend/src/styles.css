@@ -33,7 +33,8 @@
   --radius: 18px;
   --nav-h: 68px;
   --font-display: 'Forum', 'Times New Roman', serif;
-  --font-body: 'Manrope Variable', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Onest only fills the Tajik letters (ӣ ӯ ҳ қ ғ ҷ) that Manrope lacks; Russian stays in Manrope */
+  --font-body: 'Manrope Variable', 'Onest Variable', -apple-system, 'Segoe UI', Roboto, sans-serif;
   color-scheme: dark;
 }
 

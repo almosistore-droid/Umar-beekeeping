@@ -5,6 +5,7 @@ import { CASE_STATUS, FOOD_LEVEL, INSPECTION_HEALTH, SEVERITY, STRENGTH, describ
 import { Icon, type IconName } from '../Icon'
 import { Badge, ErrorBox } from '../ui'
 import { useHiveRecordMutation } from './useHiveRecordMutation'
+import { tr } from '../../i18n'
 
 /** Open disease cases with a one-tap «Вылечено». Hidden when there are none. */
 export function OpenCasesCard({ hive, canWrite }: { hive: Hive; canWrite: boolean }) {
@@ -14,18 +15,18 @@ export function OpenCasesCard({ hive, canWrite }: { hive: Hive; canWrite: boolea
   if (!open.length) return null
   return (
     <section className="card">
-      <h2 className="card__title">Болезни</h2>
+      <h2 className="card__title">{tr("Болезни")}</h2>
       <ErrorBox error={resolve.error} />
       {open.map((c) => (
         <div key={c.id} className="case-row">
           <div>
             <b>{c.disease.name}</b>
-            <div className="small hint">с {formatDate(c.detected_at)}, {SEVERITY[c.severity].toLowerCase()}</div>
+            <div className="small hint">{tr("с {0}, {1}", formatDate(c.detected_at), SEVERITY[c.severity].toLowerCase())}</div>
           </div>
           <Badge tone={CASE_STATUS[c.status].tone}>{CASE_STATUS[c.status].label}</Badge>
           {canWrite && (
             <button type="button" className="btn btn--secondary btn--sm" disabled={resolve.isPending}
-              onClick={() => resolve.mutate(c.id)}>Вылечено</button>
+              onClick={() => resolve.mutate(c.id)}>{tr("Вылечено")}</button>
           )}
         </div>
       ))}
@@ -41,16 +42,16 @@ export function RemindersCard({ hive, canWrite }: { hive: Hive; canWrite: boolea
   const today = todayIso()
   return (
     <section className="card">
-      <h2 className="card__title">Напоминания</h2>
+      <h2 className="card__title">{tr("Напоминания")}</h2>
       {tasks.data.map((t) => (
         <div key={t.id} className="reminder">
           <div className="reminder__body">
             <div>{t.title}</div>
             <div className={`reminder__due${t.due_date < today ? ' is-overdue' : ''}`}>
-              {t.due_date < today ? 'Просрочено: ' : t.due_date === today ? 'Сегодня: ' : 'К '}{formatDate(t.due_date)}
+              {t.due_date < today ? tr("Просрочено: ") : t.due_date === today ? tr("Сегодня: ") : tr("К ")}{formatDate(t.due_date)}
             </div>
           </div>
-          {canWrite && <button type="button" className="btn btn--ghost btn--sm" onClick={() => done.mutate(t.id)}>Готово</button>}
+          {canWrite && <button type="button" className="btn btn--ghost btn--sm" onClick={() => done.mutate(t.id)}>{tr("Готово")}</button>}
         </div>
       ))}
     </section>
@@ -64,9 +65,9 @@ const KIND_ICON: Record<TimelineItem['kind'], IconName> = {
 /** Unified hive timeline: records of stage 3 plus history events. */
 export function Timeline({ hiveId }: { hiveId: string }) {
   const q = useQuery({ queryKey: ['hive-timeline', hiveId], queryFn: () => healthApi.timeline(hiveId) })
-  if (q.isLoading) return <p className="hint">Загрузка…</p>
+  if (q.isLoading) return <p className="hint">{tr("Загрузка…")}</p>
   if (q.error) return <ErrorBox error={q.error} />
-  if (!q.data?.length) return <p className="hint">Записей пока нет. Начните с осмотра.</p>
+  if (!q.data?.length) return <p className="hint">{tr("Записей пока нет. Начните с осмотра.")}</p>
   return (
     <ol className="timeline">
       {q.data.map((item, i) => {
@@ -99,14 +100,14 @@ export function Timeline({ hiveId }: { hiveId: string }) {
 }
 
 function inspectionSummary(i: Inspection): string[] {
-  const out = [`Сила: ${STRENGTH[i.strength].label.toLowerCase()}`,
-    `Рамки ${i.frames_total}: расплод ${i.brood_frames}, мёд ${i.honey_frames}, перга ${i.pollen_frames}`]
-  const queen = i.queen_present === null ? null : i.queen_present ? 'матка видна' : 'матка не найдена'
-  const eggs = i.egg_laying === null ? null : i.egg_laying ? 'яйца есть' : 'яиц нет'
+  const out = [tr("Сила: {0}", STRENGTH[i.strength].label.toLowerCase()),
+    tr("Рамки {0}: расплод {1}, мёд {2}, перга {3}", i.frames_total, i.brood_frames, i.honey_frames, i.pollen_frames)]
+  const queen = i.queen_present === null ? null : i.queen_present ? tr("матка видна") : tr("матка не найдена")
+  const eggs = i.egg_laying === null ? null : i.egg_laying ? tr("яйца есть") : tr("яиц нет")
   if (queen || eggs) out.push([queen, eggs].filter(Boolean).join(', '))
-  if (i.swarming_signs || i.queen_cells) out.push(`Роение: ${i.swarming_signs ? 'есть признаки' : 'нет'}, маточников ${i.queen_cells}`)
-  if (i.food_level) out.push(`Корм: ${FOOD_LEVEL[i.food_level].toLowerCase()}`)
-  out.push(`Здоровье: ${INSPECTION_HEALTH[i.health_status].toLowerCase()}`)
+  if (i.swarming_signs || i.queen_cells) out.push(tr("Роение: {0}, маточников {1}", i.swarming_signs ? tr("есть признаки") : tr("нет"), i.queen_cells))
+  if (i.food_level) out.push(tr("Корм: {0}", FOOD_LEVEL[i.food_level].toLowerCase()))
+  out.push(tr("Здоровье: {0}", INSPECTION_HEALTH[i.health_status].toLowerCase()))
   if (i.notes) out.push(i.notes)
   return out
 }
@@ -115,15 +116,15 @@ function inspectionSummary(i: Inspection): string[] {
 export function InspectionList({ hiveId }: { hiveId: string }) {
   const q = useQuery({ queryKey: ['hive-inspections', hiveId], queryFn: () => healthApi.inspections(hiveId) })
   if (q.error) return <ErrorBox error={q.error} />
-  if (!q.data) return <p className="hint">Загрузка…</p>
-  if (!q.data.length) return <p className="hint">Осмотров ещё не было</p>
+  if (!q.data) return <p className="hint">{tr("Загрузка…")}</p>
+  if (!q.data.length) return <p className="hint">{tr("Осмотров ещё не было")}</p>
   return (
     <ol className="timeline">
       {q.data.map((i) => (
         <li key={i.id}>
           <span className="timeline__icon timeline__icon--inspection" aria-hidden><Icon name="inspect" size={16} /></span>
           <div>
-            <div className="timeline__title">Осмотр {formatDate(i.inspected_at)}</div>
+            <div className="timeline__title">{tr("Осмотр {0}", formatDate(i.inspected_at))}</div>
             {inspectionSummary(i).map((d) => <div key={d} className="small">{d}</div>)}
             {i.user_name && <div className="small hint">{i.user_name}</div>}
           </div>

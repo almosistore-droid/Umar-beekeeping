@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { num } from '../../utils/labels'
+import { tr } from '../../i18n'
 
 export interface BarRow { key: string; label: ReactNode; sub?: ReactNode; value: number; valueText?: string; to?: string }
 
@@ -8,7 +9,7 @@ export interface BarRow { key: string; label: ReactNode; sub?: ReactNode; value:
  * Horizontal single-series bars for categories and rankings. Every row prints its value as text,
  * so the list is its own table; bars share one hue and start from a common zero.
  */
-export function BarList({ rows, unit, ranked, empty = 'Данных пока нет', label }: {
+export function BarList({ rows, unit, ranked, empty = tr("Данных пока нет"), label }: {
   rows: BarRow[]; unit?: string; ranked?: boolean; empty?: string; label: string
 }) {
   const max = Math.max(...rows.map((r) => r.value), 0)

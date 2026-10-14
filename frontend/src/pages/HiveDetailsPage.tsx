@@ -18,22 +18,23 @@ import {
   FAMILY_ORIGIN, FAMILY_STATUS, HIVE_STATUS, HIVE_TYPE, MARKING, QUEEN_STATUS,
   REMOVED_QUEEN_STATUSES, STRENGTH, formatDate, todayIso,
 } from '../utils/labels'
+import { tr } from '../i18n'
 
 type SheetKind = null | 'queen' | 'removeQueen' | 'family' | 'endFamily' | 'strength' | 'inspection' | 'disease' | 'treatment' | 'feeding' | 'honey' | 'move' | 'swarm' | 'split' | 'merge' | 'wintering'
 
 // Actions arriving in later stages are shown, but disabled, so the layout is final
 const OPERATIONS: { sheet: SheetKind; label: string; icon: IconName; needsFamily: boolean }[] = [
-  { sheet: 'move', label: 'Переместить', icon: 'apiary', needsFamily: false },
-  { sheet: 'swarm', label: 'Роение', icon: 'hive', needsFamily: true },
-  { sheet: 'split', label: 'Отводок', icon: 'plus', needsFamily: true },
-  { sheet: 'merge', label: 'Объединить', icon: 'hive', needsFamily: true },
-  { sheet: 'wintering', label: 'Зимовка', icon: 'weak', needsFamily: true },
+  { sheet: 'move', label: tr("Переместить"), icon: 'apiary', needsFamily: false },
+  { sheet: 'swarm', label: tr("Роение"), icon: 'hive', needsFamily: true },
+  { sheet: 'split', label: tr("Отводок"), icon: 'plus', needsFamily: true },
+  { sheet: 'merge', label: tr("Объединить"), icon: 'hive', needsFamily: true },
+  { sheet: 'wintering', label: tr("Зимовка"), icon: 'weak', needsFamily: true },
 ]
 
 const QUICK_ACTIONS: { icon: IconName; label: string; sheet?: SheetKind; stage?: number }[] = [
-  { icon: 'inspect', label: 'Осмотр', sheet: 'inspection' }, { icon: 'honey', label: 'Мёд', sheet: 'honey' },
-  { icon: 'health', label: 'Болезнь', sheet: 'disease' }, { icon: 'treat', label: 'Лечение', sheet: 'treatment' },
-  { icon: 'feed', label: 'Подкормка', sheet: 'feeding' }, { icon: 'photo', label: 'Фото', stage: 9 },
+  { icon: 'inspect', label: tr("Осмотр"), sheet: 'inspection' }, { icon: 'honey', label: tr("Мёд"), sheet: 'honey' },
+  { icon: 'health', label: tr("Болезнь"), sheet: 'disease' }, { icon: 'treat', label: tr("Лечение"), sheet: 'treatment' },
+  { icon: 'feed', label: tr("Подкормка"), sheet: 'feeding' }, { icon: 'photo', label: tr("Фото"), stage: 9 },
 ]
 
 export function HiveDetailsPage() {
@@ -47,7 +48,7 @@ export function HiveDetailsPage() {
   if (hive.isLoading) return <LoadingView />
   if (hive.error) {
     return hive.error instanceof ApiError && hive.error.status === 404
-      ? <MessageView icon="hive" title="Улей не найден" text="Возможно, ссылка или QR-код устарели." />
+      ? <MessageView icon="hive" title={tr("Улей не найден")} text={tr("Возможно, ссылка или QR-код устарели.")} />
       : <div className="page"><ErrorBox error={hive.error} /></div>
   }
   const h = hive.data!
@@ -63,11 +64,11 @@ export function HiveDetailsPage() {
         <div className="hive-head__title">
           <span className={`hive-head__badge${h.hive_number.length > 3 ? ' hive-head__badge--long' : ''}`} aria-hidden>{h.hive_number}</span>
           <div>
-            <h1 className="page__title">Улей №{h.hive_number}</h1>
+            <h1 className="page__title">{tr("Улей №{0}", h.hive_number)}</h1>
             <p className="hint">{h.apiary.name}, {HIVE_TYPE[h.hive_type].toLowerCase()}</p>
           </div>
         </div>
-        {canManage && editable && <Link className="icon-btn" to={`/hives/${h.id}/edit`} aria-label="Изменить улей"><Icon name="edit" /></Link>}
+        {canManage && editable && <Link className="icon-btn" to={`/hives/${h.id}/edit`} aria-label={tr("Изменить улей")}><Icon name="edit" /></Link>}
       </header>
       <div className="row row--start">
         <Badge tone={st.tone}>{st.label}</Badge>
@@ -80,10 +81,10 @@ export function HiveDetailsPage() {
             const ready = !!a.sheet && canWrite && (!!family || a.sheet === 'honey')
             return (
               <button key={a.label} type="button" className="quick" disabled={!ready}
-                title={a.stage ? `Появится на этапе ${a.stage}` : !family ? 'Сначала заселите семью' : undefined}
+                title={a.stage ? tr("Появится на этапе {0}", a.stage) : !family ? tr("Сначала заселите семью") : undefined}
                 onClick={() => a.sheet === 'inspection' ? navigate(`/hives/${h.id}/inspect`) : a.sheet && setSheet(a.sheet)}>
                 <span className="quick__icon"><Icon name={a.icon} /></span>{a.label}
-                {a.stage ? <small>скоро</small> : !canWrite ? <small>только просмотр</small> : null}
+                {a.stage ? <small>{tr("скоро")}</small> : !canWrite ? <small>{tr("только просмотр")}</small> : null}
               </button>
             )
           })}
@@ -98,49 +99,49 @@ export function HiveDetailsPage() {
       {/* Family */}
       <section className="card">
         <div className="card__titlebar">
-          <h2 className="card__title">Пчелиная семья</h2>
-          {canWrite && editable && family && <button className="link-btn" onClick={() => setSheet('strength')}>Сила</button>}
+          <h2 className="card__title">{tr("Пчелиная семья")}</h2>
+          {canWrite && editable && family && <button className="link-btn" onClick={() => setSheet('strength')}>{tr("Сила")}</button>}
         </div>
         {family ? <>
-          <InfoRow label="Сила"><StrengthBars bars={STRENGTH[family.strength].bars} label={STRENGTH[family.strength].label} /></InfoRow>
-          <InfoRow label="Происхождение">{FAMILY_ORIGIN[family.origin]}</InfoRow>
-          <InfoRow label="Заселена">{formatDate(family.start_date)}</InfoRow>
-        </> : <p className="hint">В улье нет семьи</p>}
+          <InfoRow label={tr("Сила")}><StrengthBars bars={STRENGTH[family.strength].bars} label={STRENGTH[family.strength].label} /></InfoRow>
+          <InfoRow label={tr("Происхождение")}>{FAMILY_ORIGIN[family.origin]}</InfoRow>
+          <InfoRow label={tr("Заселена")}>{formatDate(family.start_date)}</InfoRow>
+        </> : <p className="hint">{tr("В улье нет семьи")}</p>}
         {canManage && editable && (
           <div className="btn-row">
-            <button className="btn btn--secondary" onClick={() => setSheet('family')}>{family ? 'Сменить семью' : 'Заселить семью'}</button>
-            {family && <button className="btn btn--ghost" onClick={() => setSheet('endFamily')}>Семья выбыла</button>}
+            <button className="btn btn--secondary" onClick={() => setSheet('family')}>{family ? tr("Сменить семью") : tr("Заселить семью")}</button>
+            {family && <button className="btn btn--ghost" onClick={() => setSheet('endFamily')}>{tr("Семья выбыла")}</button>}
           </div>
         )}
       </section>
 
       {/* Queen */}
       <section className="card">
-        <h2 className="card__title">Матка</h2>
+        <h2 className="card__title">{tr("Матка")}</h2>
         {queen ? <>
-          <InfoRow label="Код">
+          <InfoRow label={tr("Код")}>
             <Link to={`/queens/${queen.id}`} className="link">
               {queen.marking_color && MARKING[queen.marking_color] && <i className="dot" style={{ background: MARKING[queen.marking_color].color }} />}
               {queen.queen_code}
             </Link>
           </InfoRow>
-          <InfoRow label="Рождение">{queen.birth_date ? formatDate(queen.birth_date) : queen.birth_year ?? '—'}</InfoRow>
-          <InfoRow label="Возраст">{queen.age_label ?? '—'}</InfoRow>
-          <InfoRow label="Порода">{queen.breed ?? '—'}</InfoRow>
-          <InfoRow label="В улье с">{formatDate(queen.installed_at)}</InfoRow>
-          <InfoRow label="Состояние"><Badge tone={QUEEN_STATUS[queen.status].tone}>{QUEEN_STATUS[queen.status].label}</Badge></InfoRow>
-        </> : <p className="hint">{family ? 'Матка не записана' : 'Нет семьи — нет матки'}</p>}
+          <InfoRow label={tr("Рождение")}>{queen.birth_date ? formatDate(queen.birth_date) : queen.birth_year ?? '—'}</InfoRow>
+          <InfoRow label={tr("Возраст")}>{queen.age_label ?? '—'}</InfoRow>
+          <InfoRow label={tr("Порода")}>{queen.breed ?? '—'}</InfoRow>
+          <InfoRow label={tr("В улье с")}>{formatDate(queen.installed_at)}</InfoRow>
+          <InfoRow label={tr("Состояние")}><Badge tone={QUEEN_STATUS[queen.status].tone}>{QUEEN_STATUS[queen.status].label}</Badge></InfoRow>
+        </> : <p className="hint">{family ? tr("Матка не записана") : tr("Нет семьи — нет матки")}</p>}
         {canManage && editable && family && (
           <div className="btn-row">
-            <button className="btn btn--secondary" onClick={() => setSheet('queen')}>{queen ? 'Заменить матку' : 'Подсадить матку'}</button>
-            {queen && <button className="btn btn--ghost" onClick={() => setSheet('removeQueen')}>Убрать</button>}
+            <button className="btn btn--secondary" onClick={() => setSheet('queen')}>{queen ? tr("Заменить матку") : tr("Подсадить матку")}</button>
+            {queen && <button className="btn btn--ghost" onClick={() => setSheet('removeQueen')}>{tr("Убрать")}</button>}
           </div>
         )}
       </section>
 
       {canManage && editable && (
         <section className="card">
-          <h2 className="card__title">Операции</h2>
+          <h2 className="card__title">{tr("Операции")}</h2>
           <div className="ops-grid">
             {OPERATIONS.map((o) => (
               <button key={o.sheet} type="button" className="btn btn--secondary" disabled={o.needsFamily && !family}
@@ -151,16 +152,16 @@ export function HiveDetailsPage() {
       )}
 
       <section className="card">
-        <InfoRow label="Установлен">{formatDate(h.installation_date)}</InfoRow>
-        <InfoRow label="Последний осмотр">{h.last_inspection_at ? formatDate(h.last_inspection_at) : '—'}</InfoRow>
-        <InfoRow label="Следующий осмотр">{h.next_inspection_at ? formatDate(h.next_inspection_at) : '—'}</InfoRow>
+        <InfoRow label={tr("Установлен")}>{formatDate(h.installation_date)}</InfoRow>
+        <InfoRow label={tr("Последний осмотр")}>{h.last_inspection_at ? formatDate(h.last_inspection_at) : '—'}</InfoRow>
+        <InfoRow label={tr("Следующий осмотр")}>{h.next_inspection_at ? formatDate(h.next_inspection_at) : '—'}</InfoRow>
         {h.notes && <p className="notes">{h.notes}</p>}
       </section>
 
       {/* History */}
       <section className="card">
         <div className="segmented">
-          {([['timeline', 'Хронология'], ['inspections', 'Осмотры'], ['families', 'Семьи'], ['queens', 'Матки']] as const).map(([k, l]) => (
+          {([['timeline', tr("Хронология")], ['inspections', tr("Осмотры")], ['families', tr("Семьи")], ['queens', tr("Матки")]] as const).map(([k, l]) => (
             <button key={k} type="button" className={tab === k ? 'is-active' : ''} onClick={() => setTab(k)}>{l}</button>
           ))}
         </div>
@@ -170,20 +171,20 @@ export function HiveDetailsPage() {
         {tab === 'queens' && <QueenPeriods hiveId={h.id} />}
       </section>
 
-      <Sheet open={sheet === 'queen'} title={queen ? 'Заменить матку' : 'Подсадить матку'} onClose={close}><AssignQueenForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'removeQueen'} title="Убрать матку" onClose={close}><RemoveQueenForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'family'} title={family ? 'Сменить семью' : 'Заселить семью'} onClose={close}><SettleFamilyForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'endFamily'} title="Семья выбыла" onClose={close}><EndFamilyForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'strength'} title="Сила семьи" onClose={close}><StrengthForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'disease'} title="Болезнь" onClose={close}><DiseaseForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'treatment'} title="Лечение" onClose={close}><TreatmentForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'feeding'} title="Подкормка" onClose={close}><FeedingForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'honey'} title={`Мёд, улей №${h.hive_number}`} onClose={close}><HoneyForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'move'} title="Переместить улей" onClose={close}><MoveForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'swarm'} title="Роение" onClose={close}><SwarmForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'split'} title="Отводок" onClose={close}><SplitForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'merge'} title="Объединить семьи" onClose={close}><MergeForm hive={h} onDone={close} /></Sheet>
-      <Sheet open={sheet === 'wintering'} title="Зимовка" onClose={close}><WinteringForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'queen'} title={queen ? tr("Заменить матку") : tr("Подсадить матку")} onClose={close}><AssignQueenForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'removeQueen'} title={tr("Убрать матку")} onClose={close}><RemoveQueenForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'family'} title={family ? tr("Сменить семью") : tr("Заселить семью")} onClose={close}><SettleFamilyForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'endFamily'} title={tr("Семья выбыла")} onClose={close}><EndFamilyForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'strength'} title={tr("Сила семьи")} onClose={close}><StrengthForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'disease'} title={tr("Болезнь")} onClose={close}><DiseaseForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'treatment'} title={tr("Лечение")} onClose={close}><TreatmentForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'feeding'} title={tr("Подкормка")} onClose={close}><FeedingForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'honey'} title={tr("Мёд, улей №{0}", h.hive_number)} onClose={close}><HoneyForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'move'} title={tr("Переместить улей")} onClose={close}><MoveForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'swarm'} title={tr("Роение")} onClose={close}><SwarmForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'split'} title={tr("Отводок")} onClose={close}><SplitForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'merge'} title={tr("Объединить семьи")} onClose={close}><MergeForm hive={h} onDone={close} /></Sheet>
+      <Sheet open={sheet === 'wintering'} title={tr("Зимовка")} onClose={close}><WinteringForm hive={h} onDone={close} /></Sheet>
     </div>
   )
 }
@@ -192,13 +193,13 @@ export function HiveDetailsPage() {
 
 function FamilyList({ hiveId }: { hiveId: string }) {
   const q = useQuery({ queryKey: ['hive-families', hiveId], queryFn: () => hivesApi.families(hiveId) })
-  if (!q.data?.length) return <p className="hint">{q.isLoading ? 'Загрузка…' : 'Семей не было'}</p>
+  if (!q.data?.length) return <p className="hint">{q.isLoading ? tr("Загрузка…") : tr("Семей не было")}</p>
   return (
     <ul className="plain-list">
       {q.data.map((f) => (
         <li key={f.id}>
           <div className="row"><b>{FAMILY_ORIGIN[f.origin]}</b><span className="small">{FAMILY_STATUS[f.status]}</span></div>
-          <div className="small hint">{formatDate(f.start_date)} — {f.end_date ? formatDate(f.end_date) : 'сейчас'} · {STRENGTH[f.strength].label}</div>
+          <div className="small hint">{formatDate(f.start_date)} — {f.end_date ? formatDate(f.end_date) : tr("сейчас")} · {STRENGTH[f.strength].label}</div>
           {f.end_reason && <div className="small hint">{f.end_reason}</div>}
         </li>
       ))}
@@ -208,13 +209,13 @@ function FamilyList({ hiveId }: { hiveId: string }) {
 
 function QueenPeriods({ hiveId }: { hiveId: string }) {
   const q = useQuery({ queryKey: ['hive-queens', hiveId], queryFn: () => hivesApi.queens(hiveId) })
-  if (!q.data?.length) return <p className="hint">{q.isLoading ? 'Загрузка…' : 'Маток не было'}</p>
+  if (!q.data?.length) return <p className="hint">{q.isLoading ? tr("Загрузка…") : tr("Маток не было")}</p>
   return (
     <ul className="plain-list">
       {q.data.map((a) => (
         <li key={a.id}>
           <Link to={`/queens/${a.queen_id}`} className="link"><b>{a.queen_code}</b></Link>
-          <div className="small hint">{formatDate(a.installed_at)} — {a.removed_at ? formatDate(a.removed_at) : 'сейчас'}</div>
+          <div className="small hint">{formatDate(a.installed_at)} — {a.removed_at ? formatDate(a.removed_at) : tr("сейчас")}</div>
           {a.removal_reason && <div className="small hint">{a.removal_reason}</div>}
         </li>
       ))}
@@ -255,19 +256,19 @@ function AssignQueenForm({ hive, onDone }: { hive: Hive; onDone: () => void }) {
     <form className="form" onSubmit={submit}>
       <ErrorBox error={m.error} />
       {free.data && free.data.items.length === 0 ? (
-        <p className="hint">Свободных маток нет. <Link className="link" to={`/queens/new?hive=${hive.id}`}>Добавить новую матку сразу в этот улей →</Link></p>
+        <p className="hint">{tr("Свободных маток нет.")}{" "}<Link className="link" to={`/queens/new?hive=${hive.id}`}>{tr("Добавить новую матку сразу в этот улей →")}</Link></p>
       ) : <>
-        <Field label="Матка">
-          <Select value={queenId} onChange={setQueenId} placeholder="— выберите —"
+        <Field label={tr("Матка")}>
+          <Select value={queenId} onChange={setQueenId} placeholder={tr("— выберите —")}
             options={(free.data?.items ?? []).map((q) => ({ value: q.id, label: `${q.queen_code}${q.breed ? ` · ${q.breed}` : ''}${q.age_label ? ` · ${q.age_label}` : ''}` }))} />
         </Field>
-        <p className="small"><Link className="link" to={`/queens/new?hive=${hive.id}`}>или добавить новую матку →</Link></p>
-        <Field label="Дата подсадки"><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
+        <p className="small"><Link className="link" to={`/queens/new?hive=${hive.id}`}>{tr("или добавить новую матку →")}</Link></p>
+        <Field label={tr("Дата подсадки")}><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
         {hive.current_queen && <>
-          <Field label={`Что с маткой ${hive.current_queen.queen_code}?`}><Select value={prev} onChange={setPrev} options={removedOpts} /></Field>
-          <Field label="Причина замены"><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={255} placeholder="Например: плохая яйценоскость" /></Field>
+          <Field label={tr("Что с маткой {0}?", hive.current_queen.queen_code)}><Select value={prev} onChange={setPrev} options={removedOpts} /></Field>
+          <Field label={tr("Причина замены")}><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={255} placeholder={tr("Например: плохая яйценоскость")} /></Field>
         </>}
-        <SubmitButton pending={m.isPending}>Подсадить</SubmitButton>
+        <SubmitButton pending={m.isPending}>{tr("Подсадить")}</SubmitButton>
       </>}
     </form>
   )
@@ -281,11 +282,11 @@ function RemoveQueenForm({ hive, onDone }: { hive: Hive; onDone: () => void }) {
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); m.mutate(undefined) }}>
       <ErrorBox error={m.error} />
-      <p className="hint">Улей будет отмечен «Без матки».</p>
-      <Field label="Что случилось"><Select value={status} onChange={setStatus} options={removedOpts} /></Field>
-      <Field label="Дата"><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
-      <Field label="Причина"><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={255} /></Field>
-      <SubmitButton pending={m.isPending} danger>Убрать матку</SubmitButton>
+      <p className="hint">{tr("Улей будет отмечен «Без матки».")}</p>
+      <Field label={tr("Что случилось")}><Select value={status} onChange={setStatus} options={removedOpts} /></Field>
+      <Field label={tr("Дата")}><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
+      <Field label={tr("Причина")}><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={255} /></Field>
+      <SubmitButton pending={m.isPending} danger>{tr("Убрать матку")}</SubmitButton>
     </form>
   )
 }
@@ -307,14 +308,14 @@ function SettleFamilyForm({ hive, onDone }: { hive: Hive; onDone: () => void }) 
     <form className="form" onSubmit={(e) => { e.preventDefault(); m.mutate(undefined) }}>
       <ErrorBox error={m.error} />
       {hive.current_family && <>
-        <div className="warn-box">Текущая семья будет закрыта и останется в истории{hive.current_queen ? `, матка ${hive.current_queen.queen_code} — отмечена заменённой` : ''}.</div>
-        <Field label="Что с прежней семьёй"><Select value={prev} onChange={setPrev} options={endOpts} /></Field>
-        <Field label="Причина"><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={255} /></Field>
+        <div className="warn-box">{tr("Текущая семья будет закрыта и останется в истории")}{hive.current_queen ? tr(", матка {0} — отмечена заменённой", hive.current_queen.queen_code) : ''}.</div>
+        <Field label={tr("Что с прежней семьёй")}><Select value={prev} onChange={setPrev} options={endOpts} /></Field>
+        <Field label={tr("Причина")}><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={255} /></Field>
       </>}
-      <Field label="Происхождение новой семьи"><Select value={origin} onChange={setOrigin} options={originOpts} /></Field>
-      <Field label="Сила"><Select value={strength} onChange={setStrength} options={strengthOpts} /></Field>
-      <Field label="Дата заселения"><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
-      <SubmitButton pending={m.isPending}>Заселить</SubmitButton>
+      <Field label={tr("Происхождение новой семьи")}><Select value={origin} onChange={setOrigin} options={originOpts} /></Field>
+      <Field label={tr("Сила")}><Select value={strength} onChange={setStrength} options={strengthOpts} /></Field>
+      <Field label={tr("Дата заселения")}><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
+      <SubmitButton pending={m.isPending}>{tr("Заселить")}</SubmitButton>
     </form>
   )
 }
@@ -327,11 +328,11 @@ function EndFamilyForm({ hive, onDone }: { hive: Hive; onDone: () => void }) {
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); m.mutate(undefined) }}>
       <ErrorBox error={m.error} />
-      <p className="hint">Улей станет пустым. Семья{hive.current_queen ? ' и матка' : ''} останутся в истории.</p>
-      <Field label="Что случилось"><Select value={status} onChange={setStatus} options={endOpts} /></Field>
-      <Field label="Дата"><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
-      <Field label="Причина"><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={255} placeholder="Например: варроатоз, слёт, продажа" /></Field>
-      <SubmitButton pending={m.isPending} danger>Подтвердить</SubmitButton>
+      <p className="hint">{tr("Улей станет пустым. Семья")}{hive.current_queen ? tr(" и матка") : ''}{" "}{tr("останутся в истории.")}</p>
+      <Field label={tr("Что случилось")}><Select value={status} onChange={setStatus} options={endOpts} /></Field>
+      <Field label={tr("Дата")}><input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} /></Field>
+      <Field label={tr("Причина")}><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={255} placeholder={tr("Например: варроатоз, слёт, продажа")} /></Field>
+      <SubmitButton pending={m.isPending} danger>{tr("Подтвердить")}</SubmitButton>
     </form>
   )
 }

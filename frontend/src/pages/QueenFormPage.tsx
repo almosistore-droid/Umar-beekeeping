@@ -7,8 +7,9 @@ import { LoadingView } from '../components/StateViews'
 import { haptic } from '../services/telegram'
 import type { QueenOrigin, QueenStatus } from '../types/api'
 import { ACTIVE_QUEEN_STATUSES, MARKING, QUEEN_ORIGIN, QUEEN_STATUS, todayIso } from '../utils/labels'
+import { tr } from '../i18n'
 
-const BREEDS = ['Карника', 'Карпатка', 'Бакфаст', 'Среднерусская', 'Кавказская', 'Итальянская']
+const BREEDS = [tr("Карника"), tr("Карпатка"), tr("Бакфаст"), tr("Среднерусская"), tr("Кавказская"), tr("Итальянская")]
 const originOpts = (Object.keys(QUEEN_ORIGIN) as QueenOrigin[]).map((k) => ({ value: k, label: QUEEN_ORIGIN[k] }))
 const statusOpts = ACTIVE_QUEEN_STATUSES.map((s) => ({ value: s, label: QUEEN_STATUS[s].label }))
 const markingOpts = Object.entries(MARKING).map(([k, v]) => ({ value: k, label: v.label }))
@@ -91,51 +92,51 @@ export function QueenFormPage() {
 
   return (
     <form className="page form" onSubmit={submit}>
-      <h1 className="page__title">{id ? `Матка ${existing.data?.queen_code}` : 'Новая матка'}</h1>
-      {targetHive.data && <p className="hint">Будет подсажена в улей №{targetHive.data.hive_number}</p>}
+      <h1 className="page__title">{id ? tr("Матка {0}", existing.data?.queen_code) : tr("Новая матка")}</h1>
+      {targetHive.data && <p className="hint">{tr("Будет подсажена в улей №{0}", targetHive.data.hive_number)}</p>}
       <ErrorBox error={save.error} />
       <section className="card">
-        <Field label="Код матки" error={fieldError(save.error, 'queen_code')} hint="Например M-105">
+        <Field label={tr("Код матки")} error={fieldError(save.error, 'queen_code')} hint={tr("Например M-105")}>
           <input className="input" value={f.code} onChange={(e) => set({ code: e.target.value })} required maxLength={40} autoFocus={!id} />
         </Field>
         <div className="segmented">
-          <button type="button" className={f.birthMode === 'date' ? 'is-active' : ''} onClick={() => set({ birthMode: 'date' })}>Дата рождения</button>
-          <button type="button" className={f.birthMode === 'year' ? 'is-active' : ''} onClick={() => set({ birthMode: 'year' })}>Только год</button>
+          <button type="button" className={f.birthMode === 'date' ? 'is-active' : ''} onClick={() => set({ birthMode: 'date' })}>{tr("Дата рождения")}</button>
+          <button type="button" className={f.birthMode === 'year' ? 'is-active' : ''} onClick={() => set({ birthMode: 'year' })}>{tr("Только год")}</button>
         </div>
         {f.birthMode === 'date' ? (
-          <Field label="Дата рождения" error={fieldError(save.error, 'birth_date')}>
+          <Field label={tr("Дата рождения")} error={fieldError(save.error, 'birth_date')}>
             <input className="input" type="date" value={f.birthDate} max={todayIso()} onChange={(e) => set({ birthDate: e.target.value })} />
           </Field>
         ) : (
-          <Field label="Год рождения" error={fieldError(save.error, 'birth_year')}>
+          <Field label={tr("Год рождения")} error={fieldError(save.error, 'birth_year')}>
             <input className="input" type="number" inputMode="numeric" min={1990} max={new Date().getFullYear()} value={f.birthYear} onChange={(e) => set({ birthYear: e.target.value })} />
           </Field>
         )}
-        <Field label="Порода">
+        <Field label={tr("Порода")}>
           <input className="input" list="breeds" value={f.breed} onChange={(e) => set({ breed: e.target.value })} maxLength={80} />
           <datalist id="breeds">{BREEDS.map((b) => <option key={b} value={b} />)}</datalist>
         </Field>
-        <Field label="Происхождение"><Select value={f.origin} onChange={(v) => set({ origin: v })} options={originOpts} /></Field>
-        {!removed && <Field label="Состояние"><Select value={f.status} onChange={(v) => set({ status: v })} options={statusOpts} /></Field>}
-        <Field label="Метка" hint="Если не выбрать — цвет подставится по году рождения">
-          <Select value={f.marking} onChange={(v) => set({ marking: v })} options={markingOpts} placeholder="— авто —" />
+        <Field label={tr("Происхождение")}><Select value={f.origin} onChange={(v) => set({ origin: v })} options={originOpts} /></Field>
+        {!removed && <Field label={tr("Состояние")}><Select value={f.status} onChange={(v) => set({ status: v })} options={statusOpts} /></Field>}
+        <Field label={tr("Метка")} hint={tr("Если не выбрать — цвет подставится по году рождения")}>
+          <Select value={f.marking} onChange={(v) => set({ marking: v })} options={markingOpts} placeholder={tr("— авто —")} />
         </Field>
       </section>
       <section className="card">
-        <h2 className="card__title">Оценка (1–5)</h2>
-        <Score label="Яйценоскость" hint="5 — отличная" value={f.egg} onChange={(v) => set({ egg: v })} />
-        <Score label="Ройливость" hint="5 — очень ройливая" value={f.swarm} onChange={(v) => set({ swarm: v })} />
-        <Score label="Миролюбие" hint="5 — очень спокойная" value={f.temper} onChange={(v) => set({ temper: v })} />
+        <h2 className="card__title">{tr("Оценка (1–5)")}</h2>
+        <Score label={tr("Яйценоскость")} hint={tr("5 — отличная")} value={f.egg} onChange={(v) => set({ egg: v })} />
+        <Score label={tr("Ройливость")} hint={tr("5 — очень ройливая")} value={f.swarm} onChange={(v) => set({ swarm: v })} />
+        <Score label={tr("Миролюбие")} hint={tr("5 — очень спокойная")} value={f.temper} onChange={(v) => set({ temper: v })} />
       </section>
       {hiveId && (
         <section className="card">
-          <Field label="Дата подсадки"><input className="input" type="date" value={installDate} max={todayIso()} onChange={(e) => setInstallDate(e.target.value)} /></Field>
+          <Field label={tr("Дата подсадки")}><input className="input" type="date" value={installDate} max={todayIso()} onChange={(e) => setInstallDate(e.target.value)} /></Field>
         </section>
       )}
       <section className="card">
-        <Field label="Заметки"><textarea className="input" rows={3} value={f.notes} onChange={(e) => set({ notes: e.target.value })} /></Field>
+        <Field label={tr("Заметки")}><textarea className="input" rows={3} value={f.notes} onChange={(e) => set({ notes: e.target.value })} /></Field>
       </section>
-      <div className="submit-bar"><SubmitButton pending={save.isPending}>{id ? 'Сохранить' : 'Добавить матку'}</SubmitButton></div>
+      <div className="submit-bar"><SubmitButton pending={save.isPending}>{id ? tr("Сохранить") : tr("Добавить матку")}</SubmitButton></div>
     </form>
   )
 }

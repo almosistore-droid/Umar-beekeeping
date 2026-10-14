@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { num } from '../../utils/labels'
+import { tr } from '../../i18n'
 
 /**
  * Single-series columns (one hue, no legend — the title names the series). Tap or hover a column
@@ -22,10 +23,10 @@ export function ColumnChart({ title, labels, shortLabels, values, unit, labelHea
     <section className="card">
       <div className="card__titlebar">
         <h2 className="card__title">{title}</h2>
-        {max > 0 && <button type="button" className="link-btn small" onClick={() => setAsTable((v) => !v)}>{asTable ? 'График' : 'Таблица'}</button>}
+        {max > 0 && <button type="button" className="link-btn small" onClick={() => setAsTable((v) => !v)}>{asTable ? tr("График") : tr("Таблица")}</button>}
         {action}
       </div>
-      {max === 0 ? <p className="hint">Данных пока нет</p> : asTable ? (
+      {max === 0 ? <p className="hint">{tr("Данных пока нет")}</p> : asTable ? (
         <table className="data-table">
           <thead><tr><th>{labelHeader}</th><th>{unit}</th></tr></thead>
           <tbody>{values.map((v, i) => v > 0 && <tr key={i}><td>{labels[i]}</td><td>{num(v)}</td></tr>)}</tbody>

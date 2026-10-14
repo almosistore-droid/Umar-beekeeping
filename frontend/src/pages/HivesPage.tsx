@@ -8,17 +8,18 @@ import { LoadingView, MessageView } from '../components/StateViews'
 import { usePermissions } from '../hooks/usePermissions'
 import type { FamilyStrength, HiveStatus } from '../types/api'
 import { HIVE_STATUS, STRENGTH } from '../utils/labels'
+import { tr } from '../i18n'
 
 type Filter = 'all' | 'inspection' | 'strong' | 'weak' | 'queenless' | 'sick' | 'empty' | 'archive'
 const FILTERS: { value: Filter; label: string; statuses?: HiveStatus[]; strengths?: FamilyStrength[]; needsInspection?: boolean }[] = [
-  { value: 'all', label: 'Все' },
-  { value: 'inspection', label: 'Требуют осмотра', needsInspection: true },
-  { value: 'strong', label: 'Сильные', strengths: ['STRONG', 'VERY_STRONG'] },
-  { value: 'weak', label: 'Слабые', strengths: ['WEAK', 'VERY_WEAK'] },
-  { value: 'queenless', label: 'Без матки', statuses: ['QUEENLESS'] },
-  { value: 'sick', label: 'Больные', statuses: ['SICK', 'QUARANTINE'] },
-  { value: 'empty', label: 'Пустые', statuses: ['EMPTY'] },
-  { value: 'archive', label: 'Архив', statuses: ['SOLD', 'LOST', 'MERGED'] },
+  { value: 'all', label: tr("Все") },
+  { value: 'inspection', label: tr("Требуют осмотра"), needsInspection: true },
+  { value: 'strong', label: tr("Сильные"), strengths: ['STRONG', 'VERY_STRONG'] },
+  { value: 'weak', label: tr("Слабые"), strengths: ['WEAK', 'VERY_WEAK'] },
+  { value: 'queenless', label: tr("Без матки"), statuses: ['QUEENLESS'] },
+  { value: 'sick', label: tr("Больные"), statuses: ['SICK', 'QUARANTINE'] },
+  { value: 'empty', label: tr("Пустые"), statuses: ['EMPTY'] },
+  { value: 'archive', label: tr("Архив"), statuses: ['SOLD', 'LOST', 'MERGED'] },
 ]
 
 export function HivesPage() {
@@ -38,17 +39,17 @@ export function HivesPage() {
   })
 
   const apiaryOptions = useMemo(
-    () => [{ value: 'all', label: 'Все пасеки' }, ...(apiaries.data ?? []).map((a) => ({ value: a.id, label: a.name }))],
+    () => [{ value: 'all', label: tr("Все пасеки") }, ...(apiaries.data ?? []).map((a) => ({ value: a.id, label: a.name }))],
     [apiaries.data],
   )
 
   if (apiaries.data && apiaries.data.length === 0) {
     return (
       <div className="page">
-        <h1 className="page__title">Ульи</h1>
-        <MessageView icon="apiary" title="Сначала создайте пасеку"
-          text={canManage ? 'Ульи привязываются к пасеке.' : 'Попросите пчеловода добавить пасеку.'} />
-        {canManage && <Link className="btn btn--primary btn--block" to="/apiaries">Создать пасеку</Link>}
+        <h1 className="page__title">{tr("Ульи")}</h1>
+        <MessageView icon="apiary" title={tr("Сначала создайте пасеку")}
+          text={canManage ? tr("Ульи привязываются к пасеке.") : tr("Попросите пчеловода добавить пасеку.")} />
+        {canManage && <Link className="btn btn--primary btn--block" to="/apiaries">{tr("Создать пасеку")}</Link>}
       </div>
     )
   }
@@ -56,17 +57,17 @@ export function HivesPage() {
   return (
     <div className="page">
       <div className="page__titlebar">
-        <h1 className="page__title">Ульи</h1>
+        <h1 className="page__title">{tr("Ульи")}</h1>
         {hives.data && <span className="hint">{hives.data.total}</span>}
       </div>
-      <input className="input input--search" type="search" placeholder="Номер улья или код матки"
+      <input className="input input--search" type="search" placeholder={tr("Номер улья или код матки")}
         value={q} onChange={(e) => setQ(e.target.value)} />
       {apiaryOptions.length > 2 && <Chips options={apiaryOptions} value={apiaryId} onChange={setApiaryId} />}
       <Chips options={FILTERS} value={filter} onChange={setFilter} />
 
       <ErrorBox error={hives.error} />
       {hives.isLoading ? <LoadingView /> : hives.data?.items.length === 0 ? (
-        <MessageView icon="hive" title="Ульев не найдено" text={q || filter !== 'all' ? 'Измените фильтр или поиск.' : undefined} />
+        <MessageView icon="hive" title={tr("Ульев не найдено")} text={q || filter !== 'all' ? tr("Измените фильтр или поиск.") : undefined} />
       ) : (
         <ul className="list">
           {hives.data?.items.map((h) => {
@@ -74,18 +75,18 @@ export function HivesPage() {
             return (
               <li key={h.id}>
                 <Link to={`/hives/${h.id}`} className="hive-card">
-                  <div className={`hive-card__num${h.hive_number.length > 3 ? ' hive-card__num--long' : ''}`} aria-label={`Улей №${h.hive_number}`}>{h.hive_number}</div>
+                  <div className={`hive-card__num${h.hive_number.length > 3 ? ' hive-card__num--long' : ''}`} aria-label={tr("Улей №{0}", h.hive_number)}>{h.hive_number}</div>
                   <div className="hive-card__body">
                     <div className="hive-card__top">
                       <Badge tone={st.tone}>{st.label}</Badge>
 
                     </div>
                     <div className="hive-card__meta">
-                      {h.strength ? <StrengthBars bars={STRENGTH[h.strength].bars} label={STRENGTH[h.strength].label} /> : <span className="hint">Нет семьи</span>}
+                      {h.strength ? <StrengthBars bars={STRENGTH[h.strength].bars} label={STRENGTH[h.strength].label} /> : <span className="hint">{tr("Нет семьи")}</span>}
                     </div>
                     {apiaryId === 'all' && apiaryOptions.length > 2 && <div className="hive-card__apiary">{h.apiary.name}</div>}
                     <div className="hive-card__meta hint small">
-                      {h.queen_code ? <><Icon name="crown" size={14} className="inline-icon" />{h.queen_code}{h.queen_age_label && `, ${h.queen_age_label}`}</> : h.strength ? 'Матка не записана' : ''}
+                      {h.queen_code ? <><Icon name="crown" size={14} className="inline-icon" />{h.queen_code}{h.queen_age_label && `, ${h.queen_age_label}`}</> : h.strength ? tr("Матка не записана") : ''}
                     </div>
                   </div>
                   <span className="chevron" aria-hidden>›</span>
@@ -95,7 +96,7 @@ export function HivesPage() {
           })}
         </ul>
       )}
-      {canManage && <Fab to="/hives/new" label="Улей" />}
+      {canManage && <Fab to="/hives/new" label={tr("Улей")} />}
     </div>
   )
 }

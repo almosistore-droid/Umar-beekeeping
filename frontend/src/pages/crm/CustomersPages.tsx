@@ -9,6 +9,7 @@ import { LoadingView, MessageView } from '../../components/StateViews'
 import { Badge, ErrorBox, Sheet } from '../../components/ui'
 import { haptic } from '../../services/telegram'
 import { formatDate, money } from '../../utils/labels'
+import { tr } from '../../i18n'
 
 export function CustomersPage() {
   const currency = useCurrency()
@@ -19,13 +20,13 @@ export function CustomersPage() {
   return (
     <div className="page">
       <div className="page__titlebar">
-        <h1 className="page__title">Клиенты</h1>
-        <button className="btn btn--primary btn--sm" onClick={() => setOpen(true)}>＋ Клиент</button>
+        <h1 className="page__title">{tr("Клиенты")}</h1>
+        <button className="btn btn--primary btn--sm" onClick={() => setOpen(true)}>{tr("＋ Клиент")}</button>
       </div>
-      <input className="input" type="search" placeholder="Имя, телефон или город" aria-label="Поиск клиентов" value={q} onChange={(e) => setQ(e.target.value)} />
+      <input className="input" type="search" placeholder={tr("Имя, телефон или город")} aria-label={tr("Поиск клиентов")} value={q} onChange={(e) => setQ(e.target.value)} />
       <ErrorBox error={list.error} />
       {list.isLoading ? <LoadingView /> : !list.data?.length ? (
-        <MessageView icon="users" title={q ? 'Никого не нашли' : 'Клиентов пока нет'} />
+        <MessageView icon="users" title={q ? tr("Никого не нашли") : tr("Клиентов пока нет")} />
       ) : (
         <section className="card card--list">
           {list.data.map((c) => (
@@ -36,14 +37,14 @@ export function CustomersPage() {
                 <span className="small hint">{[c.phone, c.city].filter(Boolean).join(' · ') || '—'}</span>
               </span>
               <span className="crm-row__side">
-                <span className="small hint">куплено {money(c.bought, currency)}</span>
-                {Number(c.debt) > 0 && <Badge tone="bad">долг {money(c.debt, currency)}</Badge>}
+                <span className="small hint">{tr("куплено {0}", money(c.bought, currency))}</span>
+                {Number(c.debt) > 0 && <Badge tone="bad">{tr("долг {0}", money(c.debt, currency))}</Badge>}
               </span>
             </Link>
           ))}
         </section>
       )}
-      <Sheet open={open} title="Новый клиент" onClose={() => setOpen(false)}>
+      <Sheet open={open} title={tr("Новый клиент")} onClose={() => setOpen(false)}>
         {open && <CustomerForm onDone={(c) => { setOpen(false); navigate(`/crm/customers/${c.id}`) }} />}
       </Sheet>
     </div>
@@ -71,47 +72,47 @@ export function CustomerDetailsPage() {
       <header className="page__titlebar">
         <div>
           <h1 className="page__title">{x.name}</h1>
-          <p className="hint">{x.city ?? ''}{x.last_purchase ? ` · последняя покупка ${formatDate(x.last_purchase)}` : ''}</p>
+          <p className="hint">{x.city ?? ''}{x.last_purchase ? tr(" · последняя покупка {0}", formatDate(x.last_purchase)) : ''}</p>
         </div>
-        <button className="icon-btn" aria-label="Изменить клиента" onClick={() => setSheet('edit')}><Icon name="edit" /></button>
+        <button className="icon-btn" aria-label={tr("Изменить клиента")} onClick={() => setSheet('edit')}><Icon name="edit" /></button>
       </header>
-      {x.is_archived && <p className="warn-box">Клиент в архиве</p>}
-      {x.phone && <a className="btn btn--secondary btn--block" href={`tel:${x.phone}`}><Icon name="phone" size={18} />Позвонить {x.phone}</a>}
+      {x.is_archived && <p className="warn-box">{tr("Клиент в архиве")}</p>}
+      {x.phone && <a className="btn btn--secondary btn--block" href={`tel:${x.phone}`}><Icon name="phone" size={18} />{tr("Позвонить {0}", x.phone)}</a>}
 
       <div className="money-grid">
-        <Money label="Куплено" value={x.bought} currency={currency} />
-        <Money label="Оплачено" value={x.paid} currency={currency} />
-        <Money label="Долг" value={x.debt} currency={currency} tone={Number(x.debt) > 0 ? 'bad' : undefined} />
+        <Money label={tr("Куплено")} value={x.bought} currency={currency} />
+        <Money label={tr("Оплачено")} value={x.paid} currency={currency} />
+        <Money label={tr("Долг")} value={x.debt} currency={currency} tone={Number(x.debt) > 0 ? 'bad' : undefined} />
       </div>
       {x.notes && <p className="notes">{x.notes}</p>}
 
       {!x.is_archived && (
         <div className="btn-row">
-          <button className="btn btn--primary" onClick={() => setSheet('sale')}>＋ Продажа</button>
-          <button className="btn btn--secondary" onClick={() => setSheet('order')}>＋ Заказ</button>
+          <button className="btn btn--primary" onClick={() => setSheet('sale')}>{tr("＋ Продажа")}</button>
+          <button className="btn btn--secondary" onClick={() => setSheet('order')}>{tr("＋ Заказ")}</button>
         </div>
       )}
 
       <section className="card">
         <div className="segmented">
-          <button type="button" className={tab === 'sales' ? 'is-active' : ''} onClick={() => setTab('sales')}>Покупки ({x.sales.length})</button>
-          <button type="button" className={tab === 'orders' ? 'is-active' : ''} onClick={() => setTab('orders')}>Заказы ({x.orders.length})</button>
+          <button type="button" className={tab === 'sales' ? 'is-active' : ''} onClick={() => setTab('sales')}>{tr("Покупки ({0})", x.sales.length)}</button>
+          <button type="button" className={tab === 'orders' ? 'is-active' : ''} onClick={() => setTab('orders')}>{tr("Заказы ({0})", x.orders.length)}</button>
         </div>
-        {tab === 'sales' && (x.sales.length ? x.sales.map((s) => <SaleRow key={s.id} s={s} currency={currency} />) : <p className="hint">Покупок нет</p>)}
-        {tab === 'orders' && (x.orders.length ? x.orders.map((o) => <OrderRow key={o.id} o={o} currency={currency} />) : <p className="hint">Заказов нет</p>)}
+        {tab === 'sales' && (x.sales.length ? x.sales.map((s) => <SaleRow key={s.id} s={s} currency={currency} />) : <p className="hint">{tr("Покупок нет")}</p>)}
+        {tab === 'orders' && (x.orders.length ? x.orders.map((o) => <OrderRow key={o.id} o={o} currency={currency} />) : <p className="hint">{tr("Заказов нет")}</p>)}
       </section>
 
       <ErrorBox error={archive.error} />
       <button type="button" className="btn btn--ghost btn--block" disabled={archive.isPending} onClick={() => archive.mutate(!x.is_archived)}>
-        {x.is_archived ? 'Вернуть из архива' : 'Убрать в архив'}
+        {x.is_archived ? tr("Вернуть из архива") : tr("Убрать в архив")}
       </button>
-      {!x.is_archived && Number(x.debt) > 0 && <p className="hint small">У клиента есть долг — в архиве он останется в «Долгах».</p>}
+      {!x.is_archived && Number(x.debt) > 0 && <p className="hint small">{tr("У клиента есть долг — в архиве он останется в «Долгах».")}</p>}
 
-      <Sheet open={sheet === 'edit'} title="Клиент" onClose={close}>{sheet === 'edit' && <CustomerForm customer={x} onDone={close} />}</Sheet>
-      <Sheet open={sheet === 'sale'} title={`Продажа: ${x.name}`} onClose={close}>
+      <Sheet open={sheet === 'edit'} title={tr("Клиент")} onClose={close}>{sheet === 'edit' && <CustomerForm customer={x} onDone={close} />}</Sheet>
+      <Sheet open={sheet === 'sale'} title={tr("Продажа: {0}", x.name)} onClose={close}>
         {sheet === 'sale' && <SaleForm customerId={x.id} onDone={(s) => { close(); navigate(`/crm/sales/${s.id}`) }} />}
       </Sheet>
-      <Sheet open={sheet === 'order'} title={`Заказ: ${x.name}`} onClose={close}>
+      <Sheet open={sheet === 'order'} title={tr("Заказ: {0}", x.name)} onClose={close}>
         {sheet === 'order' && <OrderForm customerId={x.id} onDone={(o) => { close(); navigate(`/crm/orders/${o.id}`) }} />}
       </Sheet>
     </div>

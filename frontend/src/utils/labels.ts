@@ -5,17 +5,17 @@ import type {
 import { ROLE_LABELS } from '../types/api'
 
 export const HIVE_STATUS: Record<HiveStatus, { label: string; icon: string; tone: Tone }> = {
-  ACTIVE: { label: 'Активный', icon: '🟢', tone: 'ok' },
-  STRONG: { label: 'Сильный', icon: '💪', tone: 'ok' },
-  WEAK: { label: 'Слабый', icon: '⚠️', tone: 'warn' },
-  SICK: { label: 'Болеет', icon: '🩺', tone: 'bad' },
-  QUEENLESS: { label: 'Без матки', icon: '❗', tone: 'bad' },
-  EMPTY: { label: 'Пустой', icon: '⚪', tone: 'muted' },
-  QUARANTINE: { label: 'Карантин', icon: '🚧', tone: 'bad' },
-  MERGED: { label: 'Объединён', icon: '🔗', tone: 'muted' },
-  SPLIT: { label: 'Разделён', icon: '✂️', tone: 'muted' },
-  SOLD: { label: 'Продан', icon: '💰', tone: 'muted' },
-  LOST: { label: 'Потерян', icon: '✖️', tone: 'muted' },
+  ACTIVE: { label: tr("Активный"), icon: '🟢', tone: 'ok' },
+  STRONG: { label: tr("Сильный"), icon: '💪', tone: 'ok' },
+  WEAK: { label: tr("Слабый"), icon: '⚠️', tone: 'warn' },
+  SICK: { label: tr("Болеет"), icon: '🩺', tone: 'bad' },
+  QUEENLESS: { label: tr("Без матки"), icon: '❗', tone: 'bad' },
+  EMPTY: { label: tr("Пустой"), icon: '⚪', tone: 'muted' },
+  QUARANTINE: { label: tr("Карантин"), icon: '🚧', tone: 'bad' },
+  MERGED: { label: tr("Объединён"), icon: '🔗', tone: 'muted' },
+  SPLIT: { label: tr("Разделён"), icon: '✂️', tone: 'muted' },
+  SOLD: { label: tr("Продан"), icon: '💰', tone: 'muted' },
+  LOST: { label: tr("Потерян"), icon: '✖️', tone: 'muted' },
 }
 export type Tone = 'ok' | 'warn' | 'bad' | 'muted'
 
@@ -23,65 +23,65 @@ export type Tone = 'ok' | 'warn' | 'bad' | 'muted'
 export const EDITABLE_HIVE_STATUSES: HiveStatus[] = ['ACTIVE', 'STRONG', 'WEAK', 'SICK', 'QUARANTINE', 'QUEENLESS', 'EMPTY', 'SOLD', 'LOST']
 
 export const HIVE_TYPE: Record<HiveType, string> = {
-  DADANT: 'Дадан', LANGSTROTH: 'Лангстрот', RUTA: 'Рута', ALPINE: 'Альпийский',
-  HORIZONTAL: 'Лежак', MULTI_BODY: 'Многокорпусный', NUCLEUS: 'Нуклеус', OTHER: 'Другой',
+  DADANT: tr("Дадан"), LANGSTROTH: tr("Лангстрот"), RUTA: tr("Рута"), ALPINE: tr("Альпийский"),
+  HORIZONTAL: tr("Лежак"), MULTI_BODY: tr("Многокорпусный"), NUCLEUS: tr("Нуклеус"), OTHER: tr("Другой"),
 }
 
 export const STRENGTH: Record<FamilyStrength, { label: string; bars: number }> = {
-  VERY_WEAK: { label: 'Очень слабая', bars: 1 },
-  WEAK: { label: 'Слабая', bars: 2 },
-  MEDIUM: { label: 'Средняя', bars: 3 },
-  STRONG: { label: 'Сильная', bars: 4 },
-  VERY_STRONG: { label: 'Очень сильная', bars: 5 },
+  VERY_WEAK: { label: tr("Очень слабая"), bars: 1 },
+  WEAK: { label: tr("Слабая"), bars: 2 },
+  MEDIUM: { label: tr("Средняя"), bars: 3 },
+  STRONG: { label: tr("Сильная"), bars: 4 },
+  VERY_STRONG: { label: tr("Очень сильная"), bars: 5 },
 }
 
 export const FAMILY_STATUS: Record<FamilyStatus, string> = {
-  ACTIVE: 'Живёт в улье', REPLACED: 'Заменена', MERGED: 'Объединена', SOLD: 'Продана',
-  DEAD: 'Погибла', ABSCONDED: 'Слетела',
+  ACTIVE: tr("Живёт в улье"), REPLACED: tr("Заменена"), MERGED: tr("Объединена"), SOLD: tr("Продана"),
+  DEAD: tr("Погибла"), ABSCONDED: tr("Слетела"),
 }
 
 export const FAMILY_ORIGIN: Record<FamilyOrigin, string> = {
-  PURCHASED: 'Куплена', PACKAGE: 'Пчелопакет', NUCLEUS: 'Нуклеус', SWARM: 'Рой',
-  SPLIT: 'Отводок', MERGE: 'Объединение', OWN: 'Своя', OTHER: 'Другое',
+  PURCHASED: tr("Куплена"), PACKAGE: tr("Пчелопакет"), NUCLEUS: tr("Нуклеус"), SWARM: tr("Рой"),
+  SPLIT: tr("Отводок"), MERGE: tr("Объединение"), OWN: tr("Своя"), OTHER: tr("Другое"),
 }
 
 export const QUEEN_STATUS: Record<QueenStatus, { label: string; tone: Tone }> = {
-  ACTIVE: { label: 'Активная', tone: 'ok' },
-  GOOD: { label: 'Хорошая', tone: 'ok' },
-  OBSERVATION: { label: 'Под наблюдением', tone: 'warn' },
-  WEAK: { label: 'Слабая', tone: 'warn' },
-  LOST: { label: 'Пропала', tone: 'muted' },
-  REPLACED: { label: 'Заменена', tone: 'muted' },
-  DEAD: { label: 'Погибла', tone: 'muted' },
-  SOLD: { label: 'Продана', tone: 'muted' },
+  ACTIVE: { label: tr("Активная"), tone: 'ok' },
+  GOOD: { label: tr("Хорошая"), tone: 'ok' },
+  OBSERVATION: { label: tr("Под наблюдением"), tone: 'warn' },
+  WEAK: { label: tr("Слабая"), tone: 'warn' },
+  LOST: { label: tr("Пропала"), tone: 'muted' },
+  REPLACED: { label: tr("Заменена"), tone: 'muted' },
+  DEAD: { label: tr("Погибла"), tone: 'muted' },
+  SOLD: { label: tr("Продана"), tone: 'muted' },
 }
 export const ACTIVE_QUEEN_STATUSES: QueenStatus[] = ['ACTIVE', 'GOOD', 'OBSERVATION', 'WEAK']
 export const REMOVED_QUEEN_STATUSES: QueenStatus[] = ['REPLACED', 'DEAD', 'LOST', 'SOLD']
 
 export const QUEEN_ORIGIN: Record<QueenOrigin, string> = {
-  OWN_BRED: 'Своя (вывод)', PURCHASED: 'Куплена', SWARM: 'Роевая', SUPERSEDURE: 'Тихая смена',
-  EMERGENCY: 'Свищевая', UNKNOWN: 'Неизвестно',
+  OWN_BRED: tr("Своя (вывод)"), PURCHASED: tr("Куплена"), SWARM: tr("Роевая"), SUPERSEDURE: tr("Тихая смена"),
+  EMERGENCY: tr("Свищевая"), UNKNOWN: tr("Неизвестно"),
 }
 
 export const MARKING: Record<string, { label: string; color: string }> = {
-  WHITE: { label: 'Белая', color: '#f4f4f4' },
-  YELLOW: { label: 'Жёлтая', color: '#f7d417' },
-  RED: { label: 'Красная', color: '#e0412f' },
-  GREEN: { label: 'Зелёная', color: '#2fa84f' },
-  BLUE: { label: 'Синяя', color: '#2f6fe0' },
+  WHITE: { label: tr("Белая"), color: '#f4f4f4' },
+  YELLOW: { label: tr("Жёлтая"), color: '#f7d417' },
+  RED: { label: tr("Красная"), color: '#e0412f' },
+  GREEN: { label: tr("Зелёная"), color: '#2fa84f' },
+  BLUE: { label: tr("Синяя"), color: '#2f6fe0' },
 }
 
 const CASE_STATUS_LABEL: Record<string, string> = {
-  SUSPECTED: 'подозрение', CONFIRMED: 'подтверждено', TREATING: 'лечение', RESOLVED: 'вылечено',
+  SUSPECTED: tr("подозрение"), CONFIRMED: tr("подтверждено"), TREATING: tr("лечение"), RESOLVED: tr("вылечено"),
 }
 
 const FIELD_NAMES: Record<string, string> = {
-  hive_number: 'Номер', status: 'Статус', hive_type: 'Тип', notes: 'Заметки', strength: 'Сила',
-  installation_date: 'Установлен', colonization_date: 'Заселён', next_inspection_at: 'След. осмотр',
-  queen_code: 'Матка', role: 'Роль', is_active: 'Активен', name: 'Название',
-  frames_total: 'Рамок', brood_frames: 'Расплод', honey_frames: 'Мёд', pollen_frames: 'Перга',
-  medication: 'Препарат', dosage: 'Доза', treated_at: 'Дата', fed_at: 'Дата', quantity: 'Количество',
-  next_treatment_date: 'Следующая', next_feeding_date: 'Следующая', inspected_at: 'Дата осмотра',
+  hive_number: tr("Номер"), status: tr("Статус"), hive_type: tr("Тип"), notes: tr("Заметки"), strength: tr("Сила"),
+  installation_date: tr("Установлен"), colonization_date: tr("Заселён"), next_inspection_at: tr("След. осмотр"),
+  queen_code: tr("Матка"), role: tr("Роль"), is_active: tr("Активен"), name: tr("Название"),
+  frames_total: tr("Рамок"), brood_frames: tr("Расплод"), honey_frames: tr("Мёд"), pollen_frames: tr("Перга"),
+  medication: tr("Препарат"), dosage: tr("Доза"), treated_at: tr("Дата"), fed_at: tr("Дата"), quantity: tr("Количество"),
+  next_treatment_date: tr("Следующая"), next_feeding_date: tr("Следующая"), inspected_at: tr("Дата осмотра"),
 }
 
 /** Human-readable one-liner for a history (audit) entry. */
@@ -99,53 +99,53 @@ export function describeAudit(action: string, oldV: Record<string, unknown> | nu
       `${FIELD_NAMES[k]}: ${val(k, oldV?.[k])} → ${val(k, newV?.[k])}`)
 
   switch (action) {
-    case 'created': return { icon: 'hive', title: 'Улей создан', details: [] }
-    case 'queen_installed': return { icon: 'crown', title: `Подсажена матка ${newV?.queen_code}`, details: [] }
-    case 'queen_replaced': return { icon: 'crown', title: 'Замена матки', details: [`${oldV?.queen_code} → ${newV?.queen_code}`] }
+    case 'created': return { icon: 'hive', title: tr("Улей создан"), details: [] }
+    case 'queen_installed': return { icon: 'crown', title: tr("Подсажена матка {0}", newV?.queen_code), details: [] }
+    case 'queen_replaced': return { icon: 'crown', title: tr("Замена матки"), details: [`${oldV?.queen_code} → ${newV?.queen_code}`] }
     case 'queen_removed': return {
-      icon: 'queenless', title: `Матка ${oldV?.queen_code ?? ''} убрана`,
+      icon: 'queenless', title: tr("Матка {0} убрана", oldV?.queen_code ?? ''),
       details: newV?.queen_status ? [QUEEN_STATUS[newV.queen_status as QueenStatus]?.label ?? ''] : [],
     }
-    case 'family_settled': return { icon: 'hive', title: 'Заселена семья', details: [FAMILY_ORIGIN[newV?.origin as FamilyOrigin] ?? ''] }
+    case 'family_settled': return { icon: 'hive', title: tr("Заселена семья"), details: [FAMILY_ORIGIN[newV?.origin as FamilyOrigin] ?? ''] }
     case 'family_replaced': return {
-      icon: 'hive', title: 'Смена семьи',
-      details: [`Прежняя: ${FAMILY_STATUS[oldV?.family_status as FamilyStatus] ?? ''}`],
+      icon: 'hive', title: tr("Смена семьи"),
+      details: [tr("Прежняя: {0}", FAMILY_STATUS[oldV?.family_status as FamilyStatus] ?? '')],
     }
-    case 'family_ended': return { icon: 'weak', title: 'Семья выбыла', details: [FAMILY_STATUS[newV?.family_status as FamilyStatus] ?? ''] }
-    case 'number_changed': return { icon: 'edit', title: 'Изменён номер', details: changes() }
+    case 'family_ended': return { icon: 'weak', title: tr("Семья выбыла"), details: [FAMILY_STATUS[newV?.family_status as FamilyStatus] ?? ''] }
+    case 'number_changed': return { icon: 'edit', title: tr("Изменён номер"), details: changes() }
     case 'health_status': return {
-      icon: 'health', title: 'Состояние улья',
+      icon: 'health', title: tr("Состояние улья"),
       details: [`${val('status', oldV?.status)} → ${val('status', newV?.status)}`],
     }
     case 'disease_updated': {
       const st = (v: unknown) => (typeof v === 'string' && v in CASE_STATUS_LABEL ? CASE_STATUS_LABEL[v] : '—')
       return {
-        icon: 'health', title: `Болезнь: ${newV?.disease ?? ''}`,
+        icon: 'health', title: tr("Болезнь: {0}", newV?.disease ?? ''),
         details: newV?.status ? [`${st(oldV?.status)} → ${st(newV?.status)}`] : [],
       }
     }
-    case 'corrected': return { icon: 'edit', title: 'Исправлена запись', details: changes() }
-    case 'moved': return { icon: 'apiary', title: 'Перемещён на другую пасеку', details: [`${oldV?.apiary} → ${newV?.apiary}`, ...(oldV?.hive_number !== newV?.hive_number ? [`Номер: ${oldV?.hive_number} → ${newV?.hive_number}`] : [])] }
+    case 'corrected': return { icon: 'edit', title: tr("Исправлена запись"), details: changes() }
+    case 'moved': return { icon: 'apiary', title: tr("Перемещён на другую пасеку"), details: [`${oldV?.apiary} → ${newV?.apiary}`, ...(oldV?.hive_number !== newV?.hive_number ? [tr("Номер: {0} → {1}", oldV?.hive_number, newV?.hive_number)] : [])] }
     case 'swarmed': return {
-      icon: 'hive', title: `Роение${Number(newV?.swarm_count) > 1 ? ` (${newV?.swarm_count} роя)` : ''}`,
-      details: [newV?.captured ? (newV?.new_hive_number ? `Пойман, посажен в улей №${newV.new_hive_number}` : 'Рой пойман') : 'Рой улетел'],
+      icon: 'hive', title: tr("Роение{0}", Number(newV?.swarm_count) > 1 ? tr(" ({0} роя)", newV?.swarm_count) : ''),
+      details: [newV?.captured ? (newV?.new_hive_number ? tr("Пойман, посажен в улей №{0}", newV.new_hive_number) : tr("Рой пойман")) : tr("Рой улетел")],
     }
-    case 'swarm_settled': return { icon: 'hive', title: `Посажен рой из улья №${newV?.from_hive_number}`, details: [] }
-    case 'split': return { icon: 'hive', title: `Сделан отводок: улей №${newV?.new_hive_number}`, details: [] }
+    case 'swarm_settled': return { icon: 'hive', title: tr("Посажен рой из улья №{0}", newV?.from_hive_number), details: [] }
+    case 'split': return { icon: 'hive', title: tr("Сделан отводок: улей №{0}", newV?.new_hive_number), details: [] }
     case 'split_created': return {
-      icon: 'hive', title: `Отводок от улья №${newV?.source_hive_number}`,
-      details: [newV?.queen_code ? `Матка ${newV.queen_code}` : 'Без матки'],
+      icon: 'hive', title: tr("Отводок от улья №{0}", newV?.source_hive_number),
+      details: [newV?.queen_code ? tr("Матка {0}", newV.queen_code) : tr("Без матки")],
     }
-    case 'merged_into': return { icon: 'hive', title: `Объединён в улей №${newV?.target_hive_number}`, details: [] }
+    case 'merged_into': return { icon: 'hive', title: tr("Объединён в улей №{0}", newV?.target_hive_number), details: [] }
     case 'merge_target': {
       const nums = Array.isArray(newV?.source_hive_numbers) ? (newV?.source_hive_numbers as string[]).map((n) => `№${n}`).join(', ') : ''
-      return { icon: 'hive', title: `Присоединены ульи ${nums}`, details: newV?.queen_code ? [`Оставлена матка ${newV.queen_code}`] : [] }
+      return { icon: 'hive', title: tr("Присоединены ульи {0}", nums), details: newV?.queen_code ? [tr("Оставлена матка {0}", newV.queen_code)] : [] }
     }
-    case 'wintering_started': return { icon: 'apiary', title: `Ушёл в зимовку ${newV?.season ?? ''}`, details: [] }
-    case 'wintering_finished': return { icon: 'apiary', title: `Зимовка ${newV?.season ?? ''} завершена`, details: [WINTERING_RESULT[newV?.result as WinteringResult] ?? ''] }
-    case 'qr_printed': return { icon: 'qr', title: 'Напечатан QR-код', details: [] }
-    case 'task_done': return { icon: 'treat', title: `Выполнено: ${newV?.title ?? ''}`, details: [] }
-    default: return { icon: 'edit', title: 'Изменения', details: changes() }
+    case 'wintering_started': return { icon: 'apiary', title: tr("Ушёл в зимовку {0}", newV?.season ?? ''), details: [] }
+    case 'wintering_finished': return { icon: 'apiary', title: tr("Зимовка {0} завершена", newV?.season ?? ''), details: [WINTERING_RESULT[newV?.result as WinteringResult] ?? ''] }
+    case 'qr_printed': return { icon: 'qr', title: tr("Напечатан QR-код"), details: [] }
+    case 'task_done': return { icon: 'treat', title: tr("Выполнено: {0}", newV?.title ?? ''), details: [] }
+    default: return { icon: 'edit', title: tr("Изменения"), details: changes() }
   }
 }
 
@@ -167,22 +167,22 @@ export function todayIso(): string {
 // ---------- stage 3 ----------
 import type { CaseStatus, DiseaseSeverity, FeedType, FeedUnit, FoodLevel, InspectionHealth, QueenCondition } from '../types/api'
 
-export const QUEEN_CONDITION: Record<QueenCondition, string> = { GOOD: 'Хорошее', NORMAL: 'Нормальное', POOR: 'Плохое', NOT_SEEN: 'Не видна' }
+export const QUEEN_CONDITION: Record<QueenCondition, string> = { GOOD: tr("Хорошее"), NORMAL: tr("Нормальное"), POOR: tr("Плохое"), NOT_SEEN: tr("Не видна") }
 
-export const FOOD_LEVEL: Record<FoodLevel, string> = { CRITICAL: 'Критично', LOW: 'Мало', NORMAL: 'Норма', ABUNDANT: 'Много' }
-export const INSPECTION_HEALTH: Record<InspectionHealth, string> = { HEALTHY: 'Здорова', SUSPICIOUS: 'Подозрение', SICK: 'Болеет' }
-export const SEVERITY: Record<DiseaseSeverity, string> = { LIGHT: 'Лёгкая', MODERATE: 'Средняя', SEVERE: 'Тяжёлая' }
+export const FOOD_LEVEL: Record<FoodLevel, string> = { CRITICAL: tr("Критично"), LOW: tr("Мало"), NORMAL: tr("Норма"), ABUNDANT: tr("Много") }
+export const INSPECTION_HEALTH: Record<InspectionHealth, string> = { HEALTHY: tr("Здорова"), SUSPICIOUS: tr("Подозрение"), SICK: tr("Болеет") }
+export const SEVERITY: Record<DiseaseSeverity, string> = { LIGHT: tr("Лёгкая"), MODERATE: tr("Средняя"), SEVERE: tr("Тяжёлая") }
 export const CASE_STATUS: Record<CaseStatus, { label: string; tone: Tone }> = {
-  SUSPECTED: { label: 'Подозрение', tone: 'warn' },
-  CONFIRMED: { label: 'Подтверждено', tone: 'bad' },
-  TREATING: { label: 'Лечение', tone: 'warn' },
-  RESOLVED: { label: 'Вылечено', tone: 'ok' },
+  SUSPECTED: { label: tr("Подозрение"), tone: 'warn' },
+  CONFIRMED: { label: tr("Подтверждено"), tone: 'bad' },
+  TREATING: { label: tr("Лечение"), tone: 'warn' },
+  RESOLVED: { label: tr("Вылечено"), tone: 'ok' },
 }
 export const FEED_TYPE: Record<FeedType, string> = {
-  SUGAR_SYRUP: 'Сахарный сироп', CANDY: 'Канди', HONEY: 'Мёд', PROTEIN: 'Белковая',
-  POLLEN_SUBSTITUTE: 'Заменитель перги', MEDICATED: 'Лечебная', OTHER: 'Другое',
+  SUGAR_SYRUP: tr("Сахарный сироп"), CANDY: tr("Канди"), HONEY: tr("Мёд"), PROTEIN: tr("Белковая"),
+  POLLEN_SUBSTITUTE: tr("Заменитель перги"), MEDICATED: tr("Лечебная"), OTHER: tr("Другое"),
 }
-export const FEED_UNIT: Record<FeedUnit, string> = { KG: 'кг', G: 'г', L: 'л', ML: 'мл', PCS: 'шт' }
+export const FEED_UNIT: Record<FeedUnit, string> = { KG: tr("кг"), G: tr("г"), L: tr("л"), ML: tr("мл"), PCS: tr("шт") }
 
 export function addDaysIso(days: number, from = new Date()): string {
   const d = new Date(from)
@@ -194,15 +194,16 @@ export function addDaysIso(days: number, from = new Date()): string {
 import type { ProductType, WinteringResult } from '../types/api'
 
 export const PRODUCT_TYPE: Record<ProductType, string> = {
-  WAX: 'Воск', PROPOLIS: 'Прополис', BEE_BREAD: 'Перга', POLLEN: 'Пыльца', ROYAL_JELLY: 'Маточное молочко',
-  QUEENS: 'Матки', COLONIES: 'Пчелосемьи', PACKAGES: 'Пчелопакеты',
+  WAX: tr("Воск"), PROPOLIS: tr("Прополис"), BEE_BREAD: tr("Перга"), POLLEN: tr("Пыльца"), ROYAL_JELLY: tr("Маточное молочко"),
+  QUEENS: tr("Матки"), COLONIES: tr("Пчелосемьи"), PACKAGES: tr("Пчелопакеты"),
 }
-export const WINTERING_RESULT: Record<WinteringResult, string> = { STRONG: 'Перезимовала сильной', WEAK: 'Перезимовала, ослабла', DIED: 'Погибла' }
-export const HONEY_TYPES = ['Разнотравье', 'Акация', 'Липа', 'Гречиха', 'Подсолнечник', 'Горный', 'Хлопковый', 'Эспарцет']
-export const MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
-export const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
+export const WINTERING_RESULT: Record<WinteringResult, string> = { STRONG: tr("Перезимовала сильной"), WEAK: tr("Перезимовала, ослабла"), DIED: tr("Погибла") }
+export const HONEY_TYPES = [tr("Разнотравье"), tr("Акация"), tr("Липа"), tr("Гречиха"), tr("Подсолнечник"), tr("Горный"), tr("Хлопковый"), tr("Эспарцет")]
+export const MONTHS_SHORT = [tr("янв"), tr("фев"), tr("мар"), tr("апр"), tr("май"), tr("июн"), tr("июл"), tr("авг"), tr("сен"), tr("окт"), tr("ноя"), tr("дек")]
+export const MONTHS = [tr("Январь"), tr("Февраль"), tr("Март"), tr("Апрель"), tr("Май"), tr("Июнь"), tr("Июль"), tr("Август"), tr("Сентябрь"), tr("Октябрь"), tr("Ноябрь"), tr("Декабрь")]
 
-/** 12.50 → "12,5"; keeps up to 2 decimals, Russian decimal comma, thin-space thousands. */
+
+import { tr } from '../i18n'/** 12.50 → "12,5"; keeps up to 2 decimals, Russian decimal comma, thin-space thousands. */
 export function num(v: string | number | null | undefined): string {
   if (v === null || v === undefined || v === '') return '—'
   return Number(v).toLocaleString('ru-RU', { maximumFractionDigits: 2 })
@@ -210,35 +211,35 @@ export function num(v: string | number | null | undefined): string {
 
 /** «сегодня», «вчера», «5 дней назад» */
 export function daysAgoLabel(days: number): string {
-  if (days <= 0) return 'сегодня'
-  if (days === 1) return 'вчера'
+  if (days <= 0) return tr("сегодня")
+  if (days === 1) return tr("вчера")
   const n10 = days % 10, n100 = days % 100
-  const word = n10 === 1 && n100 !== 11 ? 'день' : n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20) ? 'дня' : 'дней'
-  return `${days} ${word} назад`
+  const word = n10 === 1 && n100 !== 11 ? tr("день") : n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20) ? tr("дня") : tr("дней")
+  return tr("{0} {1} назад", days, word)
 }
 
 // ---------- stage 7: CRM ----------
 import type { ExpenseCategory, OrderStatus, PaymentMethod, SaleCategory, SaleState } from '../types/api'
 
 export const EXPENSE_CATEGORY: Record<ExpenseCategory, string> = {
-  HIVES: 'Ульи', FRAMES: 'Рамки', FOUNDATION: 'Вощина', FEED: 'Корм', MEDICINE: 'Лекарства', EQUIPMENT: 'Оборудование',
-  TRANSPORT: 'Транспорт', FUEL: 'Топливо', QUEENS: 'Матки', COLONIES: 'Семьи', REPAIR: 'Ремонт', OTHER: 'Другое',
+  HIVES: tr("Ульи"), FRAMES: tr("Рамки"), FOUNDATION: tr("Вощина"), FEED: tr("Корм"), MEDICINE: tr("Лекарства"), EQUIPMENT: tr("Оборудование"),
+  TRANSPORT: tr("Транспорт"), FUEL: tr("Топливо"), QUEENS: tr("Матки"), COLONIES: tr("Семьи"), REPAIR: tr("Ремонт"), OTHER: tr("Другое"),
 }
 export const SALE_CATEGORY: Record<SaleCategory, string> = {
-  HONEY: 'Мёд', WAX: 'Воск', PROPOLIS: 'Прополис', BEE_BREAD: 'Перга', POLLEN: 'Пыльца', QUEENS: 'Матки',
-  COLONIES: 'Семьи', PACKAGES: 'Пчелопакеты', OTHER: 'Другое',
+  HONEY: tr("Мёд"), WAX: tr("Воск"), PROPOLIS: tr("Прополис"), BEE_BREAD: tr("Перга"), POLLEN: tr("Пыльца"), QUEENS: tr("Матки"),
+  COLONIES: tr("Семьи"), PACKAGES: tr("Пчелопакеты"), OTHER: tr("Другое"),
 }
 export const DEFAULT_SALE_UNIT: Record<SaleCategory, FeedUnit> = {
   HONEY: 'KG', WAX: 'KG', PROPOLIS: 'G', BEE_BREAD: 'KG', POLLEN: 'KG', QUEENS: 'PCS', COLONIES: 'PCS', PACKAGES: 'PCS', OTHER: 'PCS',
 }
-export const PAYMENT_METHOD: Record<PaymentMethod, string> = { CASH: 'Наличные', CARD: 'Карта', TRANSFER: 'Перевод' }
+export const PAYMENT_METHOD: Record<PaymentMethod, string> = { CASH: tr("Наличные"), CARD: tr("Карта"), TRANSFER: tr("Перевод") }
 export const ORDER_STATUS: Record<OrderStatus, { label: string; tone: Tone }> = {
-  NEW: { label: 'Новый', tone: 'warn' }, READY: { label: 'Собран', tone: 'ok' },
-  DELIVERED: { label: 'Выдан', tone: 'muted' }, CANCELLED: { label: 'Отменён', tone: 'muted' },
+  NEW: { label: tr("Новый"), tone: 'warn' }, READY: { label: tr("Собран"), tone: 'ok' },
+  DELIVERED: { label: tr("Выдан"), tone: 'muted' }, CANCELLED: { label: tr("Отменён"), tone: 'muted' },
 }
 export const SALE_STATE: Record<SaleState, { label: string; tone: Tone }> = {
-  paid: { label: 'Оплачено', tone: 'ok' }, partial: { label: 'Частично', tone: 'warn' },
-  unpaid: { label: 'В долг', tone: 'bad' }, cancelled: { label: 'Отменена', tone: 'muted' },
+  paid: { label: tr("Оплачено"), tone: 'ok' }, partial: { label: tr("Частично"), tone: 'warn' },
+  unpaid: { label: tr("В долг"), tone: 'bad' }, cancelled: { label: tr("Отменена"), tone: 'muted' },
 }
 
 /** 1 250 смн */
@@ -249,16 +250,16 @@ export function money(v: string | number | null | undefined, currency: string): 
 
 // ---------- admin panel ----------
 export const ENTITY_LABEL: Record<string, string> = {
-  hive: 'Улей', bee_family: 'Семья', queen: 'Матка', apiary: 'Пасека', inspection: 'Осмотр', hive_disease: 'Болезнь',
-  disease: 'Справочник болезней', treatment: 'Обработка', feeding: 'Подкормка', task: 'Напоминание',
-  honey_harvest: 'Мёд', other_product: 'Продукция', swarm: 'Роение', hive_split: 'Отводок', hive_merge: 'Объединение',
-  wintering: 'Зимовка', qr_code: 'QR-код', user: 'Пользователь', user_invite: 'Приглашение', customer: 'Клиент',
-  sale: 'Продажа', payment: 'Оплата', expense: 'Расход', order: 'Заказ',
+  hive: tr("Улей"), bee_family: tr("Семья"), queen: tr("Матка"), apiary: tr("Пасека"), inspection: tr("Осмотр"), hive_disease: tr("Болезнь"),
+  disease: tr("Справочник болезней"), treatment: tr("Обработка"), feeding: tr("Подкормка"), task: tr("Напоминание"),
+  honey_harvest: tr("Мёд"), other_product: tr("Продукция"), swarm: tr("Роение"), hive_split: tr("Отводок"), hive_merge: tr("Объединение"),
+  wintering: tr("Зимовка"), qr_code: tr("QR-код"), user: tr("Пользователь"), user_invite: tr("Приглашение"), customer: tr("Клиент"),
+  sale: tr("Продажа"), payment: tr("Оплата"), expense: tr("Расход"), order: tr("Заказ"),
 }
 const ACTION_LABEL: Record<string, string> = {
-  created: 'создан(а)', updated: 'изменён(а)', corrected: 'исправлен(а)', cancelled: 'отменён(а)', delivered: 'выдан',
-  payment: 'принята оплата', invited: 'приглашён', invite_revoked: 'приглашение отозвано', joined_by_invite: 'вошёл по приглашению',
-  archived: 'в архиве', qr_printed: 'напечатан',
+  created: tr("создан(а)"), updated: tr("изменён(а)"), corrected: tr("исправлен(а)"), cancelled: tr("отменён(а)"), delivered: tr("выдан"),
+  payment: tr("принята оплата"), invited: tr("приглашён"), invite_revoked: tr("приглашение отозвано"), joined_by_invite: tr("вошёл по приглашению"),
+  archived: tr("в архиве"), qr_printed: tr("напечатан"),
 }
 /** One line for the admin activity log: hive events reuse the hive timeline wording. */
 export function describeLogEntry(e: { entity_type: string; action: string; hive_id: string | null; old_value: Record<string, unknown> | null; new_value: Record<string, unknown> | null }): string {
@@ -269,8 +270,8 @@ export function describeLogEntry(e: { entity_type: string; action: string; hive_
   const how = ACTION_LABEL[e.action] ?? e.action
   if (e.entity_type === 'user' && e.action === 'updated' && e.new_value) {
     const parts = []
-    if ('role' in e.new_value) parts.push(`роль: ${ROLE_LABELS[e.new_value.role as UserRole] ?? e.new_value.role}`)
-    if ('is_active' in e.new_value) parts.push(e.new_value.is_active ? 'доступ открыт' : 'доступ закрыт')
+    if ('role' in e.new_value) parts.push(tr("роль: {0}", ROLE_LABELS[e.new_value.role as UserRole] ?? e.new_value.role))
+    if ('is_active' in e.new_value) parts.push(e.new_value.is_active ? tr("доступ открыт") : tr("доступ закрыт"))
     return `${what}: ${parts.join(', ') || how}`
   }
   return `${what} — ${how}`
@@ -278,13 +279,13 @@ export function describeLogEntry(e: { entity_type: string; action: string; hive_
 
 /** «только что», «5 мин назад», «3 ч назад», «вчера», date */
 export function agoLabel(iso: string | null | undefined, now = new Date()): string {
-  if (!iso) return 'ещё не входил(а)'
+  if (!iso) return tr("ещё не входил(а)")
   const d = new Date(iso)
   const min = Math.floor((now.getTime() - d.getTime()) / 60000)
-  if (min < 2) return 'только что'
-  if (min < 60) return `${min} мин назад`
-  if (min < 24 * 60) return `${Math.floor(min / 60)} ч назад`
-  if (min < 48 * 60) return 'вчера'
+  if (min < 2) return tr("только что")
+  if (min < 60) return tr("{0} мин назад", min)
+  if (min < 24 * 60) return tr("{0} ч назад", Math.floor(min / 60))
+  if (min < 48 * 60) return tr("вчера")
   return formatDate(iso)
 }
 
@@ -294,8 +295,8 @@ export function logDetail(e: { entity_type: string; action: string; new_value: R
   const money = (x: unknown) => `${num(x as string)}${currency ? ` ${currency}` : ''}`
   const parts: (string | null | undefined | false)[] = []
   if (e.entity_type === 'sale' && e.action === 'created') parts.push(v.total !== undefined && money(v.total), v.customer as string, Array.isArray(v.lines) && (v.lines as string[]).join(', '))
-  else if (e.entity_type === 'sale' && e.action === 'payment') parts.push(v.amount !== undefined && money(v.amount), v.debt_left !== undefined && Number(v.debt_left) > 0 && `осталось ${money(v.debt_left)}`)
-  else if (e.entity_type === 'order') parts.push(v.total !== undefined && money(v.total), v.customer as string, v.status === 'READY' && 'собран')
+  else if (e.entity_type === 'sale' && e.action === 'payment') parts.push(v.amount !== undefined && money(v.amount), v.debt_left !== undefined && Number(v.debt_left) > 0 && tr("осталось {0}", money(v.debt_left)))
+  else if (e.entity_type === 'order') parts.push(v.total !== undefined && money(v.total), v.customer as string, v.status === 'READY' && tr("собран"))
   else if (e.entity_type === 'expense') parts.push(v.amount !== undefined && money(v.amount), EXPENSE_CATEGORY[v.category as ExpenseCategory], v.description as string)
   else if (e.entity_type === 'customer' || e.entity_type === 'apiary') parts.push(v.name as string, v.city as string)
   else if (e.entity_type === 'user_invite') parts.push(v.username ? `@${v.username}` : v.telegram_id ? `ID ${v.telegram_id}` : null, v.role ? ROLE_LABELS[v.role as UserRole] : null, v.note as string)

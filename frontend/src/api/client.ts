@@ -1,3 +1,5 @@
+import { getLang, tr } from '../i18n'
+
 /** Thin fetch wrapper: base URL, bearer token, readable Russian error messages. */
 
 export class ApiError extends Error {
@@ -27,23 +29,24 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
 }
 
 const FALLBACK_MESSAGES: Record<number, string> = {
-  401: 'Требуется вход через Telegram',
-  403: 'Недостаточно прав',
-  404: 'Не найдено',
-  422: 'Проверьте введённые данные',
-  429: 'Слишком много запросов, попробуйте чуть позже',
+  401: tr("Требуется вход через Telegram"),
+  403: tr("Недостаточно прав"),
+  404: tr("Не найдено"),
+  422: tr("Проверьте введённые данные"),
+  429: tr("Слишком много запросов, попробуйте чуть позже"),
 }
 
 async function request(path: string, init: RequestInit): Promise<Response> {
   const headers = new Headers(init.headers)
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`)
+  headers.set('X-Lang', getLang()) // the server answers errors, reports and labels in this language
 
   let response: Response
   try {
     response = await fetch(`${BASE_URL}${path}`, { ...init, headers })
   } catch {
-    throw new ApiError(0, 'Нет соединения с сервером. Проверьте интернет.')
+    throw new ApiError(0, tr("Нет соединения с сервером. Проверьте интернет."))
   }
   if (!response.ok) await raise(response)
   return response
@@ -52,7 +55,7 @@ async function request(path: string, init: RequestInit): Promise<Response> {
 async function raise(response: Response): Promise<never> {
   const data = await response.json().catch(() => null)
   const detail = typeof data?.detail === 'string' ? data.detail : null
-  const message = detail ?? FALLBACK_MESSAGES[response.status] ?? 'Ошибка сервера. Попробуйте позже.'
+  const message = detail ?? FALLBACK_MESSAGES[response.status] ?? tr("Ошибка сервера. Попробуйте позже.")
   if (response.status === 401 && accessToken) onUnauthorized?.()
   throw new ApiError(response.status, message, Array.isArray(data?.errors) ? data.errors : [])
 }

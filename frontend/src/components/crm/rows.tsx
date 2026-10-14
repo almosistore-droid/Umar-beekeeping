@@ -3,6 +3,7 @@ import type { Order, Sale } from '../../types/api'
 import { FEED_UNIT, MONTHS, ORDER_STATUS, SALE_CATEGORY, SALE_STATE, formatDate, money, num } from '../../utils/labels'
 import { Icon } from '../Icon'
 import { Badge, Chips } from '../ui'
+import { tr } from '../../i18n'
 
 export interface Period { year: number; month: number | null }
 
@@ -34,12 +35,12 @@ export function SaleRow({ s, currency }: { s: Sale; currency: string }) {
     <Link to={`/crm/sales/${s.id}`} className={`crm-row${s.cancelled_at ? ' is-cancelled' : ''}`}>
       <span className="crm-row__icon" aria-hidden><Icon name="cart" size={18} /></span>
       <span className="crm-row__main">
-        <b>{s.customer?.name ?? 'Без клиента'}</b>
+        <b>{s.customer?.name ?? tr("Без клиента")}</b>
         <span className="small hint">{formatDate(s.sale_date)} · {linesText(s.items)}</span>
       </span>
       <span className="crm-row__side">
         <b>{money(s.total, currency)}</b>
-        {s.state !== 'paid' && <Badge tone={st.tone}>{s.state === 'partial' ? `долг ${money(s.debt, currency)}` : st.label}</Badge>}
+        {s.state !== 'paid' && <Badge tone={st.tone}>{s.state === 'partial' ? tr("долг {0}", money(s.debt, currency)) : st.label}</Badge>}
       </span>
     </Link>
   )
@@ -53,7 +54,7 @@ export function OrderRow({ o, currency }: { o: Order; currency: string }) {
       <span className="crm-row__main">
         <b>{o.customer.name}</b>
         <span className={`small ${o.overdue ? 'warn' : 'hint'}`}>
-          {o.due_date ? `${o.overdue ? 'просрочен, ' : ''}к ${formatDate(o.due_date)}` : `от ${formatDate(o.order_date)}`} · {linesText(o.items)}
+          {o.due_date ? tr("{0}к {1}", o.overdue ? tr("просрочен, ") : '', formatDate(o.due_date)) : tr("от {0}", formatDate(o.order_date))} · {linesText(o.items)}
         </span>
       </span>
       <span className="crm-row__side">

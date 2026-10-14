@@ -9,13 +9,14 @@ import { usePermissions } from '../hooks/usePermissions'
 import { haptic, shareText } from '../services/telegram'
 import { ROLE_LABELS, type InviteResult, type UserRole } from '../types/api'
 import { agoLabel, formatDate } from '../utils/labels'
+import { tr } from '../i18n'
 
 const roleOpts = (Object.keys(ROLE_LABELS) as UserRole[]).map((r) => ({ value: r, label: ROLE_LABELS[r] }))
 const ROLE_HINT: Record<UserRole, string> = {
-  ADMIN: 'всё, включая пользователей и админ-панель',
-  BEEKEEPER: 'пасеки, ульи, матки, операции, CRM',
-  ASSISTANT: 'осмотры, болезни, обработки, подкормки, мёд',
-  VIEWER: 'только просмотр, без денег',
+  ADMIN: tr("всё, включая пользователей и админ-панель"),
+  BEEKEEPER: tr("пасеки, ульи, матки, операции, CRM"),
+  ASSISTANT: tr("осмотры, болезни, обработки, подкормки, мёд"),
+  VIEWER: tr("только просмотр, без денег"),
 }
 
 /** Admin: users and access — roles, blocking, adding people in advance (invitations). */
@@ -34,31 +35,29 @@ export function UsersPage() {
   })
   const revoke = useMutation({ mutationFn: adminApi.revoke, onSuccess: () => { haptic('success'); refresh() }, onError: () => haptic('error') })
 
-  if (!isAdmin) return <MessageView icon="users" title="Только для администратора" />
+  if (!isAdmin) return <MessageView icon="users" title={tr("Только для администратора")} />
   if (users.isLoading) return <LoadingView />
   const pending = (invites.data ?? []).filter((i) => i.status === 'PENDING' && !i.expired)
 
   return (
     <div className="page">
       <div className="page__titlebar">
-        <h1 className="page__title">Пользователи и доступ</h1>
-        <button className="btn btn--primary btn--sm" onClick={() => setAdding(true)}>＋ Добавить</button>
+        <h1 className="page__title">{tr("Пользователи и доступ")}</h1>
+        <button className="btn btn--primary btn--sm" onClick={() => setAdding(true)}>{tr("＋ Добавить")}</button>
       </div>
       <ErrorBox error={users.error ?? update.error ?? revoke.error} />
 
       {pending.length > 0 && (
         <section className="card">
-          <h2 className="card__title">Ждут первого входа</h2>
+          <h2 className="card__title">{tr("Ждут первого входа")}</h2>
           {pending.map((i) => (
             <div key={i.id} className="invite-row">
               <span className="invite-row__who">
                 <b>{i.note ?? (i.username ? `@${i.username}` : `ID ${i.telegram_id}`)}</b>
-                <span className="hint small">
-                  {[i.username && `@${i.username}`, i.telegram_id && `ID ${i.telegram_id}`].filter(Boolean).join(' · ')} · {ROLE_LABELS[i.role]} · до {formatDate(i.expires_at)}
-                </span>
+                <span className="hint small">{tr("{0} · {1} · до {2}", [i.username && `@${i.username}`, i.telegram_id && `ID ${i.telegram_id}`].filter(Boolean).join(' · '), ROLE_LABELS[i.role], formatDate(i.expires_at))}</span>
               </span>
               <button type="button" className="btn btn--ghost btn--sm" disabled={revoke.isPending}
-                onClick={() => revoke.mutate(i.id)}>Отозвать</button>
+                onClick={() => revoke.mutate(i.id)}>{tr("Отозвать")}</button>
             </div>
           ))}
         </section>
@@ -70,19 +69,19 @@ export function UsersPage() {
           return (
             <li key={u.id} className={`card user-row${u.is_active ? '' : ' card--muted'}`}>
               <div className="card__titlebar">
-                <h2 className="card__title">{u.display_name}{self && ' (вы)'}</h2>
-                {!u.is_active && <span className="badge badge--bad">заблокирован</span>}
+                <h2 className="card__title">{u.display_name}{self && tr(" (вы)")}</h2>
+                {!u.is_active && <span className="badge badge--bad">{tr("заблокирован")}</span>}
               </div>
               <div className="user-row__meta">
                 {u.username && <span>@{u.username}</span>}
                 <span>ID {u.telegram_id}</span>
-                <span>был(а): {agoLabel(u.last_seen_at)}</span>
+                <span>{tr("был(а): {0}", agoLabel(u.last_seen_at))}</span>
               </div>
               {self ? <p className="hint small">{ROLE_LABELS[u.role]}</p> : <>
                 <Select value={u.role} onChange={(role) => update.mutate({ id: u.id, role })} options={roleOpts} />
                 <label className="switch">
                   <input type="checkbox" checked={u.is_active} onChange={(e) => update.mutate({ id: u.id, is_active: e.target.checked })} />
-                  <span>Доступ разрешён</span>
+                  <span>{tr("Доступ разрешён")}</span>
                 </label>
               </>}
             </li>
@@ -91,11 +90,11 @@ export function UsersPage() {
       </ul>
 
       <section className="card card--muted small">
-        <b>Роли</b>
+        <b>{tr("Роли")}</b>
         {(Object.keys(ROLE_HINT) as UserRole[]).map((r) => <span key={r}><b>{ROLE_LABELS[r]}:</b> {ROLE_HINT[r]}</span>)}
       </section>
 
-      <Sheet open={adding} title="Добавить пользователя" onClose={() => setAdding(false)}>
+      <Sheet open={adding} title={tr("Добавить пользователя")} onClose={() => setAdding(false)}>
         {adding && <InviteForm onDone={() => { refresh(); setAdding(false) }} />}
       </Sheet>
     </div>
@@ -123,25 +122,25 @@ function InviteForm({ onDone }: { onDone: () => void }) {
       return (
         <div className="form">
           <div className="result-ok"><span className="result-ok__mark" aria-hidden>✓</span>
-            <b>{result.user?.display_name} уже пользуется приложением</b>
-            <span className="hint small">Роль изменена на «{ROLE_LABELS[result.user!.role]}», доступ открыт.</span></div>
-          <button type="button" className="btn btn--primary btn--block" onClick={onDone}>Готово</button>
+            <b>{tr("{0} уже пользуется приложением", result.user?.display_name)}</b>
+            <span className="hint small">{tr("Роль изменена на «{0}», доступ открыт.", ROLE_LABELS[result.user!.role])}</span></div>
+          <button type="button" className="btn btn--primary btn--block" onClick={onDone}>{tr("Готово")}</button>
         </div>
       )
     }
     const share = async () => {
       const how = await shareText(result.share_text ?? '')
-      setShared(how === 'copied' ? 'Текст скопирован — вставьте его в чат с человеком.' : how === 'none' ? 'Не удалось поделиться — скопируйте текст вручную.' : null)
+      setShared(how === 'copied' ? tr("Текст скопирован — вставьте его в чат с человеком.") : how === 'none' ? tr("Не удалось поделиться — скопируйте текст вручную.") : null)
     }
     return (
       <div className="form">
-        <div className="result-ok"><span className="result-ok__mark" aria-hidden>✓</span><b>Приглашение создано</b>
-          <span className="hint small">При первом входе человек сразу получит роль «{ROLE_LABELS[result.invite!.role]}». Приглашение действует 30 дней.</span></div>
-        <p className="hint small">Отправьте человеку сообщение:</p>
+        <div className="result-ok"><span className="result-ok__mark" aria-hidden>✓</span><b>{tr("Приглашение создано")}</b>
+          <span className="hint small">{tr("При первом входе человек сразу получит роль «{0}». Приглашение действует 30 дней.", ROLE_LABELS[result.invite!.role])}</span></div>
+        <p className="hint small">{tr("Отправьте человеку сообщение:")}</p>
         <p className="share-box">{result.share_text}</p>
         {shared && <p className="hint small" role="status">{shared}</p>}
-        <button type="button" className="btn btn--primary btn--block" onClick={share}><Icon name="share" size={18} />Отправить приглашение</button>
-        <button type="button" className="btn btn--ghost btn--block" onClick={onDone}>Готово</button>
+        <button type="button" className="btn btn--primary btn--block" onClick={share}><Icon name="share" size={18} />{tr("Отправить приглашение")}</button>
+        <button type="button" className="btn btn--ghost btn--block" onClick={onDone}>{tr("Готово")}</button>
       </div>
     )
   }
@@ -149,24 +148,24 @@ function InviteForm({ onDone }: { onDone: () => void }) {
   return (
     <form className="form" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate() }}>
       <ErrorBox error={save.error} />
-      <Choice label="Как найти человека" value={by} onChange={(v) => { if (v) { setBy(v); setValue('') } }}
-        options={[{ value: 'username', label: 'По @username' }, { value: 'id', label: 'По Telegram ID' }]} />
+      <Choice label={tr("Как найти человека")} value={by} onChange={(v) => { if (v) { setBy(v); setValue('') } }}
+        options={[{ value: 'username', label: tr("По @username") }, { value: 'id', label: tr("По Telegram ID") }]} />
       {by === 'username' ? (
-        <Field label="Имя пользователя в Telegram" hint="Есть в профиле Telegram: «@имя»" error={fieldError(save.error, 'username')}>
+        <Field label={tr("Имя пользователя в Telegram")} hint={tr("Есть в профиле Telegram: «@имя»")} error={fieldError(save.error, 'username')}>
           <input className="input input--big" value={value} onChange={(e) => setValue(e.target.value)} placeholder="@username"
             autoCapitalize="off" autoComplete="off" spellCheck={false} required />
         </Field>
       ) : (
-        <Field label="Telegram ID" hint="Число. Человек может узнать его у бота @userinfobot" error={fieldError(save.error, 'telegram_id')}>
+        <Field label="Telegram ID" hint={tr("Число. Человек может узнать его у бота @userinfobot")} error={fieldError(save.error, 'telegram_id')}>
           <input className="input input--big" inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value.replace(/\D/g, ''))} required />
         </Field>
       )}
-      <Choice label="Роль" options={roleOpts} value={role} onChange={(v) => v && setRole(v)} />
+      <Choice label={tr("Роль")} options={roleOpts} value={role} onChange={(v) => v && setRole(v)} />
       <p className="hint small">{ROLE_HINT[role]}</p>
-      <Field label="Кто это" hint="Например «Карим, помощник на горной пасеке»">
+      <Field label={tr("Кто это")} hint={tr("Например «Карим, помощник на горной пасеке»")}>
         <input className="input" value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} />
       </Field>
-      <div className="submit-bar"><SubmitButton pending={save.isPending}>Добавить</SubmitButton></div>
+      <div className="submit-bar"><SubmitButton pending={save.isPending}>{tr("Добавить")}</SubmitButton></div>
     </form>
   )
 }

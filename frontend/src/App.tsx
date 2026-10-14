@@ -4,19 +4,20 @@ import { LoadingView, MessageView } from './components/StateViews'
 import { useAuth } from './hooks/useAuth'
 import { isInsideTelegram } from './services/telegram'
 import { router } from './router'
+import { tr } from './i18n'
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { state, retry, loginWithInitData } = useAuth()
   switch (state.status) {
     case 'loading':
-      return <LoadingView text="Вход через Telegram…" />
+      return <LoadingView text={tr("Вход через Telegram…")} />
     case 'outside-telegram':
       return (
         <>
           <MessageView
             logo
-            title="Откройте в Telegram"
-            text="Это приложение работает внутри Telegram. Откройте бота и нажмите «Открыть пасеку»."
+            title={tr("Откройте в Telegram")}
+            text={tr("Это приложение работает внутри Telegram. Откройте бота и нажмите «Открыть пасеку».")}
           />
           {import.meta.env.DEV && <DevLogin onSubmit={loginWithInitData} />}
         </>
@@ -24,7 +25,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     case 'error':
       return (
         <>
-          <MessageView icon="weak" title="Не удалось войти" text={state.message} action={{ label: 'Повторить', onClick: retry }} />
+          <MessageView icon="weak" title={tr("Не удалось войти")} text={state.message} action={{ label: tr("Повторить"), onClick: retry }} />
           {import.meta.env.DEV && !isInsideTelegram() && <DevLogin onSubmit={loginWithInitData} />}
         </>
       )
@@ -50,15 +51,12 @@ function DevLogin({ onSubmit }: { onSubmit: (initData: string) => void }) {
   const [value, setValue] = useState('')
   return (
     <form className="card dev-login" onSubmit={(e) => { e.preventDefault(); if (value.trim()) onSubmit(value) }}>
-      <h2 className="card__title">Вход для проверки на компьютере</h2>
-      <p className="hint small">
-        Выполните в папке проекта:<br />
-        <code>docker compose -f docker-compose.dev.yml exec backend python -m app.utils.dev_init_data 111111</code><br />
-        и вставьте результат сюда.
-      </p>
+      <h2 className="card__title">{tr("Вход для проверки на компьютере")}</h2>
+      <p className="hint small">{tr("Выполните в папке проекта:")}<br />
+        <code>docker compose -f docker-compose.dev.yml exec backend python -m app.utils.dev_init_data 111111</code><br />{tr("и вставьте результат сюда.")}</p>
       <textarea className="input" rows={3} value={value} onChange={(e) => setValue(e.target.value)}
-        placeholder="auth_date=...&user=...&hash=..." aria-label="Строка входа" />
-      <button className="btn btn--primary btn--block" type="submit">Войти</button>
+        placeholder="auth_date=...&user=...&hash=..." aria-label={tr("Строка входа")} />
+      <button className="btn btn--primary btn--block" type="submit">{tr("Войти")}</button>
     </form>
   )
 }

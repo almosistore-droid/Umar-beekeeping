@@ -3,6 +3,7 @@ import { authApi } from '../api/auth'
 import { ApiError, setAccessToken, setUnauthorizedHandler } from '../api/client'
 import { getInitData } from '../services/telegram'
 import type { User } from '../types/api'
+import { adoptServerLang, tr } from '../i18n'
 
 type AuthState =
   | { status: 'loading' }
@@ -38,9 +39,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await authApi.loginWithTelegram(initData)
       setAccessToken(res.access_token)
       setState({ status: 'authenticated', user: res.user, startParam: res.start_param })
+      adoptServerLang(res.user.language) // chosen on another device
     } catch (e) {
       setAccessToken(null)
-      setState({ status: 'error', message: e instanceof ApiError ? e.message : 'Не удалось войти' })
+      setState({ status: 'error', message: e instanceof ApiError ? e.message : tr("Не удалось войти") })
     } finally {
       inFlight.current = false
     }
