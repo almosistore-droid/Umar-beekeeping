@@ -79,6 +79,9 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Data fetching via TanStack Query; HTTP via `src/api/client.ts` (token in memory only).
 - Bottom nav: Главная / Ульи / Сканер / CRM (admin, beekeeper) or Матки (others) / Отчёты / Ещё.
 
+## Dev tunnel (docker-compose.dev.yml, profile `telegram`)
+- `tunnel/tunnel.py` (stdlib only) supervises a Cloudflare quick tunnel: sets each new address on the bot menu button via `setChatMenuButton` (real TELEGRAM_BOT_TOKEN from .env), health-checks every 30 s and starts a new tunnel after 4 failures. Image: python:3.12-slim + static cloudflared copied from the official image. Tests: `backend/tests/test_dev_tunnel.py`.
+
 ## Commands
 - Backend tests: `cd backend && .venv/bin/pytest` (DB `beekeeping_test`, migrated with Alembic in conftest).
 - Frontend: `cd frontend && npm test && npm run build`.

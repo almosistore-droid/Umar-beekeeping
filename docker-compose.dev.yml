@@ -59,13 +59,18 @@ services:
       - backend
 
   # Optional HTTPS tunnel for opening the app inside Telegram from this laptop:
-  #   docker compose -f docker-compose.dev.yml --profile telegram up --build
-  # then find "https://....trycloudflare.com" in the log (docker compose ... logs tunnel)
-  # and put it into @BotFather -> Bot Settings -> Menu Button.
+  #   docker compose -f docker-compose.dev.yml --profile telegram up -d --build
+  # It sets the new https://….trycloudflare.com address on the bot's menu button by itself
+  # (needs the real TELEGRAM_BOT_TOKEN in .env) and creates a new address when the old one dies.
+  # Current address: docker compose -f docker-compose.dev.yml logs tunnel | findstr trycloudflare
   tunnel:
-    image: cloudflare/cloudflared:latest
+    build: ./tunnel
     profiles: ["telegram"]
-    command: tunnel --no-autoupdate --url http://frontend:5173
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TUNNEL_TARGET: http://frontend:5173
+      MENU_BUTTON_TEXT: Пасека
+    restart: unless-stopped
     depends_on:
       - frontend
 
