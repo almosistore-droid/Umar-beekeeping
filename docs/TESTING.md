@@ -185,9 +185,9 @@ Telegram открывает Mini App только по **HTTPS-адресу из
    (через токен из `.env`). Если адрес умирает (ночью, после сна ноутбука), через ~2 минуты туннель
    сам создаёт новый и снова обновляет кнопку. Посмотреть текущий адрес:
    ```bash
-   docker compose -f docker-compose.dev.yml logs tunnel | findstr "Адрес Кнопка"
+   docker compose -f docker-compose.dev.yml logs tunnel | findstr "TUNNEL MENU"
    ```
-   (на Mac/Linux вместо `findstr` — `grep`). В логе будет «Кнопка «Пасека» в боте теперь открывает https://…».
+   (на Mac/Linux вместо `findstr` — `grep`). В логе будет `TUNNEL URL: https://…` и `MENU BUTTON OK -> https://…`.
 4. Откройте бота на телефоне и нажмите кнопку «Пасека» → приложение откроется внутри Telegram,
    вход произойдёт автоматически. Если Telegram показывает старое — закройте и снова откройте чат с ботом.
 

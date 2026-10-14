@@ -55,7 +55,7 @@ def test_set_menu_button_failure_is_reported_not_raised(capsys):
         raise urllib.error.URLError("no network")
 
     assert tunnel.set_menu_button("123:abc", "https://x.trycloudflare.com", "Пасека", opener=opener) is False
-    assert "не удалось обновить кнопку" in capsys.readouterr().out
+    assert "MENU BUTTON FAILED" in capsys.readouterr().out
 
 
 @pytest.mark.parametrize("behaviour, alive", [

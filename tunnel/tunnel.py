@@ -62,10 +62,12 @@ def set_menu_button(token: str, url: str, text: str, opener=urllib.request.urlop
         with opener(req, timeout=15) as resp:
             ok = json.loads(resp.read().decode()).get("ok") is True
     except (urllib.error.URLError, ValueError, OSError) as exc:
-        log(f"не удалось обновить кнопку в Telegram: {exc}")
+        log(f"MENU BUTTON FAILED: {exc} (не удалось обновить кнопку в Telegram)")
         return False
+    if not ok:
+        log("MENU BUTTON FAILED: Telegram ответил ошибкой — проверьте TELEGRAM_BOT_TOKEN в .env")
     if ok:
-        log(f"Кнопка «{text}» в боте теперь открывает {url}")
+        log(f"MENU BUTTON OK -> {url}  (кнопка «{text}» в боте теперь открывает этот адрес)")
     return ok
 
 
@@ -109,12 +111,12 @@ class Supervisor:
             self.stop()
             return False
         log("=" * 60)
-        log(f"Адрес туннеля: {self.url}")
+        log(f"TUNNEL URL: {self.url}")
         log("=" * 60)
         if token_usable(self.token):
             set_menu_button(self.token, self.url, self.text)
         else:
-            log("TELEGRAM_BOT_TOKEN не задан — вставьте адрес в @BotFather → Bot Settings → Menu Button вручную")
+            log("MENU BUTTON SKIPPED: TELEGRAM_BOT_TOKEN не задан в .env — вставьте адрес в @BotFather → Menu Button вручную")
         return True
 
     def stop(self) -> None:
