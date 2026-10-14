@@ -68,6 +68,11 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Invitations (`user_invites`): by Telegram ID or lowercase username, 30 days, one PENDING per ID/username (partial unique indexes). `auth_service.upsert_telegram_user` claims one on a user's FIRST login (ID first, then username-only invites); ADMIN_TELEGRAM_IDS still wins. Inviting someone who already uses the app changes their role at once. `users.last_seen_at` is set on every login.
 - Frontend: «Ещё → Админ-панель» (`pages/admin/AdminPage`), `/users` (access + invite sheet with Telegram share), `/admin/log` (`describeLogEntry`, `logDetail`).
 
+## Languages (specs/009-i18n-tajik) — Russian + Tajik
+- Russian text is the key. Frontend: every user-visible string goes through `tr("русский текст {0}", arg)` from `src/i18n`; translations in `src/i18n/tg.json`. `src/test/i18n.test.ts` fails on Cyrillic outside `tr()` (mark deliberate exceptions `// i18n-ignore`) and on missing/mismatched translations. Language is fixed per page load (localStorage `fayzi-umar.lang`, else Telegram `language_code`, else the server's `users.language`); switching reloads.
+- Every request sends `X-Lang`. Backend: the `language` middleware sets `app.i18n.current_lang` and translates JSON responses (`detail`, errors, labels) via the template catalog `app/i18n/tg.json` (+ `tg_data.json` for seeded data such as disease names). User data is never translated. Files (PDF/XLSX/CSV, QR labels, bot captions) are translated explicitly with `L(text)`.
+- New backend strings: run `python -m app.i18n.extract` — it lists strings missing from the catalog; `tests/test_i18n.py` enforces it. `users.language` (ru/tg) is saved by `PUT /api/auth/me/language`. Tajik letters need the Onest fallback font (Manrope lacks them).
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client. The role is loaded from DB on every request (`get_current_user`).

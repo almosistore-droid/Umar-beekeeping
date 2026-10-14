@@ -322,6 +322,7 @@ input[type="date"].input { color-scheme: dark; }
 .quick__icon { width: 40px; height: 36px; display: grid; place-items: center; clip-path: var(--hex); background: var(--comb-2); color: var(--gold); margin-bottom: 4px; }
 .quick__icon svg { width: 20px; height: 20px; }
 .quick small { color: var(--smoke); }
+.quick .quick__label { white-space: nowrap; font-size: clamp(11px, 3.4vw, 14px); }
 
 .segmented { background: var(--pitch); border: 1px solid var(--rim); }
 .segmented button { color: var(--smoke); font-family: var(--font-body); }

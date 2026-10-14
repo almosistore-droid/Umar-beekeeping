@@ -1,3 +1,4 @@
+import json
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -6,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
+from app import i18n
 from app.config import get_settings
 from app.routers import admin, apiaries, auth, health, hives, queens, users
 from app.routers import crm, operations, qr, records, reports
@@ -37,8 +39,23 @@ def create_app() -> FastAPI:
         allow_origins=settings.cors_origins,
         allow_credentials=False,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-        allow_headers=["Authorization", "Content-Type"],
+        allow_headers=["Authorization", "Content-Type", "X-Lang"],
     )
+
+    @app.middleware("http")
+    async def language(request: Request, call_next):
+        """X-Lang: ru|tg — answers (errors, labels, timeline…) in the user's language."""
+        lang = i18n.normalize(request.headers.get("x-lang"))
+        token = i18n.current_lang.set(lang)
+        try:
+            response = await call_next(request)
+        finally:
+            i18n.current_lang.reset(token)
+        if lang == i18n.DEFAULT or not response.headers.get("content-type", "").startswith("application/json"):
+            return response
+        body = b"".join([chunk async for chunk in response.body_iterator])
+        headers = {k: v for k, v in response.headers.items() if k.lower() != "content-length"}
+        return JSONResponse(i18n.translate_json(json.loads(body), lang), status_code=response.status_code, headers=headers)
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next):

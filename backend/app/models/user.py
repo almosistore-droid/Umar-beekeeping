@@ -18,6 +18,7 @@ class UserRole(str, enum.Enum):
 
 class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "users"
+    __table_args__ = (CheckConstraint("language IS NULL OR language IN ('ru', 'tg')", name="language_known"),)
 
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True, nullable=False)
     username: Mapped[str | None] = mapped_column(String(64))
@@ -28,6 +29,8 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Enum(UserRole, name="user_role"), nullable=False, default=UserRole.VIEWER
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Language chosen in the app (ru / tg); null = follow Telegram's language
+    language: Mapped[str | None] = mapped_column(String(2))
     # Last successful login through Telegram (shown in the admin panel)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

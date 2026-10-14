@@ -7,16 +7,33 @@ from config import WEBAPP_URL
 router = Router()
 
 
-def open_app_keyboard() -> InlineKeyboardMarkup:
+TEXTS = {
+    "ru": {
+        "button": "🐝 Открыть пасеку",
+        "welcome": "Добро пожаловать в систему управления пасекой!\n\n"
+                   "Нажмите кнопку ниже, чтобы открыть приложение: ульи, матки, осмотры, мёд и отчёты.",
+    },
+    "tg": {
+        "button": "🐝 Кушодани занбӯрхона",
+        "welcome": "Хуш омадед ба системаи идоракунии занбӯрхона!\n\n"
+                   "Барои кушодани барнома тугмаи поёнро пахш кунед: қуттиҳо, модарзанбӯрҳо, муоинаҳо, асал ва ҳисоботҳо.",
+    },
+}
+
+
+def lang_of(message: Message) -> str:
+    """Telegram language of the user: Tajik for tg, Russian otherwise."""
+    code = (message.from_user.language_code if message.from_user else None) or ""
+    return "tg" if code.lower().startswith("tg") else "ru"
+
+
+def open_app_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="🐝 Открыть пасеку", web_app=WebAppInfo(url=WEBAPP_URL))]]
+        inline_keyboard=[[InlineKeyboardButton(text=TEXTS[lang]["button"], web_app=WebAppInfo(url=WEBAPP_URL))]]
     )
 
 
 @router.message(CommandStart())
 async def start(message: Message, command: CommandObject) -> None:
-    await message.answer(
-        "Добро пожаловать в систему управления пасекой!\n\n"
-        "Нажмите кнопку ниже, чтобы открыть приложение: ульи, матки, осмотры, мёд и отчёты.",
-        reply_markup=open_app_keyboard(),
-    )
+    lang = lang_of(message)
+    await message.answer(TEXTS[lang]["welcome"], reply_markup=open_app_keyboard(lang))

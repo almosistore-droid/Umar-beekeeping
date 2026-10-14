@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -22,6 +23,7 @@ class UserOut(BaseModel):
     role: UserRole
     is_active: bool
     last_seen_at: datetime | None = None
+    language: str | None = None
     created_at: datetime
 
 
@@ -31,3 +33,7 @@ class AuthResponse(BaseModel):
     expires_in: int
     user: UserOut
     start_param: str | None = None
+
+
+class LanguageUpdate(BaseModel):
+    language: Literal["ru", "tg"]

@@ -13,6 +13,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from app.i18n import L
 from app.schemas.report import YearlyReportOut
 from app.services.qr_labels import _register_fonts
 from app.utils.age import plural_ru
@@ -61,14 +62,15 @@ def summary(r: YearlyReportOut) -> list[tuple[str, list[tuple[str, str]]]]:
             ("Лучший улей", f"№{m.best_hive.hive_number} — {fmt(m.best_hive.kg)} кг" if m.best_hive else "—"),
             ("Худший улей", f"№{m.worst_hive.hive_number} — {fmt(m.worst_hive.kg)} кг" if m.worst_hive else "—"),
             ("Стоимость мёда по ценам в записях", fmt(m.value)),
-        ] + [(f"{PRODUCT_TYPE[p.product_type]}, {FEED_UNIT[p.unit]}", fmt(p.quantity)) for p in m.products]),
+        ] + [(f"{L(PRODUCT_TYPE[p.product_type])}, {L(FEED_UNIT[p.unit])}", fmt(p.quantity)) for p in m.products]),
         ("Болезни", [
             ("Случаев выявлено", fmt(d.cases)), ("Вылечено", fmt(d.resolved)), ("Ещё не вылечено", fmt(d.open)),
             ("Обработок проведено", fmt(d.treatments)),
         ] + [(f"Препарат: {x.medication}", f"{x.count} {plural_ru(x.count, 'раз', 'раза', 'раз')}") for x in d.medications]),
         ("Финансы", _finance_rows(r)),
     ]
-    return sections
+    # in the language of the request (X-Lang); numbers and user data stay as they are
+    return [(L(section), [(L(label), L(value)) for label, value in rows]) for section, rows in sections]
 
 
 def _finance_rows(r: YearlyReportOut) -> list[tuple[str, str]]:
@@ -88,14 +90,24 @@ def _finance_rows(r: YearlyReportOut) -> list[tuple[str, str]]:
 
 
 def title(r: YearlyReportOut) -> str:
-    return f"Годовой отчёт за {r.year}" + (f" (по {_ru_date(r.period_end)})" if r.is_partial else "")
+    return L(f"Годовой отчёт за {r.year}") + (L(f" (по {_ru_date(r.period_end)})") if r.is_partial else "")
 
 
 # ---------- CSV ----------
 
+class _Translated:
+    """csv.writer that writes every text cell in the language of the request."""
+
+    def __init__(self, writer):
+        self._w = writer
+
+    def writerow(self, row):
+        self._w.writerow([L(c) if isinstance(c, str) else c for c in row])
+
+
 def to_csv(r: YearlyReportOut) -> bytes:
     buf = io.StringIO()
-    w = csv.writer(buf, delimiter=";", lineterminator="\r\n")
+    w = _Translated(csv.writer(buf, delimiter=";", lineterminator="\r\n"))
     w.writerow([title(r)])
     w.writerow([])
     w.writerow(["Раздел", "Показатель", "Значение"])
@@ -124,7 +136,7 @@ _HEAD_FILL = PatternFill("solid", fgColor="15120C")
 
 
 def _sheet_table(ws, headers: list[str], rows: list[list], widths: list[int]) -> None:
-    ws.append(headers)
+    ws.append([L(h) for h in headers])
     for c in ws[ws.max_row]:
         c.font, c.fill = _HEAD, _HEAD_FILL
     for row in rows:
@@ -137,7 +149,7 @@ def _sheet_table(ws, headers: list[str], rows: list[list], widths: list[int]) ->
 def to_xlsx(r: YearlyReportOut) -> bytes:
     wb = Workbook()
     ws = wb.active
-    ws.title = "Сводка"
+    ws.title = L("Сводка")
     ws.append([title(r)])
     ws["A1"].font = Font(bold=True, size=14)
     ws.append([])
@@ -151,13 +163,13 @@ def to_xlsx(r: YearlyReportOut) -> bytes:
     ws.column_dimensions["A"].width = 42
     ws.column_dimensions["B"].width = 30
 
-    _sheet_table(wb.create_sheet("Мёд по ульям"), ["Место", "Улей", "Пасека", "кг", "Откачек"],
+    _sheet_table(wb.create_sheet(L("Мёд по ульям")), ["Место", "Улей", "Пасека", "кг", "Откачек"],
                  [[i + 1, f"№{x.hive_number}", x.apiary_name, float(x.kg), x.harvests] for i, x in enumerate(r.honey.by_hive)],
                  [8, 12, 28, 10, 10])
-    _sheet_table(wb.create_sheet("Мёд по месяцам"), ["Месяц", "кг"],
-                 [[MONTHS[i], float(kg)] for i, kg in enumerate(r.honey.by_month)], [14, 10])
-    _sheet_table(wb.create_sheet("Болезни"), ["Болезнь", "Случаев", "Вылечено", "Не вылечено"],
-                 [[x.name, x.cases, x.resolved, x.open] for x in r.diseases.by_disease], [32, 10, 10, 12])
+    _sheet_table(wb.create_sheet(L("Мёд по месяцам")), ["Месяц", "кг"],
+                 [[L(MONTHS[i]), float(kg)] for i, kg in enumerate(r.honey.by_month)], [14, 10])
+    _sheet_table(wb.create_sheet(L("Болезни")), ["Болезнь", "Случаев", "Вылечено", "Не вылечено"],
+                 [[L(x.name), x.cases, x.resolved, x.open] for x in r.diseases.by_disease], [32, 10, 10, 12])
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()
@@ -183,7 +195,7 @@ def _month_chart(by_month: list[Decimal], width: float) -> Drawing:
         if i == peak and v > 0:
             d.add(String(x + bar_w / 2, base + h + 1.6 * mm, fmt(v), fontName="DejaVu-Bold", fontSize=7,
                          fillColor=INK, textAnchor="middle"))
-        d.add(String(i * slot + slot / 2, base - 4.5 * mm, MONTHS[i][:3], fontName="DejaVu", fontSize=6.5,
+        d.add(String(i * slot + slot / 2, base - 4.5 * mm, L(MONTHS[i])[:3], fontName="DejaVu", fontSize=6.5,
                      fillColor=MUTED, textAnchor="middle"))
     return d
 
@@ -207,35 +219,35 @@ def to_pdf(r: YearlyReportOut) -> bytes:
     ])
     head_style = TableStyle([("FONT", (0, 0), (-1, 0), "DejaVu-Bold", 9), ("TEXTCOLOR", (0, 0), (-1, 0), MUTED)])
     width = doc.width
-    story = [Paragraph(title(r), h1), Paragraph("Fayzi Umar · Учёт пасеки", sub), Spacer(1, 4 * mm)]
+    story = [Paragraph(title(r), h1), Paragraph(L("Fayzi Umar · Учёт пасеки"), sub), Spacer(1, 4 * mm)]
 
     for section, rows in summary(r):
         block = [Paragraph(section, h2),
                  Table([[Paragraph(a, cell), b] for a, b in rows], colWidths=[width * 0.62, width * 0.38], style=table_style)]
         if section == "Мёд" and any(r.honey.by_month):
-            block += [Spacer(1, 3 * mm), Paragraph("Сбор по месяцам, кг", sub), _month_chart(r.honey.by_month, width)]
+            block += [Spacer(1, 3 * mm), Paragraph(L("Сбор по месяцам, кг"), sub), _month_chart(r.honey.by_month, width)]
         story.append(KeepTogether(block))
 
     if r.queens.best_families:
-        rows = [["Улей", "Пасека", "Матка", "кг"]] + [[f"№{x.hive_number}", x.apiary_name, x.queen_code or "—", fmt(x.kg)]
+        rows = [[L("Улей"), L("Пасека"), L("Матка"), L("кг")]] + [[f"№{x.hive_number}", x.apiary_name, x.queen_code or "—", fmt(x.kg)]
                                                      for x in r.queens.best_families]
         t = Table(rows, colWidths=[width * 0.18, width * 0.42, width * 0.2, width * 0.2], style=table_style)
         t.setStyle(head_style)
         t.setStyle(TableStyle([("ALIGN", (0, 0), (2, -1), "LEFT")]))
-        story.append(KeepTogether([Paragraph("Лучшие семьи по сбору мёда", h2), t]))
+        story.append(KeepTogether([Paragraph(L("Лучшие семьи по сбору мёда"), h2), t]))
     if r.honey.by_hive:
-        rows = [["Место", "Улей", "Пасека", "кг"]] + [[str(i + 1), f"№{x.hive_number}", x.apiary_name, fmt(x.kg)]
+        rows = [[L("Место"), L("Улей"), L("Пасека"), L("кг")]] + [[str(i + 1), f"№{x.hive_number}", x.apiary_name, fmt(x.kg)]
                                                      for i, x in enumerate(r.honey.by_hive)]
         t = Table(rows, colWidths=[width * 0.12, width * 0.18, width * 0.5, width * 0.2], style=table_style, repeatRows=1)
         t.setStyle(head_style)
         t.setStyle(TableStyle([("ALIGN", (0, 0), (2, -1), "LEFT")]))
-        story += [Paragraph("Мёд по ульям", h2), t]
+        story += [Paragraph(L("Мёд по ульям"), h2), t]
     if r.diseases.by_disease:
-        rows = [["Болезнь", "Случаев", "Вылечено", "Не вылечено"]] + [[x.name, x.cases, x.resolved, x.open]
+        rows = [[L("Болезнь"), L("Случаев"), L("Вылечено"), L("Не вылечено")]] + [[L(x.name), x.cases, x.resolved, x.open]
                                                                        for x in r.diseases.by_disease]
         t = Table(rows, colWidths=[width * 0.46, width * 0.18, width * 0.18, width * 0.18], style=table_style)
         t.setStyle(head_style)
-        story.append(KeepTogether([Paragraph("Болезни по видам", h2), t]))
+        story.append(KeepTogether([Paragraph(L("Болезни по видам"), h2), t]))
 
     doc.build(story)
     return buf.getvalue()

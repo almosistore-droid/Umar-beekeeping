@@ -15,6 +15,7 @@ from reportlab.pdfgen.canvas import Canvas
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.i18n import L
 from app.models import ARCHIVED_HIVE_STATUSES, Hive, User
 from app.repositories.hive_repository import natural_order
 from app.schemas.qr import LabelsRequest, MAX_LABEL_HIVES
@@ -69,7 +70,7 @@ def render(labels: list[Label]) -> bytes:
     _register_fonts()
     buf = io.BytesIO()
     c = Canvas(buf, pagesize=A4)
-    c.setTitle("QR-наклейки ульев")
+    c.setTitle(L("QR-наклейки ульев"))
     c.setAuthor("Fayzi Umar")
     page_w, page_h = A4
     cell_w, cell_h = page_w / COLS, page_h / ROWS
@@ -99,7 +100,7 @@ def render(labels: list[Label]) -> bytes:
         c.setFont("DejaVu", 8)
         c.drawCentredString(cx, qr_bottom - 11.5 * mm, _fit(c, label.subtitle, "DejaVu", 8, cell_w - 8 * mm))
         c.setFont("DejaVu", 6)
-        c.drawCentredString(cx, qr_bottom - 15.5 * mm, "Fayzi Umar · Учёт пасеки")
+        c.drawCentredString(cx, qr_bottom - 15.5 * mm, L("Fayzi Umar · Учёт пасеки"))
     c.showPage()
     c.save()
     return buf.getvalue()
@@ -129,10 +130,10 @@ def build(db: Session, data: LabelsRequest) -> tuple[bytes, list[Hive]]:
     for hive in hives:
         qr = qr_service.find(db, hive.id)
         code = qr.code if qr else qr_service.payload(hive.id)
-        labels.append(Label(qr_service.qr_content(code), f"Улей №{hive.hive_number}", hive.apiary.name))
+        labels.append(Label(qr_service.qr_content(code), L(f"Улей №{hive.hive_number}"), hive.apiary.name))
     for _ in range(data.blank_count):
         new_id = uuid.uuid4()
-        labels.append(Label(qr_service.qr_content(qr_service.payload(new_id)), "Новый улей", f"код …{str(new_id)[-8:]}"))
+        labels.append(Label(qr_service.qr_content(qr_service.payload(new_id)), L("Новый улей"), L(f"код …{str(new_id)[-8:]}")))
     if not labels:
         raise ValidationFailed("На выбранной пасеке нет ульев. Укажите количество пустых наклеек.")
     return render(labels), hives

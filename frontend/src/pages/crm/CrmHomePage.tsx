@@ -66,7 +66,7 @@ export function CrmHomePage() {
       <div className="quick-grid quick-grid--4">
         {actions.map((a) => (
           <button key={a.label} type="button" className="quick" onClick={() => setSheet(a.kind)}>
-            <span className="quick__icon"><Icon name={a.icon} /></span>＋ {a.label}
+            <span className="quick__icon"><Icon name={a.icon} /></span><span className="quick__label">＋ {a.label}</span>
           </button>
         ))}
       </div>

@@ -17,6 +17,7 @@ async def main() -> None:
     dp.include_router(start.router)
 
     await bot.set_my_commands([BotCommand(command="start", description="Открыть пасеку")])
+    await bot.set_my_commands([BotCommand(command="start", description="Кушодани занбӯрхона")], language_code="tg")
     # Persistent "Пасека" button next to the input field opens the Mini App
     await bot.set_chat_menu_button(menu_button=MenuButtonWebApp(text="Пасека", web_app=WebAppInfo(url=WEBAPP_URL)))
 

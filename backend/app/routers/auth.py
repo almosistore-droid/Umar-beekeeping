@@ -9,7 +9,7 @@ from app.auth.jwt import create_access_token
 from app.auth.telegram import InitDataError, validate_init_data
 from app.config import get_settings
 from app.database import get_db
-from app.schemas.auth import AuthResponse, TelegramAuthRequest, UserOut
+from app.schemas.auth import AuthResponse, LanguageUpdate, TelegramAuthRequest, UserOut
 from app.services.auth_service import upsert_telegram_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -67,4 +67,13 @@ def telegram_login(body: TelegramAuthRequest, db: Annotated[Session, Depends(get
 
 @router.get("/me", response_model=UserOut)
 def me(user: CurrentUser):
+    return user
+
+
+@router.put("/me/language", response_model=UserOut)
+def set_language(body: LanguageUpdate, user: CurrentUser, db: Annotated[Session, Depends(get_db)]):
+    """Language chosen in «Ещё → Язык · Забон»; also used for bot messages."""
+    user.language = body.language
+    db.commit()
+    db.refresh(user)
     return user

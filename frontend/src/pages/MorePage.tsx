@@ -56,7 +56,7 @@ function LanguageCard() {
   return (
     <section className="card">
       <h2 className="card__title">Язык · Забон</h2>{/* i18n-ignore: always in both languages */}
-      <Choice label="Язык · Забон" options={LANGS} value={getLang()} onChange={choose} />{/* i18n-ignore */}
+      <Choice options={LANGS} value={getLang()} onChange={choose} />{/* i18n-ignore */}
     </section>
   )
 }

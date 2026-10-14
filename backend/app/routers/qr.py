@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import CAN_WRITE, CurrentUser, require_roles
 from app.database import get_db
+from app.i18n import L
 from app.models import User
 from app.schemas.qr import LabelsRequest, LabelsSentOut, QrOut, QrResolveOut, QrStatusOut
 from app.services import hive_service, qr_labels, qr_service, telegram_bot
@@ -56,7 +57,7 @@ def print_labels(body: LabelsRequest, db: DB, user: Writer):
     name = qr_labels.filename()
     if body.delivery == "telegram":
         caption = f"QR-наклейки: {total} {plural(total, 'наклейка', 'наклейки', 'наклеек')}. Распечатайте на A4 без масштабирования."
-        telegram_bot.send_document(user.telegram_id, name, pdf, caption)
+        telegram_bot.send_document(user.telegram_id, name, pdf, L(caption))
         qr_labels.mark_printed(db, hives, user)
         return LabelsSentOut(sent=True, labels=total)
     qr_labels.mark_printed(db, hives, user)

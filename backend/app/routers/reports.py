@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import CAN_MANAGE, CurrentUser
 from app.database import get_db
+from app.i18n import L
 from app.schemas.common import today
 from app.schemas.qr import LabelsSentOut
 from app.schemas.report import DashboardOut, YearlyReportOut
@@ -41,5 +42,5 @@ def send_yearly(year: int, db: DB, user: CurrentUser, format: Format = "pdf"):
     """Inside Telegram on a phone files cannot be downloaded: the bot sends it to the user's own chat."""
     content, media, name = report_export.render(report_service.yearly(db, year, show_finance=user.role in CAN_MANAGE), format)
     telegram_bot.send_document(user.telegram_id, name, content,
-                               f"Годовой отчёт за {year} ({_FORMAT_NAMES[format]})", media_type=media)
+                               L(f"Годовой отчёт за {year} ({_FORMAT_NAMES[format]})"), media_type=media)
     return LabelsSentOut(sent=True, labels=1)
