@@ -73,9 +73,16 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Every request sends `X-Lang`. Backend: the `language` middleware sets `app.i18n.current_lang` and translates JSON responses (`detail`, errors, labels) via the template catalog `app/i18n/tg.json` (+ `tg_data.json` for seeded data such as disease names). User data is never translated. Files (PDF/XLSX/CSV, QR labels, bot captions) are translated explicitly with `L(text)`.
 - New backend strings: run `python -m app.i18n.extract` — it lists strings missing from the catalog; `tests/test_i18n.py` enforces it. `users.language` (ru/tg) is saved by `PUT /api/auth/me/language`. Tajik letters need the Onest fallback font (Manrope lacks them).
 
+## App on the phone (specs/010-mobile-app) — PWA outside Telegram
+- PWA: `public/manifest.webmanifest`, icons `icon-192/512`, `icon-maskable-512`, `public/sw.js` (caches the static app only, never /api; HTML network-first), registered in production by `services/pwa.ts` (also install prompt / iOS hint, `components/auth/InstallHint`).
+- Login outside Telegram (`components/auth/PhoneLogin`): `POST /api/auth/login-codes` → `tg://resolve?domain=<bot>&start=login_<code>`; the bot (`bot/handlers/login.py`) asks «Войти / Отмена» and calls `…/confirm` or `…/deny` with header `X-Bot-Auth` = HMAC(bot token, label) (`app/auth/bot_signature.py` = `bot/signing.py`, a test keeps them equal); the app polls `…/poll` with its poll secret. Codes: one-time, 5 min (`login_code_ttl_seconds`). `device_auth_service`.
+- Device session: random token stored hashed in `device_sessions`, kept in localStorage `fayzi-umar.device` (the JWT stays in memory); `POST /api/auth/device` → JWT (blocked → 403, revoked/idle 180 days → 401), `POST /api/auth/logout`. `useAuth` state `signed-out` shows PhoneLogin; `onDevice` enables «Выйти». Audit action `device_login`.
+- Scanner outside Telegram: `components/qr/CameraScanner` (BarcodeDetector, else lazy-loaded jsQR).
+- Dev: the `telegram` profile runs the bot too; the tunnel writes its address to the shared volume (`URL_FILE`), the bot reads it (`WEBAPP_URL_FILE`, `SET_MENU_BUTTON=0`).
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
-- Never trust a Telegram user id from the client. The role is loaded from DB on every request (`get_current_user`).
+- Never trust a Telegram user id from the client (the bot passes it only for login confirmation, signed). The role is loaded from DB on every request (`get_current_user`).
 - Protect endpoints with `Depends(require_roles(*CAN_WRITE))` etc. from `app/auth/dependencies.py`.
 
 ## Frontend

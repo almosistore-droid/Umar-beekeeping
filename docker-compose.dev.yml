@@ -74,10 +74,31 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TUNNEL_TARGET: http://frontend:5173
       MENU_BUTTON_TEXT: Пасека
+      URL_FILE: /shared/webapp_url
+    volumes:
+      - tunnel-shared:/shared
     restart: unless-stopped
     depends_on:
       - frontend
 
+  # Bot: «Открыть пасеку» and login confirmation for the app installed on the phone (outside Telegram).
+  # Only one copy of the bot may run per token: stop it here if the same bot already runs on a server.
+  bot:
+    build: ./bot
+    profiles: ["telegram"]
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      BACKEND_URL: http://backend:8000
+      WEBAPP_URL_FILE: /shared/webapp_url
+      SET_MENU_BUTTON: "0"  # the tunnel sets the menu button to its current address
+    volumes:
+      - tunnel-shared:/shared:ro
+    depends_on:
+      - backend
+      - tunnel
+
 volumes:
+  tunnel-shared:
   pgdata-dev:
   frontend-node-modules:

@@ -23,3 +23,15 @@ class ValidationFailed(DomainError):
 
 class PermissionDenied(DomainError):
     status_code = 403
+
+
+class Unauthorized(DomainError):
+    status_code = 401
+
+
+class Gone(DomainError):
+    status_code = 410
+
+
+class NotConfigured(DomainError):
+    status_code = 503

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { App } from './App'
 import { AuthProvider } from './hooks/useAuth'
 import { initTelegram } from './services/telegram'
+import { initPwa } from './services/pwa'
 import { ApiError } from './api/client'
 import '@fontsource/forum/cyrillic-400.css'
 import '@fontsource/forum/cyrillic-ext-400.css' // Tajik letters ӣ ӯ ҳ қ ғ ҷ
@@ -14,6 +15,7 @@ import './styles.css'
 import { getLang } from './i18n'
 
 initTelegram()
+initPwa()
 document.documentElement.lang = getLang()
 
 const queryClient = new QueryClient({

@@ -121,3 +121,13 @@ def test_healthy_tunnel_keeps_running_and_survives_a_blip(monkeypatch):
     with pytest.raises(Stop):
         sup.run_forever()
     assert stops == []  # never 4 failures in a row → never restarted
+
+
+def test_url_file_shared_with_the_dev_bot(tmp_path):
+    path = tmp_path / "webapp_url"
+    tunnel.write_url_file(str(path), "https://a-b-c.trycloudflare.com")
+    assert path.read_text() == "https://a-b-c.trycloudflare.com"
+    tunnel.write_url_file(str(path), "https://new-one.trycloudflare.com")  # replaced, never half-written
+    assert path.read_text() == "https://new-one.trycloudflare.com" and not (tmp_path / "webapp_url.tmp").exists()
+    tunnel.write_url_file("", "https://x.trycloudflare.com")  # not configured: nothing happens
+    tunnel.write_url_file(str(tmp_path / "missing" / "f"), "https://x.trycloudflare.com")  # logged, no crash

@@ -6,6 +6,9 @@ import { ROLE_LABELS } from '../types/api'
 import { useState } from 'react'
 import { authApi } from '../api/auth'
 import { Choice } from '../components/ui'
+import { InstallHint } from '../components/auth/InstallHint'
+import { isStandalone } from '../services/pwa'
+import { getWebApp } from '../services/telegram'
 import { LANGS, getLang, switchLang, tr, type Lang } from '../i18n'
 
 export function MorePage() {
@@ -36,7 +39,43 @@ export function MorePage() {
         <div className="row"><span className="hint">{tr("Роль")}</span><span>{ROLE_LABELS[user.role]}</span></div>
       </section>
       <LanguageCard />
+      <PhoneAppCard />
     </div>
+  )
+}
+
+/**
+ * The app on the phone's home screen. In Telegram: open the address in the phone's browser to install it.
+ * In the installed app / a browser: install hint and «Выйти».
+ */
+function PhoneAppCard() {
+  const { onDevice, logout } = useAuth()
+  const [leaving, setLeaving] = useState(false)
+  const wa = getWebApp()
+  if (wa) {
+    if (!wa.openLink) return null
+    return (
+      <section className="card">
+        <h2 className="card__title">{tr("Приложение на телефоне")}</h2>
+        <p className="hint small">{tr("Можно открывать пасеку значком на главном экране, без Telegram. Откройте адрес в браузере телефона и установите приложение; вход — через этого же бота.")}</p>
+        <button type="button" className="btn btn--secondary btn--block" onClick={() => wa.openLink?.(window.location.origin + '/')}>
+          <Icon name="mobile" size={18} />{tr("Открыть в браузере")}
+        </button>
+      </section>
+    )
+  }
+  if (isStandalone() && !onDevice) return null
+  return (
+    <section className="card">
+      <h2 className="card__title">{tr("Приложение на телефоне")}</h2>
+      <InstallHint />
+      {onDevice && (
+        <button type="button" className="btn btn--ghost btn--block" disabled={leaving}
+          onClick={() => { setLeaving(true); void logout() }}>
+          <Icon name="logout" size={18} />{tr("Выйти на этом устройстве")}
+        </button>
+      )}
+    </section>
   )
 }
 

@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     telegram_webapp_short_name: str = ""
     # initData older than this is rejected (protects against replay of leaked initData)
     telegram_init_data_max_age_seconds: int = 86400
+    # App on the phone outside Telegram: login code lifetime and how long an unused device stays logged in
+    login_code_ttl_seconds: int = 300
+    device_session_idle_days: int = 180
 
     # Telegram IDs that get the ADMIN role on first login (comma-separated in env)
     # NoDecode: read "1,2,3" as plain text (split below) instead of expecting JSON

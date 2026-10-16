@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { RouterProvider } from 'react-router-dom'
+import { PhoneLogin } from './components/auth/PhoneLogin'
 import { LoadingView, MessageView } from './components/StateViews'
 import { useAuth } from './hooks/useAuth'
 import { isInsideTelegram } from './services/telegram'
@@ -10,15 +11,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const { state, retry, loginWithInitData } = useAuth()
   switch (state.status) {
     case 'loading':
-      return <LoadingView text={tr("Вход через Telegram…")} />
-    case 'outside-telegram':
+      return <LoadingView text={tr("Вход…")} />
+    case 'signed-out':
+      // Outside Telegram (the app on the home screen or a browser): log in through the bot
       return (
         <>
-          <MessageView
-            logo
-            title={tr("Откройте в Telegram")}
-            text={tr("Это приложение работает внутри Telegram. Откройте бота и нажмите «Открыть пасеку».")}
-          />
+          <PhoneLogin message={state.message} />
           {import.meta.env.DEV && <DevLogin onSubmit={loginWithInitData} />}
         </>
       )

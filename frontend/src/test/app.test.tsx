@@ -48,12 +48,6 @@ function renderApp() {
 }
 
 describe('Telegram authentication', () => {
-  it('shows "open in Telegram" when there is no initData', async () => {
-    vi.stubEnv('VITE_DEV_INIT_DATA', '')  // a developer's .env.local must not affect this test
-    renderApp()
-    expect(await screen.findByText('Откройте в Telegram')).toBeInTheDocument()
-  })
-
   it('sends raw initData to the backend and shows the user', async () => {
     fakeTelegram('signed-init-data')
     const fetchSpy = mockFetch((url) => {
@@ -107,7 +101,7 @@ describe('Local dev login', () => {
     await userEvent.type(box, 'signed-by-dev-script')
     await userEvent.click(screen.getByRole('button', { name: 'Войти' }))
     expect(await screen.findByText(/Иван/)).toBeInTheDocument()
-    const [, init] = fetchSpy.mock.calls[0]
+    const [, init] = fetchSpy.mock.calls.find(([u]) => String(u).endsWith('/api/auth/telegram'))!
     expect(JSON.parse(String(init?.body))).toEqual({ init_data: 'signed-by-dev-script' })
   })
 })
@@ -116,5 +110,75 @@ describe('BottomNav', () => {
   it('gives CRM to admin and beekeeper, queens to everyone else', () => {
     expect(navItems(true).map((i) => i.label)).toEqual(['Главная', 'Ульи', 'Сканер', 'CRM', 'Отчёты', 'Ещё'])
     expect(navItems(false).map((i) => i.label)).toEqual(['Главная', 'Ульи', 'Сканер', 'Матки', 'Отчёты', 'Ещё'])
+  })
+})
+
+describe('App on the phone (outside Telegram)', () => {
+  const code = { code: 'C'.repeat(32), poll_secret: 'S'.repeat(43), bot_link: `https://t.me/fayzi_bee_bot?start=login_${'C'.repeat(32)}`,
+    bot_username: 'fayzi_bee_bot', expires_in: 300 }
+  const session = { access_token: 'tok', token_type: 'bearer', expires_in: 60, user, start_param: null }
+  afterEach(() => localStorage.clear())
+
+  it('logs in through the bot and remembers this phone', async () => {
+    vi.stubEnv('VITE_DEV_INIT_DATA', '')
+    let confirmed = false
+    const fetchSpy = mockFetch((url, init) => {
+      if (url.endsWith('/api/auth/login-codes')) return json(code, 201)
+      if (url.endsWith('/api/auth/login-codes/poll')) {
+        expect(JSON.parse(String(init?.body))).toEqual({ code: code.code, poll_secret: code.poll_secret })
+        return json(confirmed ? { status: 'ok', access_token: 'tok', device_token: 'device-1', expires_in: 60, user }
+          : { status: 'pending', access_token: null, device_token: null, expires_in: null, user: null })
+      }
+      if (url.includes('/api/dashboard')) return json(dashboard)
+      return json({}, 404)
+    })
+    renderApp()
+    const link = await screen.findByRole('link', { name: 'Войти через Telegram' })
+    expect(link).toHaveAttribute('href', `tg://resolve?domain=fayzi_bee_bot&start=login_${code.code}`)
+    await userEvent.click(link)
+    expect(await screen.findByText('Подтвердите вход в Telegram')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Открыть Telegram ещё раз' })).toHaveAttribute('href', code.bot_link)
+
+    confirmed = true
+    window.dispatchEvent(new Event('focus'))  // back from Telegram: checks at once
+    expect(await screen.findByText(/Иван/)).toBeInTheDocument()
+    expect(localStorage.getItem('fayzi-umar.device')).toBe('device-1')
+    const dashCall = fetchSpy.mock.calls.find(([u]) => String(u).includes('/api/dashboard'))!
+    expect(new Headers(dashCall[1]?.headers).get('Authorization')).toBe('Bearer tok')
+  })
+
+  it('opens straight away on a logged-in phone', async () => {
+    vi.stubEnv('VITE_DEV_INIT_DATA', '')
+    localStorage.setItem('fayzi-umar.device', 'device-1')
+    const fetchSpy = mockFetch((url) => {
+      if (url.endsWith('/api/auth/device')) return json(session)
+      if (url.includes('/api/dashboard')) return json(dashboard)
+      return json({}, 404)
+    })
+    renderApp()
+    expect(await screen.findByText(/Иван/)).toBeInTheDocument()
+    expect(JSON.parse(String(fetchSpy.mock.calls[0][1]?.body))).toEqual({ device_token: 'device-1' })
+  })
+
+  it('asks to log in again when the phone was logged out or the user blocked', async () => {
+    vi.stubEnv('VITE_DEV_INIT_DATA', '')
+    localStorage.setItem('fayzi-umar.device', 'old')
+    mockFetch((url) => {
+      if (url.endsWith('/api/auth/device')) return json({ detail: 'Вход на этом устройстве больше не действует. Войдите снова.' }, 401)
+      if (url.endsWith('/api/auth/login-codes')) return json(code, 201)
+      return json({}, 404)
+    })
+    renderApp()
+    expect(await screen.findByText(/Войдите снова/)).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Войти через Telegram' })).toBeInTheDocument()
+    expect(localStorage.getItem('fayzi-umar.device')).toBeNull()
+  })
+
+  it('shows why login is unavailable', async () => {
+    vi.stubEnv('VITE_DEV_INIT_DATA', '')
+    mockFetch(() => json({ detail: 'Вход вне Telegram не настроен: на сервере не указан TELEGRAM_BOT_USERNAME' }, 503))
+    renderApp()
+    expect(await screen.findByText(/TELEGRAM_BOT_USERNAME/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Повторить' })).toBeInTheDocument()
   })
 })

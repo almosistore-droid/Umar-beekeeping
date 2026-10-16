@@ -55,7 +55,7 @@ h1, h2, p { margin: 0; }
 
 .app { min-height: 100%; }
 .app__content {
-  padding: 18px 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom));
+  padding: calc(18px + env(safe-area-inset-top)) 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom));
   max-width: 640px;
   margin: 0 auto;
 }
@@ -580,3 +580,26 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; gap:
 /* icon + label inside any button */
 button.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .btn--sm { white-space: nowrap; }
+
+/* ---------- app on the phone: login, install hint, camera scanner ---------- */
+.login { min-height: 100vh; padding-top: calc(32px + env(safe-area-inset-top)); max-width: 440px; margin: 0 auto; }
+.login .btn--block { width: 100%; }
+.login__tg { text-decoration: none; font-size: 17px; padding: 16px; }
+.login__wait { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; padding: 18px 16px;
+  background: var(--comb); border: 1px solid var(--rim); border-radius: var(--radius); }
+.login__wait .btn { text-decoration: none; }
+.login__spinner { width: 34px; height: 34px; clip-path: var(--hex-v); background: var(--gold-grad); animation: pulse-hex 1.1s ease-in-out infinite; }
+.install-hint { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 12px 14px; text-align: left;
+  border: 1px dashed var(--rim); border-radius: 14px; color: var(--smoke); font-size: 14px; }
+.install-hint b { color: var(--wax); font-weight: 600; }
+.install-hint__icon { vertical-align: -3px; color: var(--gold); }
+.install-hint--compact { border-style: solid; background: var(--comb); }
+
+.camera { position: fixed; inset: 0; z-index: 50; background: #000; display: flex; align-items: center; justify-content: center; }
+.camera__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.camera__frame { position: relative; width: min(68vw, 300px); aspect-ratio: 1; border-radius: 22px;
+  box-shadow: 0 0 0 100vmax rgba(10, 8, 4, 0.55); outline: 3px solid var(--gold); outline-offset: -3px; }
+.camera__text { position: absolute; left: 16px; right: 16px; bottom: calc(48px + env(safe-area-inset-bottom)); text-align: center;
+  color: var(--wax); font-size: 16px; font-weight: 600; text-shadow: 0 1px 6px #000; }
+.camera__close { position: absolute; top: calc(16px + env(safe-area-inset-top)); right: 16px; width: 48px; height: 48px; border: 0;
+  border-radius: 50%; background: rgba(0, 0, 0, 0.55); color: #fff; display: grid; place-items: center; }

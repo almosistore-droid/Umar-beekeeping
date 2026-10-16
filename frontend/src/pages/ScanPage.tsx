@@ -1,22 +1,29 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
+import { CameraScanner, cameraAvailable } from '../components/qr/CameraScanner'
 import { Field } from '../components/ui'
 import { canScanQr, scanQr } from '../services/telegram'
 import { tr } from '../i18n'
 
 const SCAN_TEXT = tr("Наведите камеру на QR-код улья")
 
-/** «Сканер» tab: Telegram's native camera scanner, plus manual entry for a computer. */
+/**
+ * «Сканер» tab: Telegram's native camera scanner inside Telegram, the phone camera in the app installed
+ * on the home screen (or a browser), plus manual entry for a computer.
+ */
 export function ScanPage() {
   const navigate = useNavigate()
-  const available = canScanQr()
+  const telegramScanner = canScanQr()
+  const ownCamera = !telegramScanner && cameraAvailable()
+  const available = telegramScanner || ownCamera
   const [manual, setManual] = useState('')
+  const [cameraOpen, setCameraOpen] = useState(false)
   const autoOpened = useRef(false)
 
   // replace: going back from the hive returns to where the user was before scanning
   const open = (code: string) => navigate(`/open?code=${encodeURIComponent(code.trim())}`, { replace: true })
-  const scan = () => scanQr(SCAN_TEXT, open)
+  const scan = () => (telegramScanner ? scanQr(SCAN_TEXT, open) : setCameraOpen(true))
 
   // The scanner button in the bottom bar should open the camera straight away
   useEffect(() => {
@@ -40,7 +47,7 @@ export function ScanPage() {
         <p className="hint">{tr("Подойдите к улью и отсканируйте его QR-код — откроется паспорт улья.")}</p>
         {available
           ? <button type="button" className="btn btn--primary" onClick={scan}><Icon name="scan" size={20} />{tr("Сканировать улей")}</button>
-          : <p className="warn-box small">{tr("Камера доступна, когда приложение открыто в Telegram на телефоне. Здесь можно вставить код вручную.")}</p>}
+          : <p className="warn-box small">{tr("Камера недоступна на этом устройстве. Здесь можно вставить код вручную.")}</p>}
       </section>
       <form className="card form" onSubmit={submit}>
         <Field label={tr("Код или ссылка из QR")} hint={tr("Например hive_550e8400-… или ссылка t.me/…")}>
@@ -49,6 +56,8 @@ export function ScanPage() {
         </Field>
         <button type="submit" className="btn btn--secondary" disabled={!manual.trim()}>{tr("Открыть улей")}</button>
       </form>
+      {cameraOpen && <CameraScanner text={SCAN_TEXT} onResult={(v) => { setCameraOpen(false); open(v) }}
+        onClose={() => setCameraOpen(false)} />}
     </div>
   )
 }

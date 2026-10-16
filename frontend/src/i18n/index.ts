@@ -35,11 +35,20 @@ function stored(): Lang | null {
   }
 }
 
-/** Saved choice, else Telegram's language (tg → Тоҷикӣ), else Russian. */
+function browserLanguage(): string | undefined {
+  try {
+    return navigator.language
+  } catch {
+    return undefined
+  }
+}
+
+/** Saved choice, else Telegram's language (tg → Тоҷикӣ), else the phone's language, else Russian. */
 export function detectLang(): Lang {
   const saved = stored()
   if (saved) return saved
-  return telegramLanguage()?.toLowerCase().startsWith('tg') ? 'tg' : 'ru'
+  const code = telegramLanguage() ?? browserLanguage()
+  return code?.toLowerCase().startsWith('tg') ? 'tg' : 'ru'
 }
 
 let current: Lang = detectLang()

@@ -32,6 +32,10 @@ const PATHS = {
   box: <><path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5z" /><path d="M3.5 7.5 12 12l8.5-4.5M12 12v9" /></>,
   phone: <><path d="M5 4h4l1.5 4.5-2.5 1.5a11 11 0 0 0 6 6l1.5-2.5L20 15v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z" /></>,
   coins: <><ellipse cx="9" cy="7" rx="5" ry="2.5" /><path d="M4 7v4c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5V7" /><path d="M10 15.4c.9.4 2.1.6 3.5.6 2.8 0 5-1.1 5-2.5V10M14 10.6c2.6.1 4.5 1.1 4.5 2.4" /><path d="M4 11v4c0 1.4 2.2 2.5 5 2.5" /></>,
+  close: <><path d="M6 6l12 12" /><path d="M18 6 6 18" /></>,
+  iosShare: <><path d="M12 3.5v11" /><path d="m8 7.5 4-4 4 4" /><path d="M7 10.5H5.5v10h13v-10H17" /></>,
+  mobile: <><rect x="7" y="2.5" width="10" height="19" rx="2.5" /><path d="M11 18.5h2" /></>,
+  logout: <><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" /><path d="m10 16-4-4 4-4" /><path d="M6 12h10" /></>,
   download: <><path d="M12 4v11" /><path d="m7.5 10.5 4.5 4.5 4.5-4.5" /><path d="M5 19.5h14" /></>,
 } as const
 

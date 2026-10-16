@@ -24,6 +24,23 @@ export interface AuthResponse {
   start_param: string | null
 }
 
+/** Login on the phone outside Telegram: the user confirms it in the bot. */
+export interface LoginCode {
+  code: string
+  poll_secret: string
+  bot_link: string
+  bot_username: string
+  expires_in: number
+}
+
+export interface LoginPoll {
+  status: 'pending' | 'denied' | 'expired' | 'ok'
+  access_token: string | null
+  device_token: string | null
+  expires_in: number | null
+  user: User | null
+}
+
 export type HiveStatus =
   | 'ACTIVE' | 'WEAK' | 'STRONG' | 'SICK' | 'QUEENLESS' | 'EMPTY' | 'QUARANTINE'
   | 'MERGED' | 'SPLIT' | 'SOLD' | 'LOST'

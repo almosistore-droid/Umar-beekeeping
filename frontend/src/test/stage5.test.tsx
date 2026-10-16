@@ -119,10 +119,28 @@ describe('Scanner', () => {
       <Route path="/scan" element={<ScanPage />} />
       <Route path="/open" element={<OpenQrPage />} />
     </>)
-    expect(await screen.findByText(/Камера доступна, когда приложение открыто в Telegram/)).toBeInTheDocument()
+    expect(await screen.findByText(/Камера недоступна на этом устройстве/)).toBeInTheDocument()
     await userEvent.type(screen.getByLabelText(/Код или ссылка/), `hive_${HIVE_ID}`)
     await userEvent.click(screen.getByRole('button', { name: 'Открыть улей' }))
     expect(await screen.findByTestId('where')).toHaveTextContent(`/hives/${HIVE_ID}/visit`)
+  })
+})
+
+describe('Phone camera outside Telegram', () => {
+  afterEach(() => { Object.defineProperty(navigator, 'mediaDevices', { value: undefined, configurable: true }) })
+
+  it('opens the camera from «Сканер» and explains a refused permission', async () => {
+    const getUserMedia = vi.fn().mockRejectedValue(Object.assign(new Error('denied'), { name: 'NotAllowedError' }))
+    Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia }, configurable: true })
+    setup('VIEWER', resolveWith({ status: 'found', hive_id: HIVE_ID }), '/scan', <>
+      <Route path="/scan" element={<ScanPage />} />
+    </>)
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()  // opened straight away from the nav button
+    expect(await screen.findByText(/Нет доступа к камере/)).toBeInTheDocument()
+    expect(getUserMedia).toHaveBeenCalledWith({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+    await userEvent.click(screen.getByRole('button', { name: 'Закрыть' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Сканировать улей/ })).toBeInTheDocument()
   })
 })
 

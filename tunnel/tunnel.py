@@ -13,6 +13,7 @@ Standard library only. Configuration (environment):
   TELEGRAM_BOT_TOKEN  bot token (the real one from .env; placeholders are ignored)
   TUNNEL_TARGET       what to expose, default http://frontend:5173
   MENU_BUTTON_TEXT    button title, default «Пасека»
+  URL_FILE            optional file where the current address is written (the dev bot reads it)
 """
 import json
 import os
@@ -71,6 +72,19 @@ def set_menu_button(token: str, url: str, text: str, opener=urllib.request.urlop
     return ok
 
 
+def write_url_file(path: str, url: str) -> None:
+    """Share the current address with the dev bot (its «Открыть пасеку» button must open the live tunnel)."""
+    if not path:
+        return
+    try:
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(url)
+        os.replace(tmp, path)
+    except OSError as exc:
+        log(f"не удалось записать адрес в {path}: {exc}")
+
+
 def is_alive(url: str, opener=urllib.request.urlopen) -> bool:
     try:
         with opener(urllib.request.Request(url, method="GET"), timeout=10) as resp:
@@ -82,8 +96,8 @@ def is_alive(url: str, opener=urllib.request.urlopen) -> bool:
 
 
 class Supervisor:
-    def __init__(self, target: str, token: str, text: str):
-        self.target, self.token, self.text = target, token, text
+    def __init__(self, target: str, token: str, text: str, url_file: str = ""):
+        self.target, self.token, self.text, self.url_file = target, token, text, url_file
         self.proc: subprocess.Popen | None = None
         self.url: str | None = None
         self._found = threading.Event()
@@ -113,6 +127,7 @@ class Supervisor:
         log("=" * 60)
         log(f"TUNNEL URL: {self.url}")
         log("=" * 60)
+        write_url_file(self.url_file, self.url)
         if token_usable(self.token):
             set_menu_button(self.token, self.url, self.text)
         else:
@@ -155,6 +170,7 @@ def main() -> None:
         target=os.environ.get("TUNNEL_TARGET", "http://frontend:5173"),
         token=os.environ.get("TELEGRAM_BOT_TOKEN", "").strip(),
         text=os.environ.get("MENU_BUTTON_TEXT", "Пасека"),
+        url_file=os.environ.get("URL_FILE", ""),
     )
     try:
         sup.run_forever()

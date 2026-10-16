@@ -258,7 +258,7 @@ export const ENTITY_LABEL: Record<string, string> = {
 }
 const ACTION_LABEL: Record<string, string> = {
   created: tr("создан(а)"), updated: tr("изменён(а)"), corrected: tr("исправлен(а)"), cancelled: tr("отменён(а)"), delivered: tr("выдан"),
-  payment: tr("принята оплата"), invited: tr("приглашён"), invite_revoked: tr("приглашение отозвано"), joined_by_invite: tr("вошёл по приглашению"), role_from_config: tr("стал администратором (настройки сервера)"),
+  payment: tr("принята оплата"), invited: tr("приглашён"), invite_revoked: tr("приглашение отозвано"), joined_by_invite: tr("вошёл по приглашению"), role_from_config: tr("стал администратором (настройки сервера)"), device_login: tr("вошёл в приложение на телефоне"),
   archived: tr("в архиве"), qr_printed: tr("напечатан"),
 }
 /** One line for the admin activity log: hive events reuse the hive timeline wording. */

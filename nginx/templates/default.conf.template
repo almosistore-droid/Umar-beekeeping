@@ -28,10 +28,20 @@ server {
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    # the app on the phone scans hive QR codes with the camera
+    add_header Permissions-Policy "camera=(self), microphone=(), geolocation=()" always;
     # Telegram embeds the Mini App in an iframe on web.telegram.org, so no X-Frame-Options DENY
     add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org 'self'" always;
 
     location = /api/auth/telegram {
+        limit_req zone=auth burst=10 nodelay;
+        limit_req_status 429;
+        proxy_pass http://backend:8000;
+        include /etc/nginx/proxy_params_bee;
+    }
+
+    # Login on the phone outside Telegram: creating codes and device logins are rare; polling uses the api zone
+    location ~ ^/api/auth/(login-codes|device)$ {
         limit_req zone=auth burst=10 nodelay;
         limit_req_status 429;
         proxy_pass http://backend:8000;

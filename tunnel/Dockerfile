@@ -5,6 +5,6 @@ FROM python:3.12-slim
 COPY --from=cloudflared /usr/local/bin/cloudflared /usr/local/bin/cloudflared
 COPY tunnel.py /tunnel.py
 ENV PYTHONUNBUFFERED=1
-RUN useradd -r -u 10002 tunnel
+RUN useradd -r -u 10002 tunnel && mkdir /shared && chown tunnel /shared
 USER tunnel
 CMD ["python", "/tunnel.py"]

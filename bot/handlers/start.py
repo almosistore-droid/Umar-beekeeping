@@ -2,7 +2,7 @@ from aiogram import Router
 from aiogram.filters import CommandObject, CommandStart
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, WebAppInfo
 
-from config import WEBAPP_URL
+from config import webapp_url
 
 router = Router()
 
@@ -27,9 +27,12 @@ def lang_of(message: Message) -> str:
     return "tg" if code.lower().startswith("tg") else "ru"
 
 
-def open_app_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
+def open_app_keyboard(lang: str = "ru") -> InlineKeyboardMarkup | None:
+    url = webapp_url()
+    if not url:
+        return None
     return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text=TEXTS[lang]["button"], web_app=WebAppInfo(url=WEBAPP_URL))]]
+        inline_keyboard=[[InlineKeyboardButton(text=TEXTS[lang]["button"], web_app=WebAppInfo(url=url))]]
     )
 
 

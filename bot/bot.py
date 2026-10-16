@@ -1,12 +1,12 @@
-"""Telegram bot: entry point to the Mini App (notifications are added in stage 8)."""
+"""Telegram bot: entry point to the Mini App, login confirmation for the phone app (notifications: stage 8)."""
 import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand, MenuButtonWebApp, WebAppInfo
 
-from config import BOT_TOKEN, WEBAPP_URL
-from handlers import start
+from config import BOT_TOKEN, SET_MENU_BUTTON, webapp_url
+from handlers import login, start
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -14,12 +14,15 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 async def main() -> None:
     bot = Bot(BOT_TOKEN)
     dp = Dispatcher()
+    dp.include_router(login.router)  # before start: /start login_<code> is a login confirmation
     dp.include_router(start.router)
 
     await bot.set_my_commands([BotCommand(command="start", description="Открыть пасеку")])
     await bot.set_my_commands([BotCommand(command="start", description="Кушодани занбӯрхона")], language_code="tg")
-    # Persistent "Пасека" button next to the input field opens the Mini App
-    await bot.set_chat_menu_button(menu_button=MenuButtonWebApp(text="Пасека", web_app=WebAppInfo(url=WEBAPP_URL)))
+    # Persistent "Пасека" button next to the input field opens the Mini App (dev: the tunnel sets it)
+    url = webapp_url()
+    if SET_MENU_BUTTON and url:
+        await bot.set_chat_menu_button(menu_button=MenuButtonWebApp(text="Пасека", web_app=WebAppInfo(url=url)))
 
     await dp.start_polling(bot)
 
