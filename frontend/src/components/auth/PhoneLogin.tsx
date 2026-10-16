@@ -6,6 +6,7 @@ import { deviceName } from '../../services/device'
 import type { LoginCode } from '../../types/api'
 import { Icon } from '../Icon'
 import { InstallHint } from './InstallHint'
+import { PasswordLoginForm } from './PasswordForms'
 import { tr } from '../../i18n'
 
 const LOGO_SRC = '/logo.webp'
@@ -16,14 +17,17 @@ const REFRESH_BEFORE_S = 30
 type Phase = 'preparing' | 'ready' | 'waiting' | 'denied' | 'expired' | 'failed'
 
 /**
- * Login on the phone outside Telegram: the button opens the bot with a one-time code, the user taps
- * «Войти» there and comes back; meanwhile this screen asks the server whether the code was confirmed.
+ * Login outside Telegram. With a login and password from the admin, or through the bot: the button opens
+ * the bot with a one-time code, the user taps «Войти» there and comes back while this screen asks the
+ * server whether the code was confirmed.
  */
 export function PhoneLogin({ message }: { message?: string }) {
   const { completeDeviceLogin } = useAuth()
   const [code, setCode] = useState<LoginCode | null>(null)
   const [phase, setPhase] = useState<Phase>('preparing')
   const [error, setError] = useState<string | null>(null)
+  // The server has no bot configured: only the password login is offered
+  const [telegramOff, setTelegramOff] = useState(false)
   const codeRef = useRef<LoginCode | null>(null)
 
   const prepare = useCallback(async () => {
@@ -35,6 +39,7 @@ export function PhoneLogin({ message }: { message?: string }) {
       setCode(fresh)
       setPhase('ready')
     } catch (e) {
+      if (e instanceof ApiError && e.status === 503) { setTelegramOff(true); return }
       setError(e instanceof ApiError ? e.message : tr("Не удалось войти"))
       setPhase('failed')
     }
@@ -80,45 +85,52 @@ export function PhoneLogin({ message }: { message?: string }) {
 
   const appLink = code ? `tg://resolve?domain=${code.bot_username}&start=login_${code.code}` : undefined
 
+  const telegramBlock = phase === 'waiting' ? (
+    <div className="login__wait" role="status">
+      <span className="login__spinner" aria-hidden />
+      <b>{tr("Подтвердите вход в Telegram")}</b>
+      <span className="hint small">{tr("В чате с ботом нажмите «Войти» и вернитесь сюда — вход выполнится сам.")}</span>
+      <a className="btn btn--ghost btn--block" href={code?.bot_link} target="_blank" rel="noopener noreferrer">
+        {tr("Открыть Telegram ещё раз")}
+      </a>
+    </div>
+  ) : (
+    <>
+      {(phase === 'denied' || phase === 'expired' || phase === 'failed') && (
+        <p className="warn-box small" role="alert">
+          {phase === 'denied' ? tr("Вход отменён в Telegram.")
+            : phase === 'expired' ? tr("Время на подтверждение вышло. Попробуйте ещё раз.")
+            : error}
+        </p>
+      )}
+      {phase === 'ready' && code ? (
+        <a className="btn btn--secondary btn--block login__tg" href={appLink} onClick={() => setPhase('waiting')}>
+          <Icon name="send" size={20} />{tr("Войти через Telegram")}
+        </a>
+      ) : (
+        <button type="button" className="btn btn--secondary btn--block" disabled={phase === 'preparing'}
+          onClick={() => void prepare()}>
+          {phase === 'preparing' ? tr("Подготовка…") : tr("Повторить")}
+        </button>
+      )}
+      <p className="hint small">{tr("Через Telegram пароль не нужен: откроется бот, нажмите в нём «Войти».")}</p>
+    </>
+  )
+
   return (
     <div className="state login">
       <img className="state__logo" src={LOGO_SRC} alt="Fayzi Umar" />
       <h2 className="state__title">Fayzi Umar</h2>
       <p className="hint">{tr("Учёт пасеки: ульи, матки, осмотры, мёд и отчёты.")}</p>
       {message && <p className="warn-box small">{message}</p>}
-
-      {phase === 'waiting' ? (
-        <div className="login__wait" role="status">
-          <span className="login__spinner" aria-hidden />
-          <b>{tr("Подтвердите вход в Telegram")}</b>
-          <span className="hint small">{tr("В чате с ботом нажмите «Войти» и вернитесь сюда — вход выполнится сам.")}</span>
-          <a className="btn btn--ghost btn--block" href={code?.bot_link} target="_blank" rel="noopener noreferrer">
-            {tr("Открыть Telegram ещё раз")}
-          </a>
-        </div>
-      ) : (
+      <PasswordLoginForm />
+      {!telegramOff && (
         <>
-          {(phase === 'denied' || phase === 'expired' || phase === 'failed') && (
-            <p className="warn-box small" role="alert">
-              {phase === 'denied' ? tr("Вход отменён в Telegram.")
-                : phase === 'expired' ? tr("Время на подтверждение вышло. Попробуйте ещё раз.")
-                : error}
-            </p>
-          )}
-          {phase === 'ready' && code ? (
-            <a className="btn btn--primary btn--block login__tg" href={appLink}
-              onClick={() => setPhase('waiting')}>
-              <Icon name="send" size={20} />{tr("Войти через Telegram")}
-            </a>
-          ) : (
-            <button type="button" className="btn btn--primary btn--block" disabled={phase === 'preparing'}
-              onClick={() => void prepare()}>
-              {phase === 'preparing' ? tr("Подготовка…") : tr("Повторить")}
-            </button>
-          )}
-          <p className="hint small">{tr("Пароль не нужен: откроется бот, нажмите в нём «Войти». Доступ — как в мини-приложении.")}</p>
+          <div className="login__or"><span>{tr("или")}</span></div>
+          {telegramBlock}
         </>
       )}
+      <p className="hint small">{tr("Нет логина? Попросите администратора создать вам вход.")}</p>
       <InstallHint />
     </div>
   )

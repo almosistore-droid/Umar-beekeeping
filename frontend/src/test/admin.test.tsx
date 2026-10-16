@@ -87,6 +87,34 @@ describe('Users and access', () => {
     expect(JSON.parse(String(post[1]!.body))).toMatchObject({ telegram_id: 2000, role: 'ASSISTANT' })
   })
 
+  it('creates a login and password for someone without Telegram and resets a password', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (u) => {
+      const url = String(u)
+      if (url.endsWith('/api/admin/accounts'))
+        return json({ user: { ...users[1], id: 'u3', telegram_id: null, login: 'aziz', display_name: 'Азиз' }, login: 'aziz', temporary_password: 'k7mq-3vxe-p9ta' }, 201)
+      if (url.endsWith('/api/admin/users/u2/password'))
+        return json({ user: { ...users[1], login: 'karim' }, login: 'karim', temporary_password: 'abcd-efgh-jkmn' })
+      if (url.endsWith('/api/users')) return json(users)
+      return json([])
+    })
+    wrap(<UsersPage />)
+    await userEvent.click(await screen.findByRole('button', { name: '＋ Добавить' }))
+    await userEvent.click(screen.getByRole('radio', { name: 'Логин и пароль' }))
+    await userEvent.type(screen.getByLabelText('Имя'), 'Азиз')
+    await userEvent.type(screen.getByLabelText(/^Логин/), 'Aziz')
+    await userEvent.click(screen.getByRole('button', { name: 'Создать вход' }))
+    expect(await screen.findByText('k7mq-3vxe-p9ta')).toBeInTheDocument()
+    const [, init] = spy.mock.calls.find(([u]) => String(u).endsWith('/api/admin/accounts'))!
+    expect(JSON.parse(String(init?.body))).toEqual({ first_name: 'Азиз', last_name: null, login: 'aziz', role: 'ASSISTANT' })
+    await userEvent.click(screen.getByRole('button', { name: 'Готово' }))
+
+    // a Telegram user without a login gets one together with a temporary password
+    await userEvent.click(screen.getByRole('button', { name: 'Вход по паролю' }))
+    await userEvent.type(screen.getByLabelText(/^Логин/), 'karim')
+    await userEvent.click(screen.getByRole('button', { name: 'Создать временный пароль' }))
+    expect(await screen.findByText('abcd-efgh-jkmn')).toBeInTheDocument()
+  })
+
   it('is closed to other roles', async () => {
     role = 'BEEKEEPER'
     wrap(<UsersPage />)

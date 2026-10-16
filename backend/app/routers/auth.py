@@ -21,10 +21,13 @@ from app.schemas.auth import (
     LoginCodeRequest,
     LoginPollOut,
     LoginPollRequest,
+    PasswordChange,
+    PasswordLoginRequest,
     TelegramAuthRequest,
     UserOut,
 )
 from app.services import device_auth_service as device_auth
+from app.services import password_service
 from app.services.auth_service import upsert_telegram_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -145,3 +148,18 @@ def logout(body: DeviceTokenRequest, db: Annotated[Session, Depends(get_db)]):
     """«Выйти» on the phone: this device token stops working."""
     device_auth.revoke(db, body.device_token)
     return Response(status_code=204)
+
+
+# ---------- login and password (people without Telegram) ----------
+
+@router.post("/password", response_model=LoginPollOut)
+def password_login(body: PasswordLoginRequest, db: Annotated[Session, Depends(get_db)]):
+    """Login + password → access token and a device token (the phone stays logged in)."""
+    result = password_service.login_with_password(db, body.login, body.password, body.device_name)
+    result["user"] = UserOut.model_validate(result["user"])
+    return LoginPollOut(**result)
+
+
+@router.put("/me/password", response_model=UserOut)
+def change_password(body: PasswordChange, user: CurrentUser, db: Annotated[Session, Depends(get_db)]):
+    return password_service.change_password(db, user, body.current_password, body.new_password)

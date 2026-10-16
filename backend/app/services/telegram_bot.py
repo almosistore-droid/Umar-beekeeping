@@ -9,8 +9,10 @@ class TelegramUnavailable(DomainError):
     status_code = 502
 
 
-def send_document(chat_id: int, filename: str, content: bytes, caption: str | None = None,
+def send_document(chat_id: int | None, filename: str, content: bytes, caption: str | None = None,
                   media_type: str = "application/pdf") -> None:
+    if chat_id is None:
+        raise ConflictError("У вас нет Telegram в профиле — скачайте файл кнопкой «Скачать»")
     token = get_settings().telegram_bot_token
     if not token:
         raise ConflictError("Бот не настроен (нет TELEGRAM_BOT_TOKEN) — скачайте файл в браузере")

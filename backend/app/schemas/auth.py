@@ -15,8 +15,11 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    telegram_id: int
+    telegram_id: int | None
     username: str | None
+    login: str | None = None
+    has_password: bool = False
+    must_change_password: bool = False
     first_name: str | None
     last_name: str | None
     display_name: str
@@ -94,3 +97,16 @@ class BotConfirmOut(BaseModel):
 
 class DeviceTokenRequest(BaseModel):
     device_token: str = Field(min_length=16, max_length=128)
+
+
+# ---------- login and password (no Telegram) ----------
+
+class PasswordLoginRequest(BaseModel):
+    login: str = Field(min_length=1, max_length=64)
+    password: str = Field(min_length=1, max_length=128)
+    device_name: str | None = Field(default=None, max_length=120)
+
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=1, max_length=128)

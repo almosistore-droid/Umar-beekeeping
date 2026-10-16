@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { haptic, isInsideTelegram } from '../../services/telegram'
 import { Icon } from '../Icon'
+import { useAuth } from '../../hooks/useAuth'
 import { ErrorBox } from '../ui'
 import { tr } from '../../i18n'
 
@@ -29,6 +30,8 @@ export function DeliverButtons<S>({ fileLabel, send, download, sentNote, onDone,
   disabled?: boolean
 }) {
   const inTelegram = isInsideTelegram()
+  // People who log in only with a password have no Telegram chat for the bot to send to
+  const canSend = inTelegram || !!useAuth().user?.telegram_id
   const sendM = useMutation({ mutationFn: send, onSuccess: () => { haptic('success'); onDone?.() }, onError: () => haptic('error') })
   const dlM = useMutation({
     mutationFn: download,
@@ -52,7 +55,7 @@ export function DeliverButtons<S>({ fileLabel, send, download, sentNote, onDone,
     <div className="labels-actions">
       <ErrorBox error={sendM.error ?? dlM.error} />
       {sendM.data !== undefined && <p className="ok-box" role="status">{sentNote(sendM.data)}</p>}
-      {inTelegram ? [sendBtn, downloadBtn] : [downloadBtn, sendBtn]}
+      {inTelegram ? [sendBtn, downloadBtn] : canSend ? [downloadBtn, sendBtn] : [downloadBtn]}
     </div>
   )
 }

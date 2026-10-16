@@ -7,7 +7,8 @@ import { LoadingView, MessageView } from '../components/StateViews'
 import { useAuth } from '../hooks/useAuth'
 import { usePermissions } from '../hooks/usePermissions'
 import { haptic, shareText } from '../services/telegram'
-import { ROLE_LABELS, type InviteResult, type UserRole } from '../types/api'
+import { ROLE_LABELS, type AccountCredentials, type InviteResult, type User, type UserRole } from '../types/api'
+import { CredentialsCard } from '../components/auth/PasswordForms'
 import { agoLabel, formatDate } from '../utils/labels'
 import { tr } from '../i18n'
 
@@ -25,6 +26,7 @@ export function UsersPage() {
   const me = useAuth().user
   const qc = useQueryClient()
   const [adding, setAdding] = useState(false)
+  const [passwordFor, setPasswordFor] = useState<User | null>(null)
   const users = useQuery({ queryKey: ['users'], queryFn: usersApi.list, enabled: isAdmin })
   const invites = useQuery({ queryKey: ['invites'], queryFn: adminApi.invites, enabled: isAdmin })
   const refresh = () => ['users', 'invites', 'admin-overview'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }))
@@ -74,7 +76,8 @@ export function UsersPage() {
               </div>
               <div className="user-row__meta">
                 {u.username && <span>@{u.username}</span>}
-                <span>ID {u.telegram_id}</span>
+                {u.telegram_id && <span>ID {u.telegram_id}</span>}
+                {u.login && <span>{tr("логин: {0}", u.login)}</span>}
                 <span>{tr("был(а): {0}", agoLabel(u.last_seen_at))}</span>
               </div>
               {self ? <p className="hint small">{ROLE_LABELS[u.role]}</p> : <>
@@ -83,6 +86,9 @@ export function UsersPage() {
                   <input type="checkbox" checked={u.is_active} onChange={(e) => update.mutate({ id: u.id, is_active: e.target.checked })} />
                   <span>{tr("Доступ разрешён")}</span>
                 </label>
+                <button type="button" className="btn btn--ghost btn--sm" onClick={() => setPasswordFor(u)}>
+                  <Icon name="shield" size={16} />{u.login ? tr("Новый пароль") : tr("Вход по паролю")}
+                </button>
               </>}
             </li>
           )
@@ -95,13 +101,94 @@ export function UsersPage() {
       </section>
 
       <Sheet open={adding} title={tr("Добавить пользователя")} onClose={() => setAdding(false)}>
-        {adding && <InviteForm onDone={() => { refresh(); setAdding(false) }} />}
+        {adding && <AddUser onDone={() => { refresh(); setAdding(false) }} />}
+      </Sheet>
+      <Sheet open={!!passwordFor} title={passwordFor?.login ? tr("Новый пароль") : tr("Вход по паролю")} onClose={() => setPasswordFor(null)}>
+        {passwordFor && <ResetPasswordForm user={passwordFor} onDone={() => { refresh(); setPasswordFor(null) }} />}
       </Sheet>
     </div>
   )
 }
 
-function InviteForm({ onDone }: { onDone: () => void }) {
+/** Two ways to add a person: through Telegram (invitation) or a login and password (no Telegram needed). */
+function AddUser({ onDone }: { onDone: () => void }) {
+  const [how, setHow] = useState<'telegram' | 'password'>('telegram')
+  const [creds, setCreds] = useState<AccountCredentials | null>(null)
+  const [invited, setInvited] = useState(false)
+  if (creds) return <CredentialsCard creds={creds} onDone={onDone} />
+  return (
+    <>
+      {!invited && (
+        <Choice label={tr("Как человек будет входить")} value={how} onChange={(v) => v && setHow(v)}
+          options={[{ value: 'telegram', label: tr("Через Telegram") }, { value: 'password', label: tr("Логин и пароль") }]} />
+      )}
+      {how === 'telegram' ? <InviteForm onDone={onDone} onResult={() => setInvited(true)} /> : <AccountForm onCreated={setCreds} />}
+    </>
+  )
+}
+
+function AccountForm({ onCreated }: { onCreated: (c: AccountCredentials) => void }) {
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [login, setLogin] = useState('')
+  const [role, setRole] = useState<UserRole>('ASSISTANT')
+  const save = useMutation({
+    mutationFn: () => adminApi.createAccount({ first_name: firstName.trim(), last_name: lastName.trim() || null, login: login.trim(), role }),
+    onSuccess: (c) => { haptic('success'); onCreated(c) },
+    onError: () => haptic('error'),
+  })
+  return (
+    <form className="form" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate() }}>
+      <ErrorBox error={save.error} />
+      <p className="hint small">{tr("Для тех, у кого нет Telegram. Вы получите временный пароль — человек сменит его при первом входе.")}</p>
+      <Field label={tr("Имя")}>
+        <input className="input input--big" value={firstName} onChange={(e) => setFirstName(e.target.value)} maxLength={128} required />
+      </Field>
+      <Field label={tr("Фамилия")}>
+        <input className="input" value={lastName} onChange={(e) => setLastName(e.target.value)} maxLength={128} />
+      </Field>
+      <Field label={tr("Логин")} hint={tr("Латинские буквы и цифры, например karim или karim.bee")}>
+        <input className="input input--big" value={login} onChange={(e) => setLogin(e.target.value.toLowerCase())}
+          autoCapitalize="off" autoComplete="off" spellCheck={false} maxLength={32} required />
+      </Field>
+      <Choice label={tr("Роль")} options={roleOpts} value={role} onChange={(v) => v && setRole(v)} />
+      <p className="hint small">{ROLE_HINT[role]}</p>
+      <div className="submit-bar"><SubmitButton pending={save.isPending}>{tr("Создать вход")}</SubmitButton></div>
+    </form>
+  )
+}
+
+/** New temporary password, or a first login for someone who used only Telegram. */
+function ResetPasswordForm({ user, onDone }: { user: User; onDone: () => void }) {
+  const [login, setLogin] = useState(user.login ?? '')
+  const [creds, setCreds] = useState<AccountCredentials | null>(null)
+  const save = useMutation({
+    mutationFn: () => adminApi.resetPassword(user.id, user.login ? null : login.trim()),
+    onSuccess: (c) => { haptic('success'); setCreds(c) },
+    onError: () => haptic('error'),
+  })
+  if (creds) return <CredentialsCard creds={creds} onDone={onDone} />
+  return (
+    <form className="form" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate() }}>
+      <ErrorBox error={save.error} />
+      <p><b>{user.display_name}</b></p>
+      {user.login ? (
+        <p className="hint small">{tr("Старый пароль перестанет работать, и человек выйдет из приложения на всех телефонах. Новый временный пароль он сменит при входе.")}</p>
+      ) : (
+        <>
+          <p className="hint small">{tr("Человек сможет входить и без Telegram — по логину и паролю. Аккаунт и данные те же.")}</p>
+          <Field label={tr("Логин")} hint={tr("Латинские буквы и цифры, например karim или karim.bee")}>
+            <input className="input input--big" value={login} onChange={(e) => setLogin(e.target.value.toLowerCase())}
+              autoCapitalize="off" autoComplete="off" spellCheck={false} maxLength={32} required />
+          </Field>
+        </>
+      )}
+      <SubmitButton pending={save.isPending}>{tr("Создать временный пароль")}</SubmitButton>
+    </form>
+  )
+}
+
+function InviteForm({ onDone, onResult }: { onDone: () => void; onResult?: () => void }) {
   const [by, setBy] = useState<'username' | 'id'>('username')
   const [value, setValue] = useState('')
   const [role, setRole] = useState<UserRole>('ASSISTANT')
@@ -113,7 +200,7 @@ function InviteForm({ onDone }: { onDone: () => void }) {
       ...(by === 'id' ? { telegram_id: Number(value.trim()) } : { username: value }),
       role, note: note || null,
     }),
-    onSuccess: (r) => { haptic('success'); setResult(r) },
+    onSuccess: (r) => { haptic('success'); setResult(r); onResult?.() },
     onError: () => haptic('error'),
   })
 

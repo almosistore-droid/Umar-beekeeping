@@ -15,6 +15,10 @@ export const authApi = {
     api<LoginPoll>('/api/auth/login-codes/poll', { method: 'POST', body: JSON.stringify({ code, poll_secret: pollSecret }) }),
   loginWithDevice: (deviceToken: string) =>
     api<AuthResponse>('/api/auth/device', { method: 'POST', body: JSON.stringify({ device_token: deviceToken }) }),
+  passwordLogin: (login: string, password: string, deviceName: string) =>
+    api<LoginPoll>('/api/auth/password', { method: 'POST', body: JSON.stringify({ login, password, device_name: deviceName || null }) }),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api<User>('/api/auth/me/password', { method: 'PUT', body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }) }),
   logout: (deviceToken: string) =>
     api<void>('/api/auth/logout', { method: 'POST', body: JSON.stringify({ device_token: deviceToken }) }),
   setLanguage: (language: 'ru' | 'tg') =>

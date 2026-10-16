@@ -80,6 +80,12 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Scanner outside Telegram: `components/qr/CameraScanner` (BarcodeDetector, else lazy-loaded jsQR).
 - Dev: the `telegram` profile runs the bot too; the tunnel writes its address to the shared volume (`URL_FILE`), the bot reads it (`WEBAPP_URL_FILE`, `SET_MENU_BUTTON=0`).
 
+## Login and password (specs/011-password-login) — people without Telegram
+- `users.telegram_id` is nullable; `login` (unique, lowercase), `password_hash` (scrypt, `app/auth/passwords.py`), `must_change_password`, `failed_logins`/`locked_until` (5 failures → 15 min). CHECK: telegram_id or login.
+- `password_service`: `POST /api/auth/password` (same «Неверный логин или пароль» for unknown login / wrong password; blocked → 403 only after the right password) issues JWT + device token like the bot login; `PUT /api/auth/me/password`; admin `POST /api/admin/accounts`, `POST /api/admin/users/{id}/password` (temporary password returned once, revokes the person's device sessions).
+- `get_current_user` returns 403 «Сначала смените временный пароль» except `PASSWORD_CHANGE_PATHS` while `must_change_password`; the frontend shows `ForcedPasswordChange` (`components/auth/PasswordForms`).
+- Never assume `user.telegram_id` exists: bot delivery (`telegram_bot.send_document`) refuses without it; `DeliverButtons` hides «Отправить в чат».
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client (the bot passes it only for login confirmation, signed). The role is loaded from DB on every request (`get_current_user`).

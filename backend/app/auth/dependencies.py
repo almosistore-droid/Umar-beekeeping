@@ -6,7 +6,7 @@ deactivation takes effect on the next request.
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -17,7 +17,12 @@ from app.models.user import User, UserRole
 bearer = HTTPBearer(auto_error=False)
 
 
+# Allowed while the temporary password from the admin has not been changed yet
+PASSWORD_CHANGE_PATHS = {"/api/auth/me", "/api/auth/me/password", "/api/auth/me/language", "/api/auth/logout"}
+
+
 def get_current_user(
+    request: Request,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
     db: Annotated[Session, Depends(get_db)],
 ) -> User:
@@ -41,6 +46,8 @@ def get_current_user(
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Пользователь не найден")
     if not user.is_active:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Учётная запись отключена")
+    if user.must_change_password and request.url.path not in PASSWORD_CHANGE_PATHS:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Сначала смените временный пароль")
     return user
 
 

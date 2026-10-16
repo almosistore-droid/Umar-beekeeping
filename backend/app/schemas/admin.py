@@ -115,3 +115,22 @@ class AuditPage(BaseModel):
 
 
 OverviewOut.model_rebuild()
+
+
+class AccountCreate(BaseModel):
+    """A person who logs in with a login and password (no Telegram)."""
+    first_name: str = Field(min_length=1, max_length=128)
+    last_name: str | None = Field(default=None, max_length=128)
+    login: str = Field(min_length=1, max_length=64)
+    role: UserRole
+
+
+class PasswordReset(BaseModel):
+    login: str | None = Field(default=None, max_length=64, description="Required when the user has no login yet")
+
+
+class AccountCredentials(BaseModel):
+    """Shown to the admin once: the temporary password is not stored anywhere in readable form."""
+    user: UserOut
+    login: str
+    temporary_password: str

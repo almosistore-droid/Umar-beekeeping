@@ -35,3 +35,7 @@ class Gone(DomainError):
 
 class NotConfigured(DomainError):
     status_code = 503
+
+
+class TooManyAttempts(DomainError):
+    status_code = 429

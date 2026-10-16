@@ -5,7 +5,8 @@ import { usePermissions } from '../hooks/usePermissions'
 import { ROLE_LABELS } from '../types/api'
 import { useState } from 'react'
 import { authApi } from '../api/auth'
-import { Choice } from '../components/ui'
+import { Choice, Sheet } from '../components/ui'
+import { ChangePasswordForm } from '../components/auth/PasswordForms'
 import { InstallHint } from '../components/auth/InstallHint'
 import { isStandalone } from '../services/pwa'
 import { getWebApp } from '../services/telegram'
@@ -35,8 +36,10 @@ export function MorePage() {
         <h2 className="card__title">{tr("Профиль")}</h2>
         <div className="row"><span className="hint">{tr("Имя")}</span><span>{user.display_name}</span></div>
         {user.username && <div className="row"><span className="hint">Telegram</span><span>@{user.username}</span></div>}
-        <div className="row"><span className="hint">Telegram ID</span><span>{user.telegram_id}</span></div>
+        {user.telegram_id && <div className="row"><span className="hint">Telegram ID</span><span>{user.telegram_id}</span></div>}
+        {user.login && <div className="row"><span className="hint">{tr("Логин")}</span><span>{user.login}</span></div>}
         <div className="row"><span className="hint">{tr("Роль")}</span><span>{ROLE_LABELS[user.role]}</span></div>
+        {user.has_password && <PasswordButton />}
       </section>
       <LanguageCard />
       <PhoneAppCard />
@@ -76,6 +79,22 @@ function PhoneAppCard() {
         </button>
       )}
     </section>
+  )
+}
+
+function PasswordButton() {
+  const [open, setOpen] = useState(false)
+  const [done, setDone] = useState(false)
+  return (
+    <>
+      {done && <p className="ok-box small" role="status">{tr("Пароль изменён.")}</p>}
+      <button type="button" className="btn btn--ghost btn--block" onClick={() => { setDone(false); setOpen(true) }}>
+        <Icon name="shield" size={18} />{tr("Сменить пароль")}
+      </button>
+      <Sheet open={open} title={tr("Сменить пароль")} onClose={() => setOpen(false)}>
+        {open && <ChangePasswordForm onDone={() => { setOpen(false); setDone(true) }} />}
+      </Sheet>
+    </>
   )
 }
 

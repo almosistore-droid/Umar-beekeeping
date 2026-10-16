@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, CheckConstraint, DateTime, Enum, ForeignKey, Index, String, text
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, DateTime, Enum, ForeignKey, Index, Integer, String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -18,9 +18,14 @@ class UserRole(str, enum.Enum):
 
 class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "users"
-    __table_args__ = (CheckConstraint("language IS NULL OR language IN ('ru', 'tg')", name="language_known"),)
+    __table_args__ = (
+        CheckConstraint("language IS NULL OR language IN ('ru', 'tg')", name="language_known"),
+        CheckConstraint("telegram_id IS NOT NULL OR login IS NOT NULL", name="telegram_or_login"),
+        CheckConstraint("login IS NULL OR login = lower(login)", name="login_lowercase"),
+    )
 
-    telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True, nullable=False)
+    # Telegram account (Mini App, login through the bot); null for people who log in only with a password
+    telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, index=True)
     username: Mapped[str | None] = mapped_column(String(64))
     first_name: Mapped[str | None] = mapped_column(String(128))
     last_name: Mapped[str | None] = mapped_column(String(128))
@@ -34,10 +39,21 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # Last successful login through Telegram (shown in the admin panel)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    # Login with a password (no Telegram needed). The admin creates it with a temporary password.
+    login: Mapped[str | None] = mapped_column(String(32), unique=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255))
+    must_change_password: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=text("false"))
+    failed_logins: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
     @property
     def display_name(self) -> str:
         full = " ".join(p for p in (self.first_name, self.last_name) if p)
-        return full or (f"@{self.username}" if self.username else str(self.telegram_id))
+        return full or (f"@{self.username}" if self.username else self.login or str(self.telegram_id))
+
+    @property
+    def has_password(self) -> bool:
+        return self.password_hash is not None
 
 
 class InviteStatus(str, enum.Enum):

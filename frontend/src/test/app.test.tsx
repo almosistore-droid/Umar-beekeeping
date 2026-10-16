@@ -1,5 +1,5 @@
 import userEvent from '@testing-library/user-event'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { vi } from 'vitest'
@@ -99,7 +99,7 @@ describe('Local dev login', () => {
     renderApp()
     const box = await screen.findByLabelText('Строка входа')
     await userEvent.type(box, 'signed-by-dev-script')
-    await userEvent.click(screen.getByRole('button', { name: 'Войти' }))
+    await userEvent.click(within(box.closest('form')!).getByRole('button', { name: 'Войти' }))
     expect(await screen.findByText(/Иван/)).toBeInTheDocument()
     const [, init] = fetchSpy.mock.calls.find(([u]) => String(u).endsWith('/api/auth/telegram'))!
     expect(JSON.parse(String(init?.body))).toEqual({ init_data: 'signed-by-dev-script' })
@@ -174,11 +174,54 @@ describe('App on the phone (outside Telegram)', () => {
     expect(localStorage.getItem('fayzi-umar.device')).toBeNull()
   })
 
-  it('shows why login is unavailable', async () => {
+  it('offers only the password when the server has no bot', async () => {
     vi.stubEnv('VITE_DEV_INIT_DATA', '')
     mockFetch(() => json({ detail: 'Вход вне Telegram не настроен: на сервере не указан TELEGRAM_BOT_USERNAME' }, 503))
     renderApp()
-    expect(await screen.findByText(/TELEGRAM_BOT_USERNAME/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Повторить' })).toBeInTheDocument()
+    expect(await screen.findByLabelText('Логин')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('или')).not.toBeInTheDocument())
+    expect(screen.queryByText(/TELEGRAM_BOT_USERNAME/)).not.toBeInTheDocument()
+  })
+
+  it('logs in with a login and password, then asks to replace the temporary password', async () => {
+    vi.stubEnv('VITE_DEV_INIT_DATA', '')
+    const temp = { ...user, telegram_id: null, login: 'karim', has_password: true, must_change_password: true }
+    let changed: unknown = null
+    mockFetch((url, init) => {
+      if (url.endsWith('/api/auth/login-codes')) return json(code, 201)
+      if (url.endsWith('/api/auth/password')) {
+        const body = JSON.parse(String(init?.body))
+        if (body.password !== 'k7mq-3vxe-p9ta') return json({ detail: 'Неверный логин или пароль' }, 401)
+        return json({ status: 'ok', access_token: 'tok', device_token: 'device-2', expires_in: 60, user: temp })
+      }
+      if (url.endsWith('/api/auth/me/password')) {
+        changed = JSON.parse(String(init?.body))
+        return json({ ...temp, must_change_password: false })
+      }
+      if (url.includes('/api/dashboard')) return json(dashboard)
+      return json({}, 404)
+    })
+    renderApp()
+    await userEvent.type(await screen.findByLabelText('Логин'), 'karim')
+    await userEvent.type(screen.getByLabelText('Пароль'), 'wrong')
+    const loginForm = () => within(screen.getByLabelText('Логин').closest('form')!)
+    await userEvent.click(loginForm().getByRole('button', { name: 'Войти' }))
+    expect(await screen.findByText('Неверный логин или пароль')).toBeInTheDocument()
+    await userEvent.clear(screen.getByLabelText('Пароль'))
+    await userEvent.type(screen.getByLabelText('Пароль'), 'k7mq-3vxe-p9ta')
+    await userEvent.click(loginForm().getByRole('button', { name: 'Войти' }))
+
+    expect(await screen.findByText('Придумайте свой пароль')).toBeInTheDocument()
+    expect(localStorage.getItem('fayzi-umar.device')).toBe('device-2')
+    await userEvent.type(screen.getByLabelText('Временный пароль'), 'k7mq-3vxe-p9ta')
+    await userEvent.type(screen.getByLabelText(/^Новый пароль/), 'pchela-2026')
+    await userEvent.type(screen.getByLabelText('Повторите новый пароль'), 'pchela-2025')
+    await userEvent.click(screen.getByRole('button', { name: 'Сохранить пароль' }))
+    expect(await screen.findByText('Пароли не совпадают')).toBeInTheDocument()
+    await userEvent.clear(screen.getByLabelText('Повторите новый пароль'))
+    await userEvent.type(screen.getByLabelText('Повторите новый пароль'), 'pchela-2026')
+    await userEvent.click(screen.getByRole('button', { name: 'Сохранить пароль' }))
+    expect(await screen.findByText(/Иван/)).toBeInTheDocument()
+    expect(changed).toEqual({ current_password: 'k7mq-3vxe-p9ta', new_password: 'pchela-2026' })
   })
 })

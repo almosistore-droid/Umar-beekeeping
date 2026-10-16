@@ -22,6 +22,8 @@ interface AuthContextValue {
   /** The bot confirmed the login on this phone. */
   completeDeviceLogin: (result: LoginPoll) => void
   logout: () => Promise<void>
+  /** The profile changed on the server (e.g. the temporary password was replaced). */
+  updateUser: (user: User) => void
   /** Local testing only: log in with a signed initData string pasted by the developer. */
   loginWithInitData: (initData: string) => void
 }
@@ -91,6 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ status: 'signed-out' })
   }, [])
 
+  const updateUser = useCallback((user: User) => {
+    setState((s) => (s.status === 'authenticated' ? { ...s, user } : s))
+  }, [])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       state,
@@ -99,12 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       retry: login,
       completeDeviceLogin,
       logout,
+      updateUser,
       loginWithInitData: (initData: string) => {
         manualInitData.current = initData.trim()
         void login()
       },
     }),
-    [state, login, completeDeviceLogin, logout],
+    [state, login, completeDeviceLogin, logout, updateUser],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

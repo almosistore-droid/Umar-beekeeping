@@ -7,8 +7,18 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import ADMIN_ONLY, require_roles
 from app.database import get_db
 from app.models import User
-from app.schemas.admin import AuditPage, InviteCreate, InviteOut, InviteResult, OverviewOut
-from app.services import admin_service
+from app.schemas.admin import (
+    AccountCreate,
+    AccountCredentials,
+    AuditPage,
+    InviteCreate,
+    InviteOut,
+    InviteResult,
+    OverviewOut,
+    PasswordReset,
+)
+from app.schemas.auth import UserOut
+from app.services import admin_service, password_service
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 DB = Annotated[Session, Depends(get_db)]
@@ -42,3 +52,18 @@ def audit_log(db: DB, _: Admin, user_id: uuid.UUID | None = None,
               entity_type: Annotated[str | None, Query(max_length=40)] = None,
               offset: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Query(ge=1, le=200)] = 50):
     return admin_service.audit_log(db, user_id=user_id, entity_type=entity_type, offset=offset, limit=limit)
+
+
+@router.post("/accounts", response_model=AccountCredentials, status_code=status.HTTP_201_CREATED)
+def create_account(body: AccountCreate, db: DB, admin: Admin):
+    """A person without Telegram: login + temporary password, changed at the first login."""
+    user, password = password_service.create_account(db, admin, first_name=body.first_name, last_name=body.last_name,
+                                                     login=body.login, role=body.role)
+    return AccountCredentials(user=UserOut.model_validate(user), login=user.login, temporary_password=password)
+
+
+@router.post("/users/{user_id}/password", response_model=AccountCredentials)
+def reset_password(user_id: uuid.UUID, body: PasswordReset, db: DB, admin: Admin):
+    """New temporary password (or a first login for a Telegram user); the person is logged out everywhere."""
+    user, password = password_service.reset_password(db, admin, user_id, body.login)
+    return AccountCredentials(user=UserOut.model_validate(user), login=user.login, temporary_password=password)

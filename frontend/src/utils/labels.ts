@@ -259,6 +259,8 @@ export const ENTITY_LABEL: Record<string, string> = {
 const ACTION_LABEL: Record<string, string> = {
   created: tr("создан(а)"), updated: tr("изменён(а)"), corrected: tr("исправлен(а)"), cancelled: tr("отменён(а)"), delivered: tr("выдан"),
   payment: tr("принята оплата"), invited: tr("приглашён"), invite_revoked: tr("приглашение отозвано"), joined_by_invite: tr("вошёл по приглашению"), role_from_config: tr("стал администратором (настройки сервера)"), device_login: tr("вошёл в приложение на телефоне"),
+  account_created: tr("создан вход по логину"), password_reset: tr("выдан новый пароль"), password_changed: tr("сменил(а) пароль"),
+  login_locked: tr("вход заблокирован на 15 минут: неверный пароль"),
   archived: tr("в архиве"), qr_printed: tr("напечатан"),
 }
 /** One line for the admin activity log: hive events reuse the hive timeline wording. */
@@ -299,6 +301,9 @@ export function logDetail(e: { entity_type: string; action: string; new_value: R
   else if (e.entity_type === 'order') parts.push(v.total !== undefined && money(v.total), v.customer as string, v.status === 'READY' && tr("собран"))
   else if (e.entity_type === 'expense') parts.push(v.amount !== undefined && money(v.amount), EXPENSE_CATEGORY[v.category as ExpenseCategory], v.description as string)
   else if (e.entity_type === 'customer' || e.entity_type === 'apiary') parts.push(v.name as string, v.city as string)
+  else if (e.entity_type === 'user' && e.action === 'account_created') parts.push(v.name as string, (v.login ? tr("логин: {0}", v.login as string) : null), v.role ? ROLE_LABELS[v.role as UserRole] : null)
+  else if (e.entity_type === 'user' && e.action === 'password_reset') parts.push((v.login ? tr("логин: {0}", v.login as string) : null))
+  else if (e.entity_type === 'user' && e.action === 'device_login') parts.push(v.device as string, v.method === 'password' ? tr("по паролю") : 'Telegram')
   else if (e.entity_type === 'user_invite') parts.push(v.username ? `@${v.username}` : v.telegram_id ? `ID ${v.telegram_id}` : null, v.role ? ROLE_LABELS[v.role as UserRole] : null, v.note as string)
   const out = parts.filter(Boolean).join(' · ')
   return out || null

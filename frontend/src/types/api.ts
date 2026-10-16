@@ -4,8 +4,12 @@ export type UserRole = 'ADMIN' | 'BEEKEEPER' | 'ASSISTANT' | 'VIEWER'
 
 export interface User {
   id: string
-  telegram_id: number
+  /** null: the person logs in only with a login and password (no Telegram) */
+  telegram_id: number | null
   username: string | null
+  login?: string | null
+  has_password?: boolean
+  must_change_password?: boolean
   first_name: string | null
   last_name: string | null
   display_name: string
@@ -429,6 +433,8 @@ export interface Invite {
   status: InviteStatus; expired: boolean; expires_at: string; created_at: string
   created_by_name: string | null; used_by_name: string | null; used_at: string | null
 }
+/** Shown to the admin once. */
+export interface AccountCredentials { user: User; login: string; temporary_password: string }
 export interface InviteResult { kind: 'invited' | 'updated'; invite: Invite | null; user: User | null; share_text: string | null }
 export interface AdminOverview {
   system: {

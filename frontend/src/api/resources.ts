@@ -7,7 +7,7 @@ import type {
   CrmSummary, Customer, CustomerDetails, Debtor, Expense, ExpenseCategory, LineInput, Order, OrderStatus, PayNowInput,
   PaymentMethod, Sale,
 } from '../types/api'
-import type { AdminOverview, AuditPage, Invite, InviteResult, Dashboard, HiveCheck, LabelsRequest, QrInfo, QrResolve, QrStatus, ReportFormat, YearlyReport } from '../types/api'
+import type { AccountCredentials, AdminOverview, AuditPage, Invite, InviteResult, Dashboard, HiveCheck, LabelsRequest, QrInfo, QrResolve, QrStatus, ReportFormat, YearlyReport } from '../types/api'
 
 const json = (method: string, body: unknown): RequestInit => ({ method, body: JSON.stringify(body) })
 
@@ -223,5 +223,9 @@ export const adminApi = {
   invite: (body: { telegram_id?: number | null; username?: string | null; role: UserRole; note?: string | null }) =>
     api<InviteResult>('/api/admin/invites', json('POST', body)),
   revoke: (id: string) => api<Invite>(`/api/admin/invites/${id}/revoke`, { method: 'POST' }),
+  createAccount: (body: { first_name: string; last_name?: string | null; login: string; role: UserRole }) =>
+    api<AccountCredentials>('/api/admin/accounts', json('POST', body)),
+  resetPassword: (userId: string, login?: string | null) =>
+    api<AccountCredentials>(`/api/admin/users/${userId}/password`, json('POST', { login: login || null })),
   audit: (p: { user_id?: string; entity_type?: string; offset?: number; limit?: number }) => api<AuditPage>(`/api/admin/audit${qs(p)}`),
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { PhoneLogin } from './components/auth/PhoneLogin'
+import { ForcedPasswordChange } from './components/auth/PasswordForms'
 import { LoadingView, MessageView } from './components/StateViews'
 import { useAuth } from './hooks/useAuth'
 import { isInsideTelegram } from './services/telegram'
@@ -28,6 +29,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         </>
       )
     case 'authenticated':
+      // Temporary password from the admin: replace it before anything else (the server enforces it too)
+      if (state.user.must_change_password) return <ForcedPasswordChange />
       return <>{children}</>
   }
 }

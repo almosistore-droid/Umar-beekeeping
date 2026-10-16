@@ -41,7 +41,7 @@ server {
     }
 
     # Login on the phone outside Telegram: creating codes and device logins are rare; polling uses the api zone
-    location ~ ^/api/auth/(login-codes|device)$ {
+    location ~ ^/api/auth/(login-codes|device|password)$ {
         limit_req zone=auth burst=10 nodelay;
         limit_req_status 429;
         proxy_pass http://backend:8000;

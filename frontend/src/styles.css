@@ -603,3 +603,8 @@ button.btn { display: inline-flex; align-items: center; justify-content: center;
   color: var(--wax); font-size: 16px; font-weight: 600; text-shadow: 0 1px 6px #000; }
 .camera__close { position: absolute; top: calc(16px + env(safe-area-inset-top)); right: 16px; width: 48px; height: 48px; border: 0;
   border-radius: 50%; background: rgba(0, 0, 0, 0.55); color: #fff; display: grid; place-items: center; }
+.login__form, .login .form { width: 100%; text-align: left; }
+.login__or { display: flex; align-items: center; gap: 12px; width: 100%; color: var(--smoke); font-size: 13px; }
+.login__or::before, .login__or::after { content: ''; flex: 1; height: 1px; background: var(--rim); }
+.creds { background: var(--comb-2); border: 1px solid var(--rim); border-radius: 14px; padding: 4px 14px; }
+.creds__value { font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 18px; letter-spacing: 0.04em; color: var(--gold); user-select: all; }
