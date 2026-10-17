@@ -21,7 +21,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CLIENTS="$ROOT/clients"
 EDGE="$ROOT/deploy/edge"
 BACKUPS="$ROOT/backups"
-WEBROOT=/var/www/certbot
+# Let's Encrypt webroot, mounted into the edge nginx (BEE_WEBROOT only for the tests)
+WEBROOT=${BEE_WEBROOT:-/var/www/certbot}
 
 die() { echo "Ошибка: $*" >&2; exit 1; }
 say() { echo "==> $*"; }

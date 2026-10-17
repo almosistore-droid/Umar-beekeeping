@@ -28,7 +28,8 @@ def repo(tmp_path):
         fake = bin_dir / tool
         fake.write_text(f'#!/bin/bash\necho "{tool} $*" >> "{log}"\nexit 0\n')
         fake.chmod(0o755)
-    env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}"}
+    # CI runs as a normal user: /var/www/certbot cannot be created there
+    env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}", "BEE_WEBROOT": str(tmp_path / "webroot")}
 
     def run(*args, ok=True):
         res = subprocess.run(["bash", str(root / "deploy" / "client.sh"), *args], env=env,
@@ -94,7 +95,7 @@ def test_start_writes_the_site_and_runs_the_bot_only_with_a_token(repo):
     assert "/etc/letsencrypt/live/asal.tj/fullchain.pem" in site
     calls = repo.log.read_text()
     assert "-p bee-asal" in calls and "--profile bot" not in calls
-    assert "certbot certonly --webroot -w /var/www/certbot -d asal.tj" in calls
+    assert f"certbot certonly --webroot -w {repo.root.parent / 'webroot'} -d asal.tj" in calls
 
     env_file = repo.root / "clients" / "asal.env"
     env_file.write_text(env_file.read_text().replace("TELEGRAM_BOT_TOKEN=\n", "TELEGRAM_BOT_TOKEN=1:abc\n"))
