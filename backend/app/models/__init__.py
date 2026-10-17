@@ -28,9 +28,11 @@ from app.models.operations import (
 from app.models.crm import Customer, Expense, Order, OrderItem, Payment, Sale, SaleItem
 from app.models.qr import QrCode
 from app.models.device import DeviceSession, LoginCode, LoginCodeStatus
+from app.models.notification import NotificationLog
 from app.models.user import InviteStatus, User, UserInvite, UserRole
 
 __all__ = [
+    "NotificationLog",
     "DeviceSession", "LoginCode", "LoginCodeStatus",
     "InviteStatus",
     "UserInvite",

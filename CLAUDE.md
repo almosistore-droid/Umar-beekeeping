@@ -27,7 +27,7 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Inspections recompute hive state in `inspection_service._recompute_hive`: last/next inspection from the latest inspection (default +7 days, stored at 12:00 UTC), current family strength from it.
 - Disease cases: SUSPECTED → CONFIRMED → TREATING → RESOLVED, never backwards; `health_service.sync_hive_health_status` sets SICK/QUARANTINE (quarantine diseases) while CONFIRMED/TREATING cases exist and returns to ACTIVE only from SICK/QUARANTINE.
 - Disease catalog is seeded by migration 0003; tests keep it (conftest truncates everything except `diseases`).
-- Next treatment/feeding dates create `tasks` (reminders); a new record of the same kind closes older open ones. Stage 8 will send them via the bot.
+- Next treatment/feeding dates create `tasks` (reminders); a new record of the same kind closes older open ones. Stage 8 sends them via the bot.
 - `GET /api/hives/{id}/timeline` merges records with audit events; the frontend describes events with `describeAudit` in `src/utils/labels.ts`.
 - Health records are written by CAN_WRITE (assistants included); the disease catalog by CAN_MANAGE.
 
@@ -85,6 +85,12 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - `password_service`: `POST /api/auth/password` (same «Неверный логин или пароль» for unknown login / wrong password; blocked → 403 only after the right password) issues JWT + device token like the bot login; `PUT /api/auth/me/password`; admin `POST /api/admin/accounts`, `POST /api/admin/users/{id}/password` (temporary password returned once, revokes the person's device sessions).
 - `get_current_user` returns 403 «Сначала смените временный пароль» except `PASSWORD_CHANGE_PATHS` while `must_change_password`; the frontend shows `ForcedPasswordChange` (`components/auth/PasswordForms`).
 - Never assume `user.telegram_id` exists: bot delivery (`telegram_bot.send_document`) refuses without it; `DeliverButtons` hides «Отправить в чат».
+
+## Stage 8 — Telegram reminders (specs/012-telegram-reminders)
+- `notification_service.collect()` builds `Note`s (key, category field|crm, Russian lines, button + start param) from open tasks, hives' next inspection, old queens (≥24 months), QUEENLESS hives (weekly key), wintering prep/check (seasonal, yearly key), CRM debts (weekly key) and due orders; 30-day lookback, one more reminder after 3 days overdue.
+- `dispatch()` (7:00–21:00 apiary time) claims (user, key) in `notification_log` with INSERT … ON CONFLICT DO NOTHING before sending; TelegramBlocked → FAILED (kept), TelegramUnavailable → row deleted (retried). Recipients: active users with telegram_id, ADMIN/BEEKEEPER all, ASSISTANT field only, VIEWER none; `users.notify_field` / `notify_crm`.
+- Text per line through `translate(line, lang)`; buttons are t.me deep links (`hive_<uuid>` or `go_tasks|go_hives|go_debts|go_orders`, mapped by `START_SCREENS` in `AppLayout`).
+- The bot (`bot/reminders.py`) calls `POST /api/notifications/dispatch` (X-Bot-Auth) every NOTIFY_EVERY_SECONDS (300). Settings/test: `/api/notifications/settings`, `/api/notifications/test`; UI card in «Ещё». Tests patch `ns._wintering` (seasonal).
 
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.

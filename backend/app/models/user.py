@@ -46,6 +46,10 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     failed_logins: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    # Telegram reminders (stage 8): work at the apiary / CRM (debts, orders). Turned off in «Ещё».
+    notify_field: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=text("true"))
+    notify_crm: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=text("true"))
+
     @property
     def display_name(self) -> str:
         full = " ".join(p for p in (self.first_name, self.last_name) if p)

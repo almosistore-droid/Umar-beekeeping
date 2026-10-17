@@ -5,11 +5,13 @@ import { usePermissions } from '../hooks/usePermissions'
 import { ROLE_LABELS } from '../types/api'
 import { useState } from 'react'
 import { authApi } from '../api/auth'
+import { notificationsApi } from '../api/resources'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { getWebApp, haptic } from '../services/telegram'
 import { Choice, Sheet } from '../components/ui'
 import { ChangePasswordForm } from '../components/auth/PasswordForms'
 import { InstallHint } from '../components/auth/InstallHint'
 import { isStandalone } from '../services/pwa'
-import { getWebApp } from '../services/telegram'
 import { LANGS, getLang, switchLang, tr, type Lang } from '../i18n'
 
 export function MorePage() {
@@ -41,6 +43,7 @@ export function MorePage() {
         <div className="row"><span className="hint">{tr("Роль")}</span><span>{ROLE_LABELS[user.role]}</span></div>
         {user.has_password && <PasswordButton />}
       </section>
+      <NotificationsCard />
       <LanguageCard />
       <PhoneAppCard />
     </div>
@@ -77,6 +80,46 @@ function PhoneAppCard() {
           onClick={() => { setLeaving(true); void logout() }}>
           <Icon name="logout" size={18} />{tr("Выйти на этом устройстве")}
         </button>
+      )}
+    </section>
+  )
+}
+
+/** Stage 8: reminders in Telegram, each as its own message; apiary work and CRM can be turned off. */
+function NotificationsCard() {
+  const qc = useQueryClient()
+  const settings = useQuery({ queryKey: ['notification-settings'], queryFn: notificationsApi.settings })
+  const update = useMutation({
+    mutationFn: notificationsApi.update,
+    onSuccess: (s) => { haptic('light'); qc.setQueryData(['notification-settings'], s) },
+  })
+  const test = useMutation({ mutationFn: notificationsApi.test, onSuccess: () => haptic('success'), onError: () => haptic('error') })
+  const s = settings.data
+  if (!s) return null
+  return (
+    <section className="card">
+      <h2 className="card__title">{tr("Напоминания в Telegram")}</h2>
+      {!s.telegram ? (
+        <p className="hint small">{tr("Напоминания приходят в Telegram, а у вас вход без Telegram. Смотрите их в «Ещё → Напоминания».")}</p>
+      ) : (
+        <>
+          <p className="hint small">{tr("Каждое напоминание приходит отдельным сообщением от бота (в {0}).", s.hours)}</p>
+          <label className="switch">
+            <input type="checkbox" checked={s.field} disabled={update.isPending} onChange={(e) => update.mutate({ field: e.target.checked })} />
+            <span>{tr("Работа на пасеке: осмотры, обработки, подкормки, матки, зимовка")}</span>
+          </label>
+          {s.crm_available && (
+            <label className="switch">
+              <input type="checkbox" checked={s.crm} disabled={update.isPending} onChange={(e) => update.mutate({ crm: e.target.checked })} />
+              <span>{tr("CRM: долги клиентов и заказы")}</span>
+            </label>
+          )}
+          {test.isSuccess && <p className="ok-box small" role="status">{tr("Отправлено — проверьте чат с ботом.")}</p>}
+          {test.error instanceof Error && <p className="error-box" role="alert">{test.error.message}</p>}
+          <button type="button" className="btn btn--ghost btn--block" disabled={test.isPending} onClick={() => test.mutate()}>
+            <Icon name="send" size={18} />{tr("Прислать пробное сообщение")}
+          </button>
+        </>
       )}
     </section>
   )

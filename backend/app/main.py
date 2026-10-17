@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from app import i18n
 from app.config import get_settings
 from app.routers import admin, apiaries, auth, health, hives, queens, users
-from app.routers import crm, operations, qr, records, reports
+from app.routers import crm, notifications, operations, qr, records, reports
 from app.utils.errors import DomainError
 from app.utils.validation_messages import humanize_errors
 
@@ -97,6 +97,7 @@ def create_app() -> FastAPI:
     app.include_router(qr.router)
     app.include_router(reports.router)
     app.include_router(crm.router)
+    app.include_router(notifications.router)
     return app
 
 

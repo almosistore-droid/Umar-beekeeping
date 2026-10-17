@@ -229,3 +229,11 @@ export const adminApi = {
     api<AccountCredentials>(`/api/admin/users/${userId}/password`, json('POST', { login: login || null })),
   audit: (p: { user_id?: string; entity_type?: string; offset?: number; limit?: number }) => api<AuditPage>(`/api/admin/audit${qs(p)}`),
 }
+
+// ---------- stage 8: Telegram reminders ----------
+export interface NotificationSettings { field: boolean; crm: boolean; crm_available: boolean; telegram: boolean; hours: string }
+export const notificationsApi = {
+  settings: () => api<NotificationSettings>('/api/notifications/settings'),
+  update: (body: { field?: boolean; crm?: boolean }) => api<NotificationSettings>('/api/notifications/settings', json('PUT', body)),
+  test: () => api<{ sent: boolean }>('/api/notifications/test', { method: 'POST' }),
+}

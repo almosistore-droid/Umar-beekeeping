@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # App on the phone outside Telegram: login code lifetime and how long an unused device stays logged in
     login_code_ttl_seconds: int = 300
     device_session_idle_days: int = 180
+    # Telegram reminders are sent only between these local hours (settings.timezone)
+    notify_from_hour: int = 7
+    notify_to_hour: int = 21
 
     # Telegram IDs that get the ADMIN role on first login (comma-separated in env)
     # NoDecode: read "1,2,3" as plain text (split below) instead of expecting JSON

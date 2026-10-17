@@ -1,4 +1,4 @@
-"""Telegram bot: entry point to the Mini App, login confirmation for the phone app (notifications: stage 8)."""
+"""Telegram bot: entry point to the Mini App, login confirmation for the phone app, reminders (stage 8)."""
 import asyncio
 import logging
 
@@ -7,6 +7,7 @@ from aiogram.types import BotCommand, MenuButtonWebApp, WebAppInfo
 
 from config import BOT_TOKEN, SET_MENU_BUTTON, webapp_url
 from handlers import login, start
+import reminders
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -24,7 +25,11 @@ async def main() -> None:
     if SET_MENU_BUTTON and url:
         await bot.set_chat_menu_button(menu_button=MenuButtonWebApp(text="Пасека", web_app=WebAppInfo(url=url)))
 
-    await dp.start_polling(bot)
+    reminder_loop = asyncio.create_task(reminders.run_forever())  # stage 8: Telegram reminders
+    try:
+        await dp.start_polling(bot)
+    finally:
+        reminder_loop.cancel()
 
 
 if __name__ == "__main__":
