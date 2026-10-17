@@ -42,7 +42,7 @@ def update_settings(body: NotificationSettingsUpdate, user: CurrentUser, db: DB)
 
 @router.post("/test")
 def send_test(user: CurrentUser):
-    notification_service.send_test(user)
+    notification_service.send_test(user, get_settings())
     return {"sent": True}
 
 

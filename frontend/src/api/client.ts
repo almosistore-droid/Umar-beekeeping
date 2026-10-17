@@ -18,6 +18,7 @@ const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? ''
 
 let accessToken: string | null = null
 let onUnauthorized: (() => void) | null = null
+let onPaymentRequired: (() => void) | null = null
 
 // Token is kept in memory only: on reload the app re-authenticates with fresh initData.
 export function setAccessToken(token: string | null) {
@@ -26,6 +27,11 @@ export function setAccessToken(token: string | null) {
 
 export function setUnauthorizedHandler(handler: (() => void) | null) {
   onUnauthorized = handler
+}
+
+/** 402 = the subscription of this installation has ended: the app switches to the blocked screen. */
+export function setPaymentRequiredHandler(handler: (() => void) | null) {
+  onPaymentRequired = handler
 }
 
 const FALLBACK_MESSAGES: Record<number, string> = {
@@ -57,6 +63,7 @@ async function raise(response: Response): Promise<never> {
   const detail = typeof data?.detail === 'string' ? data.detail : null
   const message = detail ?? FALLBACK_MESSAGES[response.status] ?? tr("Ошибка сервера. Попробуйте позже.")
   if (response.status === 401 && accessToken) onUnauthorized?.()
+  if (response.status === 402) onPaymentRequired?.()
   throw new ApiError(response.status, message, Array.isArray(data?.errors) ? data.errors : [])
 }
 

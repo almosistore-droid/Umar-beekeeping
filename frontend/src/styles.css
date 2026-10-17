@@ -8,12 +8,14 @@
   --rim: #3d3222;        /* hairlines */
   --gold: #f4c23b;       /* primary */
   --gold-deep: #c98e17;  /* gradient end, pressed */
+  --gold-light: #ffd65a; /* gradient start */
+  --gold-rgb: 244, 194, 59; /* --gold for rgba(); all four are overridden by the installation's brand */
   --amber: #ee8a1c;      /* honey orange accent */
   --wax: #f6ecd6;        /* text */
   --smoke: #a8997d;      /* secondary text */
   --leaf: #9cc56b;
   --ember: #e8664b;
-  --gold-grad: linear-gradient(160deg, #ffd65a 0%, var(--gold) 45%, var(--gold-deep) 100%);
+  --gold-grad: linear-gradient(160deg, var(--gold-light) 0%, var(--gold) 45%, var(--gold-deep) 100%);
   --hex: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%);
   --hex-v: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
 
@@ -93,7 +95,7 @@ h1, h2, p { margin: 0; }
   min-height: 50px; padding: 0 20px; border: 0; border-radius: 14px;
   font-family: var(--font-body); font-size: 16px; font-weight: 700; cursor: pointer;
 }
-.btn--primary { background: var(--gold-grad); color: #1b1406; box-shadow: 0 6px 18px -8px rgba(244, 194, 59, 0.6); }
+.btn--primary { background: var(--gold-grad); color: #1b1406; box-shadow: 0 6px 18px -8px rgba(var(--gold-rgb), 0.6); }
 .btn:active { transform: scale(0.98); }
 
 .state {
@@ -302,7 +304,7 @@ input[type="date"].input { color-scheme: dark; }
 .fab {
   background: var(--gold-grad); color: #1b1406; font-family: var(--font-body);
   display: inline-flex; align-items: center; gap: 6px;
-  box-shadow: 0 10px 24px -10px rgba(244, 194, 59, 0.7), 0 2px 6px rgba(0,0,0,.5);
+  box-shadow: 0 10px 24px -10px rgba(var(--gold-rgb), 0.7), 0 2px 6px rgba(0,0,0,.5);
 }
 .fab svg { width: 18px; height: 18px; }
 .link { color: var(--gold); }
@@ -350,7 +352,7 @@ input[type="date"].input { color-scheme: dark; }
   display: flex; align-items: center; gap: 14px;
   padding: 4px 2px 6px;
 }
-.brand-hero__logo { width: 76px; height: 76px; flex: none; filter: drop-shadow(0 6px 16px rgba(244, 194, 59, 0.25)); }
+.brand-hero__logo { width: 76px; height: 76px; flex: none; filter: drop-shadow(0 6px 16px rgba(var(--gold-rgb), 0.25)); }
 .brand-hero__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .brand-hero__name { font-family: var(--font-display); font-size: 30px; line-height: 1; color: var(--gold); }
 .brand-hero__sub { color: var(--smoke); font-size: 14px; }
@@ -608,3 +610,8 @@ button.btn { display: inline-flex; align-items: center; justify-content: center;
 .login__or::before, .login__or::after { content: ''; flex: 1; height: 1px; background: var(--rim); }
 .creds { background: var(--comb-2); border: 1px solid var(--rim); border-radius: 14px; padding: 4px 14px; }
 .creds__value { font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 18px; letter-spacing: 0.04em; color: var(--gold); user-select: all; }
+
+/* Subscription ends soon (admin, home screen) */
+.sub-warning { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 12px; font-size: 14px; line-height: 1.4; }
+.sub-warning svg { flex: none; margin-top: 2px; color: var(--amber); }
+.sub-warning a, .state a { color: var(--gold); }

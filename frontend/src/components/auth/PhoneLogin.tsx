@@ -8,8 +8,8 @@ import { Icon } from '../Icon'
 import { InstallHint } from './InstallHint'
 import { PasswordLoginForm } from './PasswordForms'
 import { tr } from '../../i18n'
+import { useBranding } from '../../services/branding'
 
-const LOGO_SRC = '/logo.webp'
 const POLL_EVERY_MS = 2000
 // Ask for a fresh code a bit before the old one expires, so the button always opens a valid one
 const REFRESH_BEFORE_S = 30
@@ -22,6 +22,7 @@ type Phase = 'preparing' | 'ready' | 'waiting' | 'denied' | 'expired' | 'failed'
  * server whether the code was confirmed.
  */
 export function PhoneLogin({ message }: { message?: string }) {
+  const brand = useBranding()
   const { completeDeviceLogin } = useAuth()
   const [code, setCode] = useState<LoginCode | null>(null)
   const [phase, setPhase] = useState<Phase>('preparing')
@@ -119,8 +120,8 @@ export function PhoneLogin({ message }: { message?: string }) {
 
   return (
     <div className="state login">
-      <img className="state__logo" src={LOGO_SRC} alt="Fayzi Umar" />
-      <h2 className="state__title">Fayzi Umar</h2>
+      <img className="state__logo" src={brand.logo_url} alt={brand.name} />
+      <h2 className="state__title">{brand.name}</h2>
       <p className="hint">{tr("Учёт пасеки: ульи, матки, осмотры, мёд и отчёты.")}</p>
       {message && <p className="warn-box small">{message}</p>}
       <PasswordLoginForm />

@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
 import { tr } from '../i18n'
-
-export const LOGO_SRC = '/logo.webp'
+import { useBranding } from '../services/branding'
 
 export function LoadingView({ text = tr("Загрузка…") }: { text?: string }) {
   return (
@@ -28,9 +27,10 @@ export function MessageView({
   action?: { label: string; onClick: () => void }
   secondary?: { label: string; onClick: () => void }
 }) {
+  const brand = useBranding()
   return (
     <div className="state">
-      {logo ? <img className="state__logo" src={LOGO_SRC} alt="Fayzi Umar" />
+      {logo ? <img className="state__logo" src={brand.logo_url} alt={brand.name} />
         : icon && <div className="state__cell" aria-hidden><Icon name={icon} size={30} /></div>}
       <h2 className="state__title">{title}</h2>
       {text && <p className="hint">{text}</p>}

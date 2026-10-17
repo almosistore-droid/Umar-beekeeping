@@ -260,16 +260,17 @@ def _release(db: Session, user_id: uuid.UUID, key: str) -> None:
     db.commit()
 
 
-TEST_LINES = ("🔔 Уведомления Fayzi Umar работают.",
-              "Так будут приходить напоминания об осмотрах, обработках, подкормках и других делах на пасеке.")
+def test_lines(settings: Settings) -> tuple[str, ...]:
+    return (f"🔔 Уведомления {settings.brand_name} работают.",
+            "Так будут приходить напоминания об осмотрах, обработках, подкормках и других делах на пасеке.")
 
 
-def send_test(user: User) -> None:
+def send_test(user: User, settings: Settings) -> None:
     from app.utils.errors import ConflictError
     if user.telegram_id is None:
         raise ConflictError("У вас нет Telegram в профиле — уведомления приходят только в Telegram")
     try:
-        text = "\n".join(translate(line, language(user)) for line in TEST_LINES)
+        text = "\n".join(translate(line, language(user)) for line in test_lines(settings))
         telegram_bot.send_message(user.telegram_id, text)
     except telegram_bot.TelegramBlocked:
         raise ConflictError("Бот не может написать вам: откройте чат с ботом и нажмите «Start»") from None

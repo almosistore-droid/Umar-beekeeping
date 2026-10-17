@@ -13,6 +13,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from app.config import get_settings
 from app.i18n import L
 from app.schemas.report import YearlyReportOut
 from app.services.qr_labels import _register_fonts
@@ -204,7 +205,7 @@ def to_pdf(r: YearlyReportOut) -> bytes:
     _register_fonts()
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm,
-                            bottomMargin=16 * mm, title=title(r), author="Fayzi Umar")
+                            bottomMargin=16 * mm, title=title(r), author=get_settings().brand_name)
     h1 = ParagraphStyle("h1", fontName="DejaVu-Bold", fontSize=18, leading=22, textColor=INK)
     sub = ParagraphStyle("sub", fontName="DejaVu", fontSize=9, leading=12, textColor=MUTED)
     h2 = ParagraphStyle("h2", fontName="DejaVu-Bold", fontSize=12, leading=16, textColor=HONEY, spaceBefore=8, spaceAfter=4)
@@ -219,7 +220,7 @@ def to_pdf(r: YearlyReportOut) -> bytes:
     ])
     head_style = TableStyle([("FONT", (0, 0), (-1, 0), "DejaVu-Bold", 9), ("TEXTCOLOR", (0, 0), (-1, 0), MUTED)])
     width = doc.width
-    story = [Paragraph(title(r), h1), Paragraph(L("Fayzi Umar · Учёт пасеки"), sub), Spacer(1, 4 * mm)]
+    story = [Paragraph(title(r), h1), Paragraph(f"{get_settings().brand_name} · {L(get_settings().brand_subtitle)}", sub), Spacer(1, 4 * mm)]
 
     for section, rows in summary(r):
         block = [Paragraph(section, h2),

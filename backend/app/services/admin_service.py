@@ -74,7 +74,7 @@ def share_text(role: UserRole) -> str:
     link = (f"https://t.me/{bot}/{s.telegram_webapp_short_name}" if bot and s.telegram_webapp_short_name
             else f"https://t.me/{bot}" if bot else None)
     where = f"Откройте бота: {link} и нажмите кнопку «Пасека»." if link else "Откройте нашего бота и нажмите кнопку «Пасека»."
-    return f"Вас добавили в учёт пасеки Fayzi Umar ({ROLE_NAMES[role]}). {where}"
+    return f"Вас добавили в учёт пасеки {s.brand_name} ({ROLE_NAMES[role]}). {where}"
 
 
 def _find_user(db: Session, data: InviteCreate) -> User | None:

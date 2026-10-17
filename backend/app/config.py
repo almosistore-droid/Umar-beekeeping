@@ -1,4 +1,6 @@
 """Application settings. All secrets come from the environment (.env), never from code."""
+import re
+from datetime import date
 from functools import lru_cache
 from typing import Annotated
 
@@ -43,6 +45,30 @@ class Settings(BaseSettings):
 
     # Money label shown next to amounts (CRM, reports)
     currency: str = "смн"
+
+    # Brand of this installation (each client of the subscription has its own): name, line under it,
+    # accent colour and logo file (PNG/WebP/JPEG; empty = the bundled Fayzi Umar logo)
+    brand_name: str = "Fayzi Umar"
+    brand_subtitle: str = "Учёт пасеки"
+    brand_color: str = "#f4c23b"
+    brand_logo: str = ""
+    # Subscription: after this date (apiary calendar) the app is blocked; empty = no limit
+    subscription_until: date | None = None
+    # Who to contact to renew (shown on the blocked screen), e.g. «+992 90 000-00-00 · @owner»
+    subscription_contact: str = ""
+
+    @field_validator("subscription_until", mode="before")
+    @classmethod
+    def _empty_date(cls, v):
+        return None if isinstance(v, str) and not v.strip() else v
+
+    @field_validator("brand_color")
+    @classmethod
+    def _hex_colour(cls, v: str) -> str:
+        v = v.strip()
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", v):
+            raise ValueError("BRAND_COLOR must look like #f4c23b")
+        return v.lower()
 
     # CORS
     cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["http://localhost:5173"])

@@ -15,6 +15,7 @@ from reportlab.pdfgen.canvas import Canvas
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.i18n import L
 from app.models import ARCHIVED_HIVE_STATUSES, Hive, User
 from app.repositories.hive_repository import natural_order
@@ -71,7 +72,7 @@ def render(labels: list[Label]) -> bytes:
     buf = io.BytesIO()
     c = Canvas(buf, pagesize=A4)
     c.setTitle(L("QR-наклейки ульев"))
-    c.setAuthor("Fayzi Umar")
+    c.setAuthor(get_settings().brand_name)
     page_w, page_h = A4
     cell_w, cell_h = page_w / COLS, page_h / ROWS
     qr_size = 50 * mm
@@ -100,7 +101,7 @@ def render(labels: list[Label]) -> bytes:
         c.setFont("DejaVu", 8)
         c.drawCentredString(cx, qr_bottom - 11.5 * mm, _fit(c, label.subtitle, "DejaVu", 8, cell_w - 8 * mm))
         c.setFont("DejaVu", 6)
-        c.drawCentredString(cx, qr_bottom - 15.5 * mm, L("Fayzi Umar · Учёт пасеки"))
+        c.drawCentredString(cx, qr_bottom - 15.5 * mm, f"{get_settings().brand_name} · {L(get_settings().brand_subtitle)}")
     c.showPage()
     c.save()
     return buf.getvalue()

@@ -1,8 +1,9 @@
-/* Fayzi Umar service worker: makes the app installable and opens it quickly.
+/* Service worker: makes the app installable and opens it quickly.
  * Caches only the static app (HTML shell, hashed /assets/, icons, fonts). Never /api: data is always live.
  * The HTML is fetched from the network first, so a new release shows up on the next launch. */
-const CACHE = 'fayzi-umar-v1'
-const SHELL = ['/', '/manifest.webmanifest', '/icon-192.png', '/logo.webp']
+const CACHE = 'beekeeping-v2'
+// Icons and the manifest are served by the backend (/api/branding/…) with the installation's brand
+const SHELL = ['/']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()))

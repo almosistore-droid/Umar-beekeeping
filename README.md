@@ -21,6 +21,7 @@
 | + | Приложение на телефоне (iPhone, Android): значок на экране, вход через бота, сканер камерой | ✅ готово |
 | + | Вход по логину и паролю для тех, у кого нет Telegram | ✅ готово |
 | 8 | Уведомления и напоминания в Telegram | ✅ готово |
+| + | Подписка: у каждого клиента своё приложение (название, логотип, цвет, домен, бот), блокировка без оплаты | ✅ готово |
 | 9 | Фото, журнал изменений, права | ⏳ |
 | 10 | Тестирование, безопасность, оптимизация | ⏳ |
 
@@ -140,6 +141,34 @@ docker compose exec postgres pg_dump -U bee beekeeping | gzip > backup_$(date +%
 ```
 
 ---
+
+## Клиенты подписки (несколько приложений на одном сервере)
+
+У каждого клиента своя копия: своя база, домен, HTTPS, бот, название, логотип и цвет. Код и образы общие,
+впереди один nginx (`deploy/edge`). Всё делает `./deploy/client.sh` (без аргументов — список команд).
+
+```bash
+cd /opt/beekeeping && git pull
+./deploy/client.sh build                 # собрать новую версию (один раз для всех)
+./deploy/client.sh add asal asal.tj      # новый клиент → clients/asal.env (30 дней пробно)
+nano clients/asal.env                    # BRAND_NAME, BRAND_COLOR, SUBSCRIPTION_CONTACT, токен бота, ADMIN_TELEGRAM_IDS
+./deploy/client.sh logo asal /root/asal.png
+./deploy/client.sh start asal            # DNS asal.tj → IP сервера должен быть уже настроен
+./deploy/client.sh extend asal +1year    # оплатил — продлить; block asal — закрыть сейчас
+./deploy/client.sh list                  # кто до какого числа оплачен
+./deploy/client.sh update all            # после build: все клиенты на новой версии
+```
+
+После даты `SUBSCRIPTION_UNTIL` приложение клиента закрыто для всех (экран «Подписка закончилась» с вашим
+контактом), данные сохраняются; за 7 дней администратор клиента видит предупреждение. Cron:
+
+```bash
+echo '0 3 * * * root /opt/beekeeping/deploy/client.sh renew' > /etc/cron.d/certbot-bee
+echo '30 2 * * * root /opt/beekeeping/deploy/client.sh backup all' > /etc/cron.d/backup-bee
+```
+
+Старую установку (одна копия, `.env` в корне) переводит в клиенты `./deploy/client.sh adopt fayzi` — база и
+файлы остаются (тот же Docker-проект `beekeeping`). Подробности: `specs/013-subscription-clients/spec.md`.
 
 ## Безопасность входа
 

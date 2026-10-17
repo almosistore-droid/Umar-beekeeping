@@ -5,7 +5,8 @@ import { App } from './App'
 import { AuthProvider } from './hooks/useAuth'
 import { initTelegram } from './services/telegram'
 import { initPwa } from './services/pwa'
-import { ApiError } from './api/client'
+import { ApiError, setPaymentRequiredHandler } from './api/client'
+import { loadBranding, markSubscriptionEnded } from './services/branding'
 import '@fontsource/forum/cyrillic-400.css'
 import '@fontsource/forum/cyrillic-ext-400.css' // Tajik letters ӣ ӯ ҳ қ ғ ҷ
 import '@fontsource/forum/latin-400.css'
@@ -17,6 +18,7 @@ import { getLang } from './i18n'
 initTelegram()
 initPwa()
 document.documentElement.lang = getLang()
+setPaymentRequiredHandler(markSubscriptionEnded)
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,7 +30,8 @@ const queryClient = new QueryClient({
   },
 })
 
-createRoot(document.getElementById('root')!).render(
+// The brand (name, logo, colour) and the subscription state come before the first screen
+void loadBranding().then(() => createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -36,4 +39,4 @@ createRoot(document.getElementById('root')!).render(
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,
-)
+))

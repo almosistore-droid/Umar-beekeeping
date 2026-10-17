@@ -15,6 +15,8 @@ BACKEND_URL = os.environ.get("BACKEND_URL", "http://backend:8000").rstrip("/")
 # Dev: the tunnel writes its current address to WEBAPP_URL_FILE instead.
 WEBAPP_URL = os.environ.get("WEBAPP_URL", "").strip().rstrip("/")
 WEBAPP_URL_FILE = os.environ.get("WEBAPP_URL_FILE", "").strip()
+# Brand of this installation (each client of the subscription has its own)
+BRAND_NAME = os.environ.get("BRAND_NAME", "Fayzi Umar").strip() or "Fayzi Umar"
 # 0 = do not touch the menu button (dev: the tunnel manages it)
 SET_MENU_BUTTON = os.environ.get("SET_MENU_BUTTON", "1").strip() != "0"
 

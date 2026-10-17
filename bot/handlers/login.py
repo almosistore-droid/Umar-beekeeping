@@ -8,13 +8,14 @@ from aiogram.filters import CommandObject, CommandStart
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 import backend_client
+from config import BRAND_NAME
 
 router = Router()
 CODE_RE = r"^login_[A-Za-z0-9_-]{16,58}$"
 
 TEXTS = {
     "ru": {
-        "ask": "Войти в приложение Fayzi Umar на телефоне?\n\n"
+        "ask": "Войти в приложение {brand} на телефоне?\n\n"
                "Нажмите «Войти», только если вы сами только что нажали «Войти через Telegram» в приложении. "
                "Если нет — нажмите «Отмена».",
         "yes": "✅ Войти",
@@ -24,7 +25,7 @@ TEXTS = {
         "fail": "Не удалось войти. Попробуйте ещё раз из приложения.",
     },
     "tg": {
-        "ask": "Ба барномаи Fayzi Umar дар телефон ворид мешавед?\n\n"
+        "ask": "Ба барномаи {brand} дар телефон ворид мешавед?\n\n"
                "«Ворид шудан»-ро танҳо он вақт пахш кунед, ки худатон ҳоло дар барнома "
                "«Ворид шудан тавассути Telegram»-ро пахш карда бошед. Агар не — «Бекор кардан»-ро пахш кунед.",
         "yes": "✅ Ворид шудан",
@@ -48,7 +49,7 @@ async def ask(message: Message, command: CommandObject) -> None:
         InlineKeyboardButton(text=t["yes"], callback_data=f"lok:{code}"),
         InlineKeyboardButton(text=t["no"], callback_data=f"lno:{code}"),
     ]])
-    await message.answer(t["ask"], reply_markup=keyboard)
+    await message.answer(t["ask"].format(brand=BRAND_NAME), reply_markup=keyboard)
 
 
 @router.callback_query(F.data.regexp(r"^l(ok|no):[A-Za-z0-9_-]{16,58}$"))

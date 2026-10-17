@@ -1,0 +1,77 @@
+# One client of the subscription = one copy of the app (own database, brand, domain and bot).
+# Started by deploy/client.sh, never by hand:
+#   docker compose -p <project> -f deploy/client.yml --env-file clients/<slug>.env up -d
+# The shell provides SLUG, CLIENT_ENV (path of clients/<slug>.env) and CLIENT_DIR (clients/<slug>/, logo).
+# No ports are published: the shared edge nginx (deploy/edge) reaches backend/frontend over the
+# «bee-edge» network by the aliases <slug>-backend / <slug>-frontend.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    # small settings: up to five clients share one 2–4 GB server
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=40"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [default]
+
+  backend:
+    image: beekeeping-backend:latest
+    pull_policy: never
+    restart: unless-stopped
+    env_file: ${CLIENT_ENV}
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      CORS_ORIGINS: https://${DOMAIN}
+      BRAND_LOGO: /app/brand/logo.png
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/uploads
+      - ${CLIENT_DIR}:/app/brand:ro
+    networks:
+      default: {}
+      edge:
+        aliases: ["${SLUG}-backend"]
+
+  frontend:
+    image: beekeeping-frontend:latest
+    pull_policy: never
+    restart: unless-stopped
+    networks:
+      edge:
+        aliases: ["${SLUG}-frontend"]
+
+  bot:
+    image: beekeeping-bot:latest
+    pull_policy: never
+    restart: unless-stopped
+    profiles: ["bot"] # started only when the client has a bot token
+    env_file: ${CLIENT_ENV}
+    environment:
+      WEBAPP_URL: https://${DOMAIN}
+      BACKEND_URL: http://backend:8000
+    depends_on:
+      - backend
+    networks: [default]
+
+networks:
+  default: {}
+  edge:
+    external: true
+    name: bee-edge
+
+volumes:
+  pgdata:
+  uploads:

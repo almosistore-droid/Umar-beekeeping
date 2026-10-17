@@ -4,7 +4,8 @@ import { reportsApi } from '../api/resources'
 import { BarList } from '../components/charts/BarList'
 import { ColumnChart } from '../components/charts/ColumnChart'
 import { Icon, type IconName } from '../components/Icon'
-import { LOGO_SRC } from '../components/StateViews'
+import { useBranding } from '../services/branding'
+import { SubscriptionWarning } from '../components/Subscription'
 import { ErrorBox } from '../components/ui'
 import { useAuth } from '../hooks/useAuth'
 import { ROLE_LABELS } from '../types/api'
@@ -20,6 +21,7 @@ const MONTH_TICKS = MONTHS_SHORT.map((m) => m.slice(0, 1).toUpperCase() + m.slic
 /** Dashboard: counters and charts from one request (GET /api/dashboard). */
 export function HomePage() {
   const { user } = useAuth()
+  const brand = useBranding()
   const year = new Date().getFullYear()
   const dash = useQuery({ queryKey: ['dashboard', year], queryFn: () => reportsApi.dashboard(year) })
   const d = dash.data
@@ -38,10 +40,10 @@ export function HomePage() {
   return (
     <div className="page">
       <header className="brand-hero">
-        <img className="brand-hero__logo" src={LOGO_SRC} alt="Fayzi Umar" width={76} height={76} />
+        <img className="brand-hero__logo" src={brand.logo_url} alt={brand.name} width={76} height={76} />
         <div className="brand-hero__text">
-          <span className="brand-hero__name">Fayzi Umar</span>
-          <span className="brand-hero__sub">{tr("Учёт пасеки")}</span>
+          <span className="brand-hero__name">{brand.name}</span>
+          <span className="brand-hero__sub">{brand.subtitle}</span>
         </div>
       </header>
 
@@ -49,6 +51,7 @@ export function HomePage() {
         <span className="greeting__name">{tr("Салом,")}{" "}{user?.first_name ?? user?.display_name ?? tr("пчеловод")}</span>
         {user && <span className="chip">{ROLE_LABELS[user.role]}</span>}
       </div>
+      {user?.role === 'ADMIN' && <SubscriptionWarning />}
       <ErrorBox error={dash.error} />
 
       <div className="tiles">

@@ -7,6 +7,8 @@ import { useAuth } from './hooks/useAuth'
 import { isInsideTelegram } from './services/telegram'
 import { router } from './router'
 import { tr } from './i18n'
+import { useBranding } from './services/branding'
+import { SubscriptionBlocked } from './components/Subscription'
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { state, retry, loginWithInitData } = useAuth()
@@ -36,6 +38,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 }
 
 export function App() {
+  const { subscription } = useBranding()
+  // Unpaid subscription: nothing of the app is shown (the server refuses every request with 402 too)
+  if (!subscription.active) return <SubscriptionBlocked />
   return (
     <AuthGate>
       <RouterProvider router={router} />

@@ -9,3 +9,6 @@ frontend/node_modules/
 frontend/dist/
 uploads/
 *.tsbuildinfo
+clients/
+backups/
+deploy/edge/sites/*.conf

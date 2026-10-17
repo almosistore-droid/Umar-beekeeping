@@ -8,6 +8,7 @@ import type { AccountCredentials } from '../../types/api'
 import { Icon } from '../Icon'
 import { ErrorBox, Field, SubmitButton } from '../ui'
 import { tr } from '../../i18n'
+import { getBranding } from '../../services/branding'
 
 /** Login + password for people without Telegram (accounts made by the admin). */
 export function PasswordLoginForm() {
@@ -93,8 +94,8 @@ export function ForcedPasswordChange() {
 /** For the admin: login + temporary password, shown once, with a button to send it to the person. */
 export function CredentialsCard({ creds, onDone }: { creds: AccountCredentials; onDone: () => void }) {
   const [note, setNote] = useState<string | null>(null)
-  const message = tr("Вход в учёт пасеки Fayzi Umar: {0}\nЛогин: {1}\nВременный пароль: {2}\nПри первом входе придумайте свой пароль.",
-    window.location.origin, creds.login, creds.temporary_password)
+  const message = tr("Вход в учёт пасеки {0}: {1}\nЛогин: {2}\nВременный пароль: {3}\nПри первом входе придумайте свой пароль.",
+    getBranding().name, window.location.origin, creds.login, creds.temporary_password)
   const share = async () => {
     const how = await shareText(message)
     setNote(how === 'copied' ? tr("Текст скопирован — вставьте его в сообщение человеку.") : how === 'none' ? tr("Не удалось поделиться — перепишите логин и пароль вручную.") : null)

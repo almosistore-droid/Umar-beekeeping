@@ -92,6 +92,18 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Text per line through `translate(line, lang)`; buttons are t.me deep links (`hive_<uuid>` or `go_tasks|go_hives|go_debts|go_orders`, mapped by `START_SCREENS` in `AppLayout`).
 - The bot (`bot/reminders.py`) calls `POST /api/notifications/dispatch` (X-Bot-Auth) every NOTIFY_EVERY_SECONDS (300). Settings/test: `/api/notifications/settings`, `/api/notifications/test`; UI card in «Ещё». Tests patch `ns._wintering` (seasonal).
 
+## Subscription clients (specs/013-subscription-clients)
+- One installation per client (own DB, domain, bot, `clients/<slug>.env`), same images; brand = runtime settings
+  `BRAND_NAME/SUBTITLE/COLOR/LOGO`. Never hardcode «Fayzi Umar» or `/logo.webp`: backend `get_settings().brand_name`,
+  frontend `useBranding()` / `getBranding()` (`src/services/branding.ts`, loaded in `main.tsx` before render).
+- Public `/api/branding` (+ logo, icons, manifest via Pillow in `branding_service`). Brand colour → CSS vars `--gold`,
+  `--gold-light`, `--gold-deep`, `--gold-rgb` (use `rgba(var(--gold-rgb), a)`, not literal colours).
+- `SUBSCRIPTION_UNTIL` passed → middleware returns 402 for `/api/*` except health/branding; frontend
+  `SubscriptionBlocked` (also on any 402 via `setPaymentRequiredHandler`), admin `SubscriptionWarning` ≤ 7 days.
+- Deploy: `deploy/client.sh` + `deploy/client.yml` (no ports, aliases `<slug>-backend|frontend` on network
+  `bee-edge`) + `deploy/edge` (nginx, generated `sites/<slug>.conf`). `COMPOSE_PROJECT` in a client env keeps an
+  old project's volumes (`adopt`). Tests: `backend/tests/test_deploy_client.py` (fake docker/certbot).
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client (the bot passes it only for login confirmation, signed). The role is loaded from DB on every request (`get_current_user`).
@@ -99,7 +111,7 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 
 ## Frontend
 - Mobile-first; cards and big buttons, no wide tables.
-- Brand: Fayzi Umar (logo `frontend/public/logo.webp`). Palette tokens at the top of `src/styles.css` (`--pitch`, `--comb`, `--gold`, `--amber`, `--wax`…); the app keeps this dark palette in every Telegram theme and paints Telegram's header to match. Hexagon (`--hex`) is the brand motif: hive numbers, nav scanner button, icon cells. Titles use Forum, body Manrope (self-hosted via @fontsource). Icons: `src/components/Icon.tsx` (no emoji in UI).
+- Brand: per installation (default Fayzi Umar, logo `backend/app/assets/brand/logo.png`), see «Subscription clients». Palette tokens at the top of `src/styles.css` (`--pitch`, `--comb`, `--gold`, `--amber`, `--wax`…); the app keeps this dark palette in every Telegram theme and paints Telegram's header to match. Hexagon (`--hex`) is the brand motif: hive numbers, nav scanner button, icon cells. Titles use Forum, body Manrope (self-hosted via @fontsource). Icons: `src/components/Icon.tsx` (no emoji in UI).
 - Data fetching via TanStack Query; HTTP via `src/api/client.ts` (token in memory only).
 - Bottom nav: Главная / Ульи / Сканер / CRM (admin, beekeeper) or Матки (others) / Отчёты / Ещё.
 
