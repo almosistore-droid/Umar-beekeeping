@@ -235,6 +235,8 @@ export interface Treatment {
   result: string | null
   next_treatment_date: string | null
   notes: string | null
+  stock_item_id?: string | null
+  stock_quantity?: string | null
 }
 
 export interface Feeding {
@@ -360,6 +362,7 @@ export interface Dashboard {
   strength: Bucket[]
   diseases: DiseaseCount[]
   queen_ages: Bucket[]
+  stock_low?: StockItem[]
 }
 export interface YearlyReport {
   year: number; period_end: string; is_partial: boolean
@@ -450,3 +453,29 @@ export interface AuditRow {
   old_value: Record<string, unknown> | null; new_value: Record<string, unknown> | null; comment: string | null
 }
 export interface AuditPage { items: AuditRow[]; next_offset: number | null; entity_types: string[] }
+
+// ---------- warehouse ----------
+export type StockCategory = 'FRAMES' | 'FEED' | 'MEDICINE' | 'OTHER'
+export type StockUnit = 'PCS' | 'KG' | 'G' | 'L' | 'ML' | 'M' | 'PACK'
+export type StockMovementKind = 'RECEIPT' | 'CONSUMPTION' | 'INVENTORY' | 'FRAME_PREP' | 'FEEDING' | 'TREATMENT'
+export interface StockItem {
+  id: string; code: string | null; name: string; category: StockCategory; unit: StockUnit
+  min_quantity: string | null; notes: string | null; is_archived: boolean; quantity: string; low: boolean
+}
+export interface StockNorms {
+  wire_m_per_frame: string; foundation_g_per_frame: string; sugar_kg_per_l_syrup: string; sugar_kg_per_kg_syrup: string
+  updated_at?: string | null
+}
+export interface StockOverview { items: StockItem[]; honey_kg: string; norms: StockNorms }
+export interface StockMovement {
+  id: string; item_id: string; moved_at: string; kind: StockMovementKind; quantity: string; note: string | null
+  frame_prep_id: string | null; feeding_id: string | null; treatment_id: string | null
+  hive_id: string | null; hive_number: string | null; cancelled_at: string | null; author_name: string | null; created_at: string
+}
+export interface StockItemDetails { item: StockItem; movements: StockMovement[] }
+export interface UseLine { item_id: string; name: string; unit: StockUnit; quantity: string; balance_after: string }
+export interface FramePrep {
+  id: string; prepared_at: string; frames: number; wire_m_per_frame: string; foundation_g_per_frame: string
+  notes: string | null; cancelled_at: string | null; created_at: string
+}
+export interface FramePrepResult { prep: FramePrep; lines: UseLine[] }

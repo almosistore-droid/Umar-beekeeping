@@ -104,6 +104,18 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
   `bee-edge`) + `deploy/edge` (nginx, generated `sites/<slug>.conf`). `COMPOSE_PROJECT` in a client env keeps an
   old project's volumes (`adopt`). Tests: `backend/tests/test_deploy_client.py` (fake docker/certbot).
 
+## Warehouse (specs/014-warehouse)
+- `models/stock.py`: `stock_items` (system items by `code`: frames_empty, frames_ready, foundation, wire, sugar, candy,
+  protein — unit fixed, never archived), `stock_movements` (signed quantity, `cancelled_at`, links frame_prep/feeding/
+  treatment), `frame_preparations` (norms copied), `stock_norms` (one row). Balance = Σ non-cancelled movements, computed.
+- `stock_service`: manual receipt/consumption (≤ balance)/inventory; `prepare_frames`; `sync_feeding` / `sync_treatment`
+  called from `health_service` (correction = cancel old + new movement; automatic ones may go below zero).
+  `feeding_need` = frontend `utils/stock.ts feedingNeed` (keep both equal, both tested).
+- Honey stock (warehouse and CRM) = harvests − sold − honey fed. Low items: dashboard `stock_low`, bot category `stock`
+  (ADMIN/BEEKEEPER, `notify_field`), start param `go_stock`. Stock audit entries carry no hive_id (keeps hive timelines clean).
+- Frontend: `pages/stock/*` (`/stock`, `/stock/:id`, `/stock/norms`), `components/stock/forms.tsx`; feeding form shows the
+  write-off, treatment form picks a medicine from the stock.
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client (the bot passes it only for login confirmation, signed). The role is loaded from DB on every request (`get_current_user`).

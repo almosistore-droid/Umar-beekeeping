@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.models.enums import FeedUnit, ProductType
 from app.schemas.operations import HiveRank
+from app.schemas.stock import StockItemOut
 
 
 class Bucket(BaseModel):
@@ -53,6 +54,7 @@ class DashboardOut(BaseModel):
     strength: list[Bucket]
     diseases: list[DiseaseCount]
     queen_ages: list[Bucket]
+    stock_low: list[StockItemOut] = []  # warehouse items below their minimum
 
 
 # ---------- yearly report ----------

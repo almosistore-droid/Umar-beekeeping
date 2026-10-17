@@ -7,6 +7,7 @@ import type {
   CrmSummary, Customer, CustomerDetails, Debtor, Expense, ExpenseCategory, LineInput, Order, OrderStatus, PayNowInput,
   PaymentMethod, Sale,
 } from '../types/api'
+import type { FramePrep, FramePrepResult, StockCategory, StockItem, StockItemDetails, StockNorms, StockOverview, StockUnit } from '../types/api'
 import type { AccountCredentials, AdminOverview, AuditPage, Invite, InviteResult, Dashboard, HiveCheck, LabelsRequest, QrInfo, QrResolve, QrStatus, ReportFormat, YearlyReport } from '../types/api'
 
 const json = (method: string, body: unknown): RequestInit => ({ method, body: JSON.stringify(body) })
@@ -108,6 +109,7 @@ export interface TreatmentInput {
   treated_at?: string | null; disease_id?: string | null; hive_disease_id?: string | null; medication: string
   dosage?: string | null; method?: string | null; result?: string | null; next_treatment_date?: string | null
   notes?: string | null
+  stock_item_id?: string | null; stock_quantity?: number | null
 }
 export interface FeedingInput {
   fed_at?: string | null; feed_type: FeedType; quantity: number; unit: FeedUnit; reason?: string | null
@@ -236,4 +238,28 @@ export const notificationsApi = {
   settings: () => api<NotificationSettings>('/api/notifications/settings'),
   update: (body: { field?: boolean; crm?: boolean }) => api<NotificationSettings>('/api/notifications/settings', json('PUT', body)),
   test: () => api<{ sent: boolean }>('/api/notifications/test', { method: 'POST' }),
+}
+
+// ---------- warehouse ----------
+export interface StockItemInput {
+  name: string; category: StockCategory; unit: StockUnit; min_quantity?: number | null; notes?: string | null
+  initial_quantity?: number | null
+}
+export interface MovementInput { kind: 'RECEIPT' | 'CONSUMPTION' | 'INVENTORY'; quantity: number; moved_at?: string; note?: string | null }
+export interface NormsInput { wire_m_per_frame: number; foundation_g_per_frame: number; sugar_kg_per_l_syrup: number; sugar_kg_per_kg_syrup: number }
+export const stockApi = {
+  overview: (archived = false) => api<StockOverview>(`/api/stock${qs({ archived: archived || undefined })}`),
+  item: (id: string) => api<StockItemDetails>(`/api/stock/items/${id}`),
+  createItem: (body: StockItemInput) => api<StockItem>('/api/stock/items', json('POST', body)),
+  updateItem: (id: string, body: StockItemInput) => api<StockItem>(`/api/stock/items/${id}`, json('PUT', body)),
+  archive: (id: string) => api<StockItem>(`/api/stock/items/${id}/archive`, { method: 'POST' }),
+  restore: (id: string) => api<StockItem>(`/api/stock/items/${id}/restore`, { method: 'POST' }),
+  move: (id: string, body: MovementInput) => api<StockItem>(`/api/stock/items/${id}/movements`, json('POST', body)),
+  cancelMovement: (id: string, reason: string) => api<StockItem>(`/api/stock/movements/${id}/cancel`, json('POST', { reason })),
+  prepareFrames: (body: { frames: number; prepared_at?: string; notes?: string | null }) =>
+    api<FramePrepResult>('/api/stock/frame-preps', json('POST', body)),
+  framePreps: () => api<FramePrep[]>('/api/stock/frame-preps'),
+  cancelFramePrep: (id: string, reason: string) => api<FramePrep>(`/api/stock/frame-preps/${id}/cancel`, json('POST', { reason })),
+  norms: () => api<StockNorms>('/api/stock/norms'),
+  saveNorms: (body: NormsInput) => api<StockNorms>('/api/stock/norms', json('PUT', body)),
 }

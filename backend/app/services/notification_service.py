@@ -34,7 +34,7 @@ from app.schemas.common import app_zone, stored_day
 from app.services import crm_service, qr_service, telegram_bot
 from app.utils.age import age_in_months, age_label
 
-FIELD, CRM = "field", "crm"
+FIELD, CRM, STOCK = "field", "crm", "stock"
 OVERDUE_AGAIN_DAYS = 3      # one more reminder when still not done after this many days
 LOOKBACK_DAYS = 30          # older forgotten items are not sent (no flood on the first run)
 OLD_QUEEN_MONTHS = 24
@@ -48,7 +48,7 @@ TASK_ICON = {TaskKind.TREATMENT: "💊", TaskKind.FEEDING: "🍯", TaskKind.INSP
 @dataclass(frozen=True)
 class Note:
     key: str
-    category: str          # FIELD | CRM
+    category: str          # FIELD | CRM | STOCK
     lines: tuple[str, ...]  # Russian, one template per line; each line is translated for the person
     button: str | None = None
     start: str | None = None  # Mini App start parameter: hive_<uuid> or go_<screen>
@@ -178,15 +178,27 @@ def _crm(db: Session, settings: Settings, today: date) -> list[Note]:
     return notes
 
 
+def _stock(db: Session, today: date) -> list[Note]:
+    """Warehouse items below their minimum: once a week while they stay low."""
+    from app.services.stock_service import UNIT_LABEL, fmt, low_items
+    week = "{}-W{:02d}".format(*today.isocalendar()[:2])
+    return [Note(f"stock:{i.id}:{week}", STOCK,
+                 (f"📦 На складе заканчивается: {i.name} — осталось {fmt(i.quantity)} {UNIT_LABEL[i.unit]}",),
+                 "Склад", "go_stock")
+            for i in low_items(db)]
+
+
 def collect(db: Session, settings: Settings, today: date) -> list[Note]:
     hives = _active_hives(db)
     return (_tasks(db, today) + _inspections(hives, today) + _queens(hives, today) + _wintering(hives, today)
-            + _crm(db, settings, today))
+            + _stock(db, today) + _crm(db, settings, today))
 
 
 def wants(user: User, note: Note) -> bool:
     if note.category == CRM:
         return user.notify_crm and user.role in CRM_ROLES
+    if note.category == STOCK:  # buying is decided by the owner and the beekeeper
+        return user.notify_field and user.role in CRM_ROLES
     return user.notify_field and user.role in FIELD_ROLES
 
 

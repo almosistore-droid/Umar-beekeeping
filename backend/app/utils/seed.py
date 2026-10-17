@@ -50,6 +50,7 @@ def run(telegram_id: int | None) -> None:
         _seed_health(db, user)
         _seed_operations(db, user)
         _seed_crm(db, user)
+        _seed_stock(db, user)
     finally:
         db.close()
 
@@ -262,6 +263,33 @@ def _seed_crm(db, user) -> None:
     done = crm.create_order(db, OrderCreate(customer_id=customers[0].id, order_date=back(20), items=[honey(3, 90)]), user)
     crm.deliver_order(db, done, DeliverIn(sale_date=back(18)), user)
     print("Готово: клиенты, расходы за год, продажи с долгами, заказы.")
+
+
+def _seed_stock(db, user) -> None:
+    """Warehouse demo: purchases, a medicine, one frame preparation, sugar running low."""
+    from app.models import StockMovement
+    from app.models.stock import StockMovementKind
+    from app.schemas.stock import FramePrepIn, MovementIn, StockItemIn, StockItemUpdate
+    from app.services import stock_service as st
+
+    if db.scalar(select(StockMovement.id).where(StockMovement.kind == StockMovementKind.RECEIPT)):
+        print("Демо-данные склада уже есть.")
+        return
+    st.ensure_system(db)
+    today = app_today()
+    code = {i.code: i for i in st.list_items(db) if i.code}
+    for c, qty in (("frames_empty", 60), ("foundation", 4), ("wire", 150), ("sugar", 25), ("candy", 6)):
+        st.add_movement(db, code[c].id, MovementIn(kind="RECEIPT", quantity=qty, moved_at=today - timedelta(days=40),
+                                                   note="Закупка"), user)
+    sugar = code["sugar"]
+    st.update_item(db, sugar.id, StockItemUpdate(name=sugar.name, category=sugar.category, unit=sugar.unit,
+                                                 min_quantity=25), user)
+    st.create_item(db, StockItemIn(name="Бипин", category="MEDICINE", unit="ML", min_quantity=5, initial_quantity=20),
+                   user)
+    st.create_item(db, StockItemIn(name="Банки 1 л", category="OTHER", unit="PCS", min_quantity=20,
+                                   initial_quantity=120), user)
+    st.prepare_frames(db, FramePrepIn(frames=20, prepared_at=today - timedelta(days=10)), user)
+    print("Готово: склад — закупки, рамки подготовлены, сахар заканчивается.")
 
 
 if __name__ == "__main__":

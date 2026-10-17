@@ -34,7 +34,7 @@ from app.schemas.health import (
 from app.schemas.hive import HiveOut
 from app.services import health_service as health
 from app.services import inspection_service as insp
-from app.services import hive_check_service, timeline_service
+from app.services import hive_check_service, stock_service, timeline_service
 from app.services.hive_service import get_hive, to_out as hive_out
 
 router = APIRouter(prefix="/api", tags=["health"])
@@ -78,6 +78,14 @@ def _insp_out(i) -> InspectionOut:
 def _treat_out(t) -> TreatmentOut:
     out = TreatmentOut.model_validate(t)
     out.performed_by_name = t.performer.display_name if t.performer else None
+    return out
+
+
+def _treat_full(db, t) -> TreatmentOut:
+    out = _treat_out(t)
+    used = stock_service.treatment_stock(db, t.id)
+    if used is not None:
+        out.stock_item_id, out.stock_quantity = used.item_id, -used.quantity
     return out
 
 
@@ -142,19 +150,19 @@ def update_case(case_id: uuid.UUID, body: CaseUpdate, db: DB, user: Writer):
 @router.get("/hives/{hive_id}/treatments", response_model=list[TreatmentOut])
 def list_treatments(hive_id: uuid.UUID, db: DB, _: CurrentUser):
     get_hive(db, hive_id)
-    return [_treat_out(t) for t in health.list_treatments(db, hive_id)]
+    return [_treat_full(db, t) for t in health.list_treatments(db, hive_id)]
 
 
 @router.post("/hives/{hive_id}/treatments", response_model=TreatmentResult, status_code=status.HTTP_201_CREATED)
 def create_treatment(hive_id: uuid.UUID, body: TreatmentCreate, db: DB, user: Writer):
     t, hive = health.create_treatment(db, hive_id, body, user)
-    return TreatmentResult(treatment=_treat_out(t), hive=hive_out(hive))
+    return TreatmentResult(treatment=_treat_full(db, t), hive=hive_out(hive))
 
 
 @router.put("/treatments/{treatment_id}", response_model=TreatmentResult)
 def update_treatment(treatment_id: uuid.UUID, body: TreatmentUpdate, db: DB, user: Writer):
     t, hive = health.update_treatment(db, treatment_id, body, user)
-    return TreatmentResult(treatment=_treat_out(t), hive=hive_out(hive))
+    return TreatmentResult(treatment=_treat_full(db, t), hive=hive_out(hive))
 
 
 # ---------- feedings ----------

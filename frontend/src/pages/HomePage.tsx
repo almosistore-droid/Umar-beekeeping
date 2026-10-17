@@ -10,7 +10,7 @@ import { ErrorBox } from '../components/ui'
 import { useAuth } from '../hooks/useAuth'
 import { ROLE_LABELS } from '../types/api'
 import { plural } from '../utils/plural'
-import { MONTHS_SHORT, num } from '../utils/labels'
+import { MONTHS_SHORT, num, qty } from '../utils/labels'
 import { tr } from '../i18n'
 
 const STRENGTH_FILTER: Record<string, string | undefined> = {
@@ -53,6 +53,12 @@ export function HomePage() {
       </div>
       {user?.role === 'ADMIN' && <SubscriptionWarning />}
       <ErrorBox error={dash.error} />
+      {!!dash.data?.stock_low?.length && (
+        <Link to="/stock" className="warn-box stock-banner" role="status">
+          <Icon name="box" size={18} />
+          <span>{tr("На складе заканчивается: {0}", dash.data.stock_low.map((i) => `${i.name} (${qty(i.quantity, i.unit)})`).join(', '))}</span>
+        </Link>
+      )}
 
       <div className="tiles">
         <Link to="/hives" className="tile tile--lead">

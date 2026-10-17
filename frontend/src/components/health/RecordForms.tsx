@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { healthApi } from '../../api/resources'
+import { healthApi, stockApi } from '../../api/resources'
 import type { CaseStatus, DiseaseSeverity, FeedType, FeedUnit, Hive } from '../../types/api'
-import { CASE_STATUS, FEED_TYPE, FEED_UNIT, SEVERITY, addDaysIso, todayIso } from '../../utils/labels'
+import { CASE_STATUS, FEED_TYPE, FEED_UNIT, SEVERITY, addDaysIso, qty as qtyText, STOCK_UNIT, todayIso } from '../../utils/labels'
+import { feedingNeed } from '../../utils/stock'
 import { Choice, ErrorBox, Field, SubmitButton, fieldError } from '../ui'
 import { useHiveRecordMutation } from './useHiveRecordMutation'
 import { tr } from '../../i18n'
@@ -79,11 +80,18 @@ export function TreatmentForm({ hive, onDone }: { hive: Hive; onDone: () => void
   const [method, setMethod] = useState<string | null>(null)
   const [result, setResult] = useState('')
   const [next, setNext] = useState<string | null>(null)
+  const stock = useQuery({ queryKey: ['stock'], queryFn: () => stockApi.overview() })
+  const medicines = (stock.data?.items ?? []).filter((i) => i.category === 'MEDICINE' || i.category === 'OTHER')
+  const [stockItem, setStockItem] = useState('')
+  const [stockQty, setStockQty] = useState('')
+  const picked = medicines.find((i) => i.id === stockItem)
 
   const save = useHiveRecordMutation(hive, () => healthApi.treat(hive.id, {
     treated_at: date, medication, dosage: dosage || null, method, result: result || null, next_treatment_date: next,
     hive_disease_id: target?.startsWith('case:') ? target.slice(5) : null,
     disease_id: target?.startsWith('disease:') ? target.slice(8) : null,
+    stock_item_id: picked ? picked.id : null,
+    stock_quantity: picked ? Number(stockQty.replace(',', '.')) : null,
   }), onDone)
 
   const targetOpts = [
@@ -100,6 +108,26 @@ export function TreatmentForm({ hive, onDone }: { hive: Hive; onDone: () => void
         <input className="input" list="medications" value={medication} onChange={(e) => setMedication(e.target.value)} required maxLength={120} />
         <datalist id="medications">{MEDICATIONS.map((m) => <option key={m} value={m} />)}</datalist>
       </Field>
+      {medicines.some((i) => i.category === 'MEDICINE') && (
+        <Field label={tr("Списать со склада")} error={fieldError(save.error, 'stock_quantity')}
+          hint={picked ? tr("На складе: {0}", qtyText(picked.quantity, picked.unit)) : undefined}>
+          <select className="input" value={stockItem} aria-label={tr("Препарат со склада")} onChange={(e) => {
+            setStockItem(e.target.value)
+            const item = medicines.find((i) => i.id === e.target.value)
+            if (item && !medication.trim()) setMedication(item.name)
+          }}>
+            <option value="">{tr("Не списывать")}</option>
+            {medicines.map((i) => <option key={i.id} value={i.id}>{i.name} · {qtyText(i.quantity, i.unit)}</option>)}
+          </select>
+          {picked && (
+            <div className="input-unit">
+              <input className="input" inputMode="decimal" value={stockQty} required aria-label={tr("Сколько списать")}
+                placeholder={tr("Сколько")} onChange={(e) => setStockQty(e.target.value)} />
+              <span>{STOCK_UNIT[picked.unit]}</span>
+            </div>
+          )}
+        </Field>
+      )}
       <Field label={tr("Доза")}><input className="input" value={dosage} onChange={(e) => setDosage(e.target.value)} maxLength={120} placeholder={tr("Например: 1 мл на улочку")} /></Field>
       <Choice label={tr("Способ")} options={METHODS.map((m) => ({ value: m, label: m }))} value={method} onChange={setMethod} allowNone />
       <Field label={tr("Дата обработки")} error={fieldError(save.error, 'treated_at')}>
@@ -121,6 +149,10 @@ export function FeedingForm({ hive, onDone }: { hive: Hive; onDone: () => void }
   const [date, setDate] = useState(todayIso())
   const [reason, setReason] = useState('')
   const [next, setNext] = useState<string | null>(null)
+  const stock = useQuery({ queryKey: ['stock'], queryFn: () => stockApi.overview() })
+  const amount = Number(qty.replace(',', '.'))
+  const need = stock.data ? feedingNeed(stock.data.norms, type, amount, unit) : null
+  const needItem = need ? stock.data?.items.find((i) => i.code === need.code) : undefined
   const save = useHiveRecordMutation(hive, () => healthApi.feed(hive.id, {
     feed_type: type, quantity: Number(qty.replace(',', '.')), unit, fed_at: date, reason: reason || null, next_feeding_date: next,
   }), onDone)
@@ -139,6 +171,19 @@ export function FeedingForm({ hive, onDone }: { hive: Hive; onDone: () => void }
         </Field>
       </div>
       <Choice label={tr("Единица")} options={unitOpts} value={unit} onChange={(v) => v && setUnit(v)} />
+      {need && needItem && (() => {
+        const left = Number(needItem.quantity) - need.quantity
+        return (
+          <p className={`${left < 0 ? 'warn-box' : 'ok-box'} small`} role="status">
+            {tr("Со склада спишется: {0} {1}", needItem.name, qtyText(need.quantity, needItem.unit))}{" · "}
+            {left < 0 ? tr("на складе только {0}", qtyText(needItem.quantity, needItem.unit))
+              : tr("останется {0}", qtyText(left, needItem.unit))}
+          </p>
+        )
+      })()}
+      {type === 'HONEY' && amount > 0 && (unit === 'KG' || unit === 'G') && (
+        <p className="hint small">{tr("Мёд спишется из запаса мёда на складе.")}</p>
+      )}
       <Field label={tr("Дата")} error={fieldError(save.error, 'fed_at')}>
         <input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} />
       </Field>

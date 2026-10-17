@@ -10,7 +10,7 @@ from app.models.health import Disease, HiveDisease
 from app.schemas.common import today
 from app.config import get_settings
 from app.schemas.report import Bucket, DashboardFinance, DashboardOut, DashboardTiles, DiseaseCount
-from app.services import health_service, honey_service
+from app.services import health_service, honey_service, stock_service
 from app.utils.age import age_in_months
 from app.utils.labels import STRENGTH
 
@@ -78,5 +78,6 @@ def dashboard(db: Session, year: int, show_finance: bool = False) -> DashboardOu
         honey_by_hive=honey["by_hive"][:10],
         strength=[Bucket(key=s.value, label=STRENGTH[s].capitalize(), count=strengths[s]) for s in STRENGTH_ORDER],
         diseases=disease_counts(db, year),
+        stock_low=stock_service.low_items(db),
         queen_ages=[Bucket(key=k, label=label, count=ages[k]) for k, label in AGE_BUCKETS],
     )

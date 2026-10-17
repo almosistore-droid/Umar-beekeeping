@@ -615,3 +615,26 @@ button.btn { display: inline-flex; align-items: center; justify-content: center;
 .sub-warning { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 12px; font-size: 14px; line-height: 1.4; }
 .sub-warning svg { flex: none; margin-top: 2px; color: var(--amber); }
 .sub-warning a, .state a { color: var(--gold); }
+
+/* ---------- warehouse ---------- */
+.input-unit { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.input-unit .input { flex: 1; }
+.input-unit span { color: var(--smoke); min-width: 2.5em; }
+.stock-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 0; background: none; border: 0;
+  border-bottom: 1px solid var(--rim); color: inherit; text-align: left; font: inherit; text-decoration: none; cursor: pointer; }
+.stock-row:last-child { border-bottom: 0; }
+.stock-row__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.stock-row__qty { font-family: 'Forum', serif; font-size: 20px; white-space: nowrap; }
+.stock-row--low .stock-row__qty { color: var(--ember); }
+.stock-row--cancelled { opacity: 0.5; }
+.stock-row--cancelled .stock-row__qty { text-decoration: line-through; }
+.stock-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.stock-actions .btn { width: 100%; }
+.calc { display: grid; gap: 6px; margin: 4px 0 2px; padding: 12px; border-radius: 12px;
+  background: rgba(var(--gold-rgb), 0.07); border: 1px solid rgba(var(--gold-rgb), 0.18); }
+.calc__row { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+.calc__row b { white-space: nowrap; }
+.calc__row--bad b { color: var(--ember); }
+.stock-banner { display: flex; gap: 10px; align-items: flex-start; text-decoration: none; color: var(--wax); margin: 0 0 12px; }
+.stock-banner svg { flex: none; margin-top: 2px; color: var(--amber); }
+.stock-honey { display: block; text-decoration: none; color: inherit; padding-top: 4px; padding-bottom: 4px; }

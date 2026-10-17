@@ -609,7 +609,8 @@ def honey_stock_kg(db: Session) -> Decimal:
     sold = db.scalar(select(func.coalesce(func.sum(SaleItem.quantity), 0)).join(Sale, Sale.id == SaleItem.sale_id)
                      .where(Sale.cancelled_at.is_(None), SaleItem.category == SaleCategory.HONEY,
                             SaleItem.unit == FeedUnit.KG)) or ZERO
-    return _q(harvested - sold)
+    from app.services.stock_service import fed_honey_kg
+    return _q(harvested - sold - fed_honey_kg(db))
 
 
 def summary(db: Session, year: int, month: int | None) -> CrmSummary:

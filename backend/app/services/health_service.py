@@ -41,6 +41,7 @@ from app.schemas.health import (
     TreatmentUpdate,
 )
 from app.services import audit_service as audit
+from app.services import stock_service
 from app.utils.errors import ConflictError, NotFoundError, ValidationFailed
 
 # Statuses the disease rule may switch between; manual statuses (WEAK, QUEENLESS…) are left alone
@@ -252,12 +253,14 @@ def create_treatment(db: Session, hive_id: uuid.UUID, data: TreatmentCreate, use
     disease_id, case = _resolve_treatment_links(db, hive, data)
     if case and case.status == DiseaseCaseStatus.RESOLVED:
         raise ConflictError("Эта болезнь уже вылечена")
-    fields = data.model_dump(exclude={"disease_id", "hive_disease_id", "treated_at"})
+    stock_item = stock_service.check_treatment_item(db, data.stock_item_id)
+    fields = data.model_dump(exclude={"disease_id", "hive_disease_id", "treated_at", "stock_item_id", "stock_quantity"})
     treatment = Treatment(hive_id=hive.id, disease_id=disease_id, hive_disease_id=case.id if case else None,
                           treated_at=data.treated_at or today(), performed_by=user.id, **fields)
     db.add(treatment)
     db.flush()
     _treatment_reminder(db, hive, treatment, user)
+    stock_service.sync_treatment(db, treatment, hive, stock_item, data.stock_quantity, user)
     if case and case.status in (DiseaseCaseStatus.SUSPECTED, DiseaseCaseStatus.CONFIRMED):
         old = case.status
         case.status = DiseaseCaseStatus.TREATING
@@ -278,7 +281,8 @@ def update_treatment(db: Session, treatment_id: uuid.UUID, data: TreatmentUpdate
     fields = ["treated_at", "medication", "dosage", "method", "result", "next_treatment_date", "notes",
               "disease_id", "hive_disease_id"]
     before = audit.snapshot(treatment, fields)
-    values = data.model_dump(exclude={"comment"})
+    stock_item = stock_service.check_treatment_item(db, data.stock_item_id) if data.stock_item_id else None
+    values = data.model_dump(exclude={"comment", "stock_item_id", "stock_quantity"})
     values["treated_at"] = values["treated_at"] or treatment.treated_at
     values["disease_id"], values["hive_disease_id"] = disease_id, case.id if case else None
     if values["next_treatment_date"] and values["next_treatment_date"] < values["treated_at"]:
@@ -292,6 +296,7 @@ def update_treatment(db: Session, treatment_id: uuid.UUID, data: TreatmentUpdate
         if "next_treatment_date" in new:
             _retarget_task(db, treatment.id, "treatment", treatment.next_treatment_date, hive, user,
                            TaskKind.TREATMENT, f"Повторная обработка: {treatment.medication}")
+    stock_service.sync_treatment(db, treatment, hive, stock_item, data.stock_quantity, user)
     db.commit()
     db.refresh(treatment)
     return treatment, hive
@@ -327,6 +332,7 @@ def create_feeding(db: Session, hive_id: uuid.UUID, data: FeedingCreate, user: U
                       fed_at=data.fed_at or today())
     db.add(feeding)
     db.flush()
+    stock_service.sync_feeding(db, feeding, hive, user)
     close_open_tasks(db, hive.id, TaskKind.FEEDING, user)
     if feeding.next_feeding_date:
         create_task(db, hive=hive, kind=TaskKind.FEEDING, title=_feeding_title(feeding),
@@ -355,6 +361,7 @@ def update_feeding(db: Session, feeding_id: uuid.UUID, data: FeedingUpdate, user
         if "next_feeding_date" in new:
             _retarget_task(db, feeding.id, "feeding", feeding.next_feeding_date, hive, user,
                            TaskKind.FEEDING, _feeding_title(feeding))
+        stock_service.sync_feeding(db, feeding, hive, user)
     db.commit()
     db.refresh(feeding)
     return feeding, hive

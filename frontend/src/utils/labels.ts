@@ -255,6 +255,7 @@ export const ENTITY_LABEL: Record<string, string> = {
   honey_harvest: tr("Мёд"), other_product: tr("Продукция"), swarm: tr("Роение"), hive_split: tr("Отводок"), hive_merge: tr("Объединение"),
   wintering: tr("Зимовка"), qr_code: tr("QR-код"), user: tr("Пользователь"), user_invite: tr("Приглашение"), customer: tr("Клиент"),
   sale: tr("Продажа"), payment: tr("Оплата"), expense: tr("Расход"), order: tr("Заказ"),
+  stock_item: tr("Склад"), stock_movement: tr("Склад"), frame_prep: tr("Подготовка рамок"), stock_norms: tr("Нормы расхода"),
 }
 const ACTION_LABEL: Record<string, string> = {
   created: tr("создан(а)"), updated: tr("изменён(а)"), corrected: tr("исправлен(а)"), cancelled: tr("отменён(а)"), delivered: tr("выдан"),
@@ -262,6 +263,8 @@ const ACTION_LABEL: Record<string, string> = {
   account_created: tr("создан вход по логину"), password_reset: tr("выдан новый пароль"), password_changed: tr("сменил(а) пароль"),
   login_locked: tr("вход заблокирован на 15 минут: неверный пароль"),
   archived: tr("в архиве"), qr_printed: tr("напечатан"),
+  restored: tr("возвращён(а) из архива"), receipt: tr("приход"), consumption: tr("расход"), inventory: tr("пересчёт"),
+  frame_prep: tr("на подготовку рамок"), feeding: tr("на подкормку"), treatment: tr("на обработку"), frames_prepared: tr("рамки подготовлены"),
 }
 /** One line for the admin activity log: hive events reuse the hive timeline wording. */
 export function describeLogEntry(e: { entity_type: string; action: string; hive_id: string | null; old_value: Record<string, unknown> | null; new_value: Record<string, unknown> | null }): string {
@@ -304,7 +307,27 @@ export function logDetail(e: { entity_type: string; action: string; new_value: R
   else if (e.entity_type === 'user' && e.action === 'account_created') parts.push(v.name as string, (v.login ? tr("логин: {0}", v.login as string) : null), v.role ? ROLE_LABELS[v.role as UserRole] : null)
   else if (e.entity_type === 'user' && e.action === 'password_reset') parts.push((v.login ? tr("логин: {0}", v.login as string) : null))
   else if (e.entity_type === 'user' && e.action === 'device_login') parts.push(v.device as string, v.method === 'password' ? tr("по паролю") : 'Telegram')
+  else if (e.entity_type === 'stock_movement') parts.push(v.item as string, v.quantity !== undefined && `${Number(v.quantity) > 0 ? '+' : ''}${num(v.quantity as string)} ${STOCK_UNIT[v.unit as StockUnit] ?? ''}`)
+  else if (e.entity_type === 'stock_item') parts.push(v.name as string)
+  else if (e.entity_type === 'frame_prep' && v.frames !== undefined) parts.push(tr("{0} шт", v.frames as number))
   else if (e.entity_type === 'user_invite') parts.push(v.username ? `@${v.username}` : v.telegram_id ? `ID ${v.telegram_id}` : null, v.role ? ROLE_LABELS[v.role as UserRole] : null, v.note as string)
   const out = parts.filter(Boolean).join(' · ')
   return out || null
+}
+
+// ---------- warehouse ----------
+import type { StockCategory, StockMovementKind, StockUnit } from '../types/api'
+export const STOCK_UNIT: Record<StockUnit, string> = {
+  PCS: tr("шт"), KG: tr("кг"), G: tr("г"), L: tr("л"), ML: tr("мл"), M: tr("м"), PACK: tr("уп."),
+}
+export const STOCK_CATEGORY: Record<StockCategory, string> = {
+  FRAMES: tr("Рамки и вощина"), FEED: tr("Корм"), MEDICINE: tr("Лекарства"), OTHER: tr("Другое"),
+}
+export const MOVEMENT_KIND: Record<StockMovementKind, string> = {
+  RECEIPT: tr("Приход"), CONSUMPTION: tr("Расход"), INVENTORY: tr("Пересчёт"), FRAME_PREP: tr("Подготовка рамок"),
+  FEEDING: tr("Подкормка"), TREATMENT: tr("Обработка"),
+}
+/** «12,5 кг» — up to 3 decimals (grams of wax, millilitres). */
+export function qty(v: string | number, unit: StockUnit): string {
+  return `${Number(v).toLocaleString('ru-RU', { maximumFractionDigits: 3 })} ${STOCK_UNIT[unit]}`
 }

@@ -186,6 +186,15 @@ class TreatmentFields(BaseModel):
     result: str | None = Text
     next_treatment_date: date | None = None
     notes: str | None = Text
+    # medicine taken from the warehouse (both or neither)
+    stock_item_id: uuid.UUID | None = None
+    stock_quantity: Decimal | None = Field(default=None, gt=0, le=Decimal("100000"), decimal_places=3)
+
+    @model_validator(mode="after")
+    def _stock(self):
+        if (self.stock_item_id is None) != (self.stock_quantity is None):
+            raise ValueError("Для списания со склада выберите препарат и укажите количество")
+        return self
 
     @field_validator("medication")
     @classmethod
@@ -230,6 +239,8 @@ class TreatmentOut(ORMModel):
     next_treatment_date: date | None
     notes: str | None
     created_at: datetime
+    stock_item_id: uuid.UUID | None = None
+    stock_quantity: Decimal | None = None
 
 
 # ---------- feedings ----------

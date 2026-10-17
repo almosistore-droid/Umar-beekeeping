@@ -30,6 +30,9 @@ import { HiveVisitPage } from '../pages/HiveVisitPage'
 import { HiveInspectPage } from '../pages/HiveInspectPage'
 import { HiveCheckPage } from '../pages/HiveCheckPage'
 import { tr } from '../i18n'
+import { StockPage } from '../pages/stock/StockPage'
+import { StockItemPage } from '../pages/stock/StockItemPage'
+import { StockNormsPage } from '../pages/stock/StockNormsPage'
 
 export const routes = [
   {
@@ -68,6 +71,9 @@ export const routes = [
       { path: 'crm/customers', element: <CustomersPage /> },
       { path: 'crm/customers/:id', element: <CustomerDetailsPage /> },
       { path: 'crm/debts', element: <DebtsPage /> },
+      { path: 'stock', element: <StockPage /> },
+      { path: 'stock/norms', element: <StockNormsPage /> },
+      { path: 'stock/:id', element: <StockItemPage /> },
       { path: 'more', element: <MorePage /> },
       { path: '*', element: <MessageView icon="inspect" title={tr("Страница не найдена")} /> },
     ],

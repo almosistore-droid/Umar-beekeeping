@@ -5,7 +5,7 @@ import { getWebApp, takeStartParam } from '../services/telegram'
 
 /** Start parameters used by the reminder buttons in Telegram (stage 8). */
 export const START_SCREENS: Record<string, string> = {
-  go_tasks: '/tasks', go_hives: '/hives', go_debts: '/crm/debts', go_orders: '/crm/orders',
+  go_tasks: '/tasks', go_hives: '/hives', go_debts: '/crm/debts', go_orders: '/crm/orders', go_stock: '/stock',
 }
 
 export function AppLayout() {
