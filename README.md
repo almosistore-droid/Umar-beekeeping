@@ -79,8 +79,10 @@ cp .env.example .env
 nano .env
 ```
 
-Обязательно заполнить: `DOMAIN`, `POSTGRES_PASSWORD`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`,
-`TELEGRAM_WEBAPP_SHORT_NAME`, `ADMIN_TELEGRAM_IDS`, `JWT_SECRET` (сгенерировать: `openssl rand -hex 32`).
+Обязательно заполнить: `DOMAIN`, `POSTGRES_PASSWORD` (только латинские буквы и цифры: символы `@ / : # ? %` ломают адрес базы), `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`,
+`TELEGRAM_WEBAPP_SHORT_NAME`, `ADMIN_TELEGRAM_IDS`, `JWT_SECRET` (не короче 32 символов; вписать сразу:
+`sed -i "s/^JWT_SECRET=.*/JWT_SECRET=$(openssl rand -hex 32)/" .env`).
+На сервере с 2 ГБ памяти добавьте файл подкачки на 2 ГБ — без него сборка экранов может упасть.
 
 ### 4. Получите HTTPS-сертификат (Let's Encrypt)
 
@@ -113,7 +115,7 @@ docker compose logs -f backend
 - `https://ВАШ_ДОМЕН/api/docs` → Swagger
 - В Telegram откройте бота → `/start` → **🐝 Открыть пасеку** → увидите своё имя и роль «Администратор».
 
-Если открыть сайт в обычном браузере, будет экран «Откройте в Telegram» — так и должно быть.
+В обычном браузере открывается экран входа (логин и пароль или «Войти через Telegram») — оттуда же приложение ставится значком на телефон.
 
 ### Демо-данные (по желанию)
 
