@@ -139,6 +139,14 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
   public nginx. Panel = separate ASGI app `app/owner_panel/main.py` (no app settings; reads clients/*.env), skipped by
   the i18n extract. Deploy: `deploy/owner.yml`, `deploy/edge/owner-site.conf.template`, `client.sh owner|owner-password`.
 
+## Stage 10 (specs/018-stage10-production)
+- Keep: acceptance tests for §38 (`tests/test_acceptance.py`), no-N+1 (`tests/test_query_counts.py` — add new list
+  screens to SCREENS), secrets scan, route auth walk (`tests/test_security.py`), CI coverage ≥ 90 % and audits.
+- Production: docs hidden, JWT HS* only, `no-store` on /api data. Frontend: rarely used screens via `lazyPage` in
+  `router/index.tsx` (warmed up by OfflineBar), Tajik catalog loaded in `main.tsx` before `boot.tsx`.
+- Server ops in `deploy/client.sh`: backup [--send] / backup-setup / decrypt / restore / check [--alert] / cron /
+  rollback; `deploy/harden.sh`. Tests with fake docker/curl in `tests/test_deploy_client.py`.
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client (the bot passes it only for login confirmation, signed). The role is loaded from DB on every request (`get_current_user`).

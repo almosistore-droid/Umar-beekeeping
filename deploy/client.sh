@@ -103,9 +103,13 @@ ensure_certificate() { # ensure_certificate SLUG DOMAIN
 cmd_build() {
   cd "$ROOT"
   say "Сборка образов (один раз для всех клиентов)"
-  docker build -t beekeeping-backend:latest backend
-  docker build -t beekeeping-frontend:latest frontend
-  docker build -t beekeeping-bot:latest bot
+  local rev; rev=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M)
+  for part in backend frontend bot; do
+    # the version in use stays as «previous»: ./deploy/client.sh rollback brings it back
+    docker image inspect "beekeeping-$part:latest" >/dev/null 2>&1 && docker tag "beekeeping-$part:latest" "beekeeping-$part:previous"
+    docker build -t "beekeeping-$part:latest" -t "beekeeping-$part:$rev" "$part"
+  done
+  say "Версия $rev собрана"
   say "Готово. Перезапустить клиентов на новой версии: ./deploy/client.sh update all"
 }
 
@@ -163,6 +167,8 @@ cmd_start() {
 cmd_update() {
   local target=${1:-all}
   local slugs; if [[ "$target" == all ]]; then slugs=$(all_slugs); else slugs=$target; fi
+  say "Копии баз перед обновлением"
+  cmd_backup "$target" || die "копия не сделана — обновление остановлено (данные не тронуты)"
   for s in $slugs; do
     say "Обновление $s"
     compose "$s" up -d --force-recreate --remove-orphans
@@ -226,18 +232,181 @@ cmd_list() {
   done
 }
 
-cmd_backup() {
-  local target=${1:-all}
+BACKUP_ENV="$ROOT/deploy/backup.env"
+MAX_TELEGRAM_BYTES=$((49 * 1024 * 1024))
+
+backup_get() { [[ -f "$BACKUP_ENV" ]] && env_get "$BACKUP_ENV" "$1" || true; }
+
+telegram_send() { # telegram_send FILE CAPTION — to the owner's chat with the backup bot; 0 = delivered
+  local token chat; token=$(backup_get BACKUP_BOT_TOKEN); chat=$(backup_get BACKUP_CHAT_ID)
+  [[ -n "$token" && -n "$chat" ]] || { echo "   (копии в Telegram не настроены: ./deploy/client.sh backup-setup)"; return 1; }
+  local out
+  out=$(curl -sS --max-time 300 -F "chat_id=$chat" -F "caption=$2" -F "document=@$1" \
+    "https://api.telegram.org/bot$token/sendDocument" 2>&1) || true
+  [[ "$out" == *'"ok":true'* ]]
+}
+
+telegram_text() { # telegram_text MESSAGE — short message to the owner (alerts)
+  local token chat; token=$(backup_get BACKUP_BOT_TOKEN); chat=$(backup_get BACKUP_CHAT_ID)
+  [[ -n "$token" && -n "$chat" ]] || return 1
+  local out
+  out=$(curl -sS --max-time 30 --data-urlencode "chat_id=$chat" --data-urlencode "text=$1" \
+    "https://api.telegram.org/bot$token/sendMessage" 2>&1) || true
+  [[ "$out" == *'"ok":true'* ]]
+}
+
+encrypt_file() { # encrypt_file IN OUT — AES-256 with BACKUP_PASSWORD (never on the command line)
+  BACKUP_PASSWORD=$(backup_get BACKUP_PASSWORD) \
+    openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:BACKUP_PASSWORD -in "$1" -out "$2"
+}
+
+cmd_backup() { # backup [SLUG|all] [--send]
+  local target=all send=0
+  for arg in "$@"; do [[ "$arg" == --send ]] && send=1 || target=$arg; done
   local slugs; if [[ "$target" == all ]]; then slugs=$(all_slugs); else slugs=$target; fi
   mkdir -p "$BACKUPS"; chmod 700 "$BACKUPS"
+  local failed=0
   for s in $slugs; do
     local env; env=$(client_env "$s")
     local file; file="$BACKUPS/$s-$(date +%F-%H%M).sql.gz"
-    compose "$s" exec -T postgres pg_dump -U "$(env_get "$env" POSTGRES_USER)" "$(env_get "$env" POSTGRES_DB)" | gzip > "$file"
-    say "$s → $file"
+    if ! compose "$s" exec -T postgres pg_dump --no-owner -U "$(env_get "$env" POSTGRES_USER)" "$(env_get "$env" POSTGRES_DB)" \
+        | gzip > "$file.part" || [[ ! -s "$file.part" ]]; then
+      rm -f "$file.part"; echo "Ошибка: копия $s не сделана" >&2; failed=1; continue
+    fi
+    mv "$file.part" "$file"; chmod 600 "$file"
+    say "$s → $file ($(du -h "$file" | cut -f1))"
+    if [[ $send == 1 ]]; then
+      encrypt_file "$file" "$file.enc"
+      if (( $(stat -c %s "$file.enc") > MAX_TELEGRAM_BYTES )); then
+        echo "   больше 49 МБ — в Telegram не помещается, осталась на сервере" >&2; failed=1
+      elif telegram_send "$file.enc" "Копия базы $s · $(date '+%d.%m.%Y %H:%M') · зашифрована"; then
+        say "   отправлена в Telegram"
+      else
+        echo "   не удалось отправить в Telegram" >&2; failed=1
+      fi
+      rm -f "$file.enc"
+    fi
   done
   # keep 30 days
   find "$BACKUPS" -name '*.sql.gz' -mtime +30 -delete
+  return $failed
+}
+
+cmd_rollback() { # back to the version before the last build
+  for part in backend frontend bot; do
+    docker image inspect "beekeeping-$part:previous" >/dev/null 2>&1 || die "предыдущей версии нет (сборка была одна)"
+  done
+  for part in backend frontend bot; do docker tag "beekeeping-$part:previous" "beekeeping-$part:latest"; done
+  say "Возвращена предыдущая версия; перезапуск клиентов"
+  echo "   Если новая версия уже изменила базу, восстановите копию до обновления: ./deploy/client.sh restore ИМЯ backups/…"
+  local s; for s in $(all_slugs); do compose "$s" up -d --force-recreate --remove-orphans; done
+}
+
+cmd_backup_setup() {
+  [[ -f "$BACKUP_ENV" ]] && say "Настройки уже есть — перезаписываю (старые копии откроются старым паролем)"
+  local token chat
+  read -rsp "Токен бота для копий (из @BotFather; можно бота любого клиента): " token; echo
+  read -rp "Ваш Telegram ID (узнать: @userinfobot): " chat
+  [[ "$token" =~ ^[0-9]+:[A-Za-z0-9_-]{20,}$ ]] || die "это не похоже на токен бота"
+  [[ "$chat" =~ ^-?[0-9]+$ ]] || die "Telegram ID — это число"
+  local pass; pass=$(secret 16)
+  ( umask 077; printf 'BACKUP_BOT_TOKEN=%s\nBACKUP_CHAT_ID=%s\nBACKUP_PASSWORD=%s\n' "$token" "$chat" "$pass" > "$BACKUP_ENV" )
+  if telegram_text "Копии баз будут приходить сюда каждую ночь. Пароль для расшифровки храните отдельно от телефона."; then
+    say "Проверочное сообщение отправлено — откройте чат с ботом"
+  else
+    echo "Не получилось написать вам: откройте этого бота в Telegram, нажмите «Start» и повторите." >&2
+  fi
+  say "ПАРОЛЬ КОПИЙ: $pass"
+  echo "   Запишите его в надёжное место (не в чат, не на этот сервер). Без него копию не открыть."
+}
+
+cmd_decrypt() { # decrypt FILE.sql.gz.enc → FILE.sql.gz (asks for the password if backup.env is not here)
+  local in=${1:-}
+  [[ -f "$in" && "$in" == *.enc ]] || die "укажите файл .enc"
+  local pass; pass=$(backup_get BACKUP_PASSWORD)
+  [[ -n "$pass" ]] || { read -rsp "Пароль копий: " pass; echo; }
+  BACKUP_PASSWORD=$pass openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_PASSWORD -in "$in" -out "${in%.enc}" \
+    || die "не расшифровалось: неверный пароль или файл повреждён"
+  say "Готово: ${in%.enc}"
+}
+
+cmd_restore() { # restore SLUG FILE(.sql.gz|.sql.gz.enc)
+  local slug=${1:-} file=${2:-}
+  local env; env=$(client_env "$slug")
+  [[ -f "$file" ]] || die "нет файла $file"
+  if [[ "$file" == *.enc ]]; then cmd_decrypt "$file"; file=${file%.enc}; fi
+  gzip -t "$file" 2>/dev/null || die "файл повреждён (не gzip)"
+  if [[ "${BEE_YES:-}" != 1 ]]; then
+    echo "ВНИМАНИЕ: все данные «$slug» будут заменены копией $file."
+    local answer; read -rp "Для подтверждения введите имя клиента ($slug): " answer
+    [[ "$answer" == "$slug" ]] || die "отменено"
+  fi
+  say "Сначала копия текущего состояния (на всякий случай)"
+  cmd_backup "$slug" || die "не удалось сделать копию текущих данных — восстановление остановлено"
+  local user db; user=$(env_get "$env" POSTGRES_USER); db=$(env_get "$env" POSTGRES_DB)
+  compose "$slug" stop backend bot >/dev/null 2>&1 || true
+  compose "$slug" exec -T postgres psql -q -v ON_ERROR_STOP=1 -U "$user" -d "$db" \
+    -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public AUTHORIZATION \"$user\";"
+  gunzip -c "$file" | compose "$slug" exec -T postgres psql -q -v ON_ERROR_STOP=1 -U "$user" -d "$db" >/dev/null
+  compose "$slug" up -d
+  say "$slug восстановлен из $(basename "$file")"
+}
+
+# ---------- health check and alerts ----------
+
+check_client() { # prints problems of one client, one per line
+  local s=$1 env="$CLIENTS/$1.env"
+  local domain; domain=$(env_get "$env" DOMAIN)
+  local health
+  health=$(compose "$s" exec -T backend python -c \
+    "import urllib.request;print(urllib.request.urlopen('http://127.0.0.1:8000/api/health',timeout=5).status)" 2>/dev/null \
+    | tail -n1 | tr -d '\r' || true)
+  [[ "$health" == 200 ]] || echo "$s: приложение не отвечает"
+  local pem="${BEE_LETSENCRYPT:-/etc/letsencrypt}/live/$domain/fullchain.pem"
+  if [[ -f "$pem" ]]; then
+    local end; end=$(openssl x509 -enddate -noout -in "$pem" | cut -d= -f2)
+    local days=$(( ( $(date -d "$end" +%s) - $(date +%s) ) / 86400 ))
+    (( days < 14 )) && echo "$s: сертификат $domain истекает через $days дн."
+  fi
+  return 0
+}
+
+cmd_check() { # check [--alert]: problems on screen; with --alert also to the owner's Telegram (once per 6 h)
+  local alert=0; [[ "${1:-}" == --alert ]] && alert=1
+  local problems=""
+  for s in $(all_slugs); do problems+=$(check_client "$s"); problems+=$'\n'; done
+  local used; used=$(df --output=pcent "${BEE_DISK:-/}" | tail -n1 | tr -dc '0-9')
+  (( used >= 85 )) && problems+="Диск сервера заполнен на ${used}%"$'\n'
+  problems=$(printf '%s' "$problems" | sed '/^$/d')
+  if [[ -z "$problems" ]]; then
+    say "Всё в порядке: клиентов $(all_slugs | wc -w), диск ${used}%"
+    rm -f "$BACKUPS/.alert"
+    return 0
+  fi
+  echo "$problems"
+  if [[ $alert == 1 ]]; then
+    mkdir -p "$BACKUPS"
+    local stamp="$BACKUPS/.alert" sum; sum=$(printf '%s' "$problems" | sha1sum | cut -c1-12)
+    if [[ ! -f "$stamp" || "$(cut -d' ' -f1 "$stamp")" != "$sum" || $(( $(date +%s) - $(cut -d' ' -f2 "$stamp") )) -gt 21600 ]]; then
+      telegram_text "⚠️ Сервер пасек: $problems" && echo "$sum $(date +%s)" > "$stamp"
+    fi
+  fi
+  return 1
+}
+
+cmd_cron() { # nightly copies to Telegram, certificates, checks every 15 min
+  local file=${BEE_CRON_FILE:-/etc/cron.d/beekeeping}
+  cat > "$file" <<CRON
+# made by deploy/client.sh cron
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+30 2 * * * root $ROOT/deploy/client.sh backup all --send >> /var/log/beekeeping-backup.log 2>&1
+0 3 * * * root $ROOT/deploy/client.sh renew >> /var/log/beekeeping-renew.log 2>&1
+*/15 * * * * root $ROOT/deploy/client.sh check --alert > /dev/null 2>&1
+CRON
+  chmod 644 "$file"
+  rm -f /etc/cron.d/certbot-bee /etc/cron.d/backup-bee 2>/dev/null || true
+  say "Расписание записано в $file: копии 02:30, сертификаты 03:00, проверка каждые 15 минут"
 }
 
 cmd_logs() {
@@ -338,7 +507,13 @@ usage() {
   ./deploy/client.sh extend ИМЯ +1year        продлить (или +6months, +30days, 2027-10-17, none — без срока)
   ./deploy/client.sh block ИМЯ                закрыть доступ сейчас (данные сохраняются)
   ./deploy/client.sh list                     все клиенты, домены, срок оплаты
-  ./deploy/client.sh backup all               копии баз в backups/ (хранятся 30 дней)
+  ./deploy/client.sh backup all [--send]      копии баз в backups/ (30 дней); --send — зашифрованные вам в Telegram
+  ./deploy/client.sh backup-setup             куда присылать копии (бот и ваш Telegram ID), пароль копий
+  ./deploy/client.sh restore ИМЯ файл         вернуть базу клиента из копии (.sql.gz или .sql.gz.enc)
+  ./deploy/client.sh decrypt файл.enc         расшифровать копию из Telegram
+  ./deploy/client.sh check [--alert]          всё ли работает (приложения, сертификаты, диск)
+  ./deploy/client.sh cron                     расписание: копии ночью, сертификаты, проверка каждые 15 минут
+  ./deploy/client.sh rollback                 вернуть предыдущую версию после неудачного обновления
   ./deploy/client.sh logs ИМЯ [backend|bot]   журнал
   ./deploy/client.sh stop ИМЯ                 остановить (данные сохраняются)
   ./deploy/client.sh adopt ИМЯ                перенести старую установку (.env) в клиенты
@@ -360,6 +535,12 @@ main() {
     block) cmd_block "$@" ;;
     list) cmd_list "$@" ;;
     backup) cmd_backup "$@" ;;
+    backup-setup) cmd_backup_setup "$@" ;;
+    restore) cmd_restore "$@" ;;
+    decrypt) cmd_decrypt "$@" ;;
+    check) cmd_check "$@" ;;
+    cron) cmd_cron "$@" ;;
+    rollback) cmd_rollback "$@" ;;
     logs) cmd_logs "$@" ;;
     stop) cmd_stop "$@" ;;
     adopt) cmd_adopt "$@" ;;

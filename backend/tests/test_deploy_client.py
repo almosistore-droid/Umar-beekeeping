@@ -24,9 +24,18 @@ def repo(tmp_path):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     log = tmp_path / "calls.log"
-    for tool in ("docker", "certbot"):
+    for tool in ("docker", "certbot", "curl"):
         fake = bin_dir / tool
-        fake.write_text(f'#!/bin/bash\necho "{tool} $*" >> "{log}"\nexit 0\n')
+        fake.write_text(f"""#!/bin/bash
+echo "{tool} $*" >> "{log}"
+case "$*" in
+  *pg_dump*) echo "-- dump of the client database" ;;
+  *urllib*) echo 200 ;;
+  *psql*) cat >> "{tmp_path}/restored.sql" ;;
+  *api.telegram.org*) echo '{{"ok":true}}' ;;
+esac
+exit 0
+""")
         fake.chmod(0o755)
     # CI runs as a normal user: /var/www/certbot cannot be created there
     env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}", "BEE_WEBROOT": str(tmp_path / "webroot")}
@@ -179,3 +188,66 @@ def test_harden_never_locks_out_without_a_key(tmp_path, has_key):
     assert ("90-bee.conf" in res.stdout) is has_key
     if not has_key:
         assert "пароли НЕ отключаю" in res.stdout
+
+
+def test_backup_encrypted_to_telegram_and_decrypt(repo, tmp_path):
+    repo("add", "asal", "asal.tj")
+    (repo.root / "deploy" / "backup.env").write_text("BACKUP_BOT_TOKEN=123456:" + "a" * 30 +
+                                                     "\nBACKUP_CHAT_ID=1324431208\nBACKUP_PASSWORD=secret-pass-1\n")
+    r = repo("backup", "all", "--send")
+    assert "отправлена в Telegram" in r.stdout
+    calls = repo.log.read_text()
+    assert "sendDocument" in calls and "chat_id=1324431208" in calls
+    assert "secret-pass-1" not in calls                      # the password is never on a command line
+    dumps = list((repo.root / "backups").glob("asal-*.sql.gz"))
+    assert len(dumps) == 1 and not list((repo.root / "backups").glob("*.enc"))   # encrypted copy not kept
+    assert oct(dumps[0].stat().st_mode & 0o777) == "0o600"
+
+    # the file that went to Telegram opens with the password
+    enc = tmp_path / "copy.sql.gz.enc"
+    subprocess.run(["openssl", "enc", "-aes-256-cbc", "-pbkdf2", "-iter", "200000", "-salt", "-pass", "pass:secret-pass-1",
+                    "-in", str(dumps[0]), "-out", str(enc)], check=True)
+    repo("decrypt", str(enc))
+    assert (tmp_path / "copy.sql.gz").read_bytes() == dumps[0].read_bytes()
+
+
+def test_restore_makes_a_safety_copy_first(repo, tmp_path):
+    import gzip
+    repo("add", "asal", "asal.tj")
+    dump = tmp_path / "old.sql.gz"
+    dump.write_bytes(gzip.compress(b"CREATE TABLE hives (id int);\n"))
+    env = dict(os.environ)
+    res = subprocess.run(["bash", str(repo.root / "deploy" / "client.sh"), "restore", "asal", str(dump)],
+                         input="wrong\n", capture_output=True, text=True, cwd=repo.root,
+                         env={**env, "PATH": f"{tmp_path / 'bin'}:{env['PATH']}"})
+    assert res.returncode != 0 and "отменено" in res.stderr   # needs the client's name typed
+    res = subprocess.run(["bash", str(repo.root / "deploy" / "client.sh"), "restore", "asal", str(dump)],
+                         input="asal\n", capture_output=True, text=True, cwd=repo.root,
+                         env={**env, "PATH": f"{tmp_path / 'bin'}:{env['PATH']}", "BEE_WEBROOT": str(tmp_path / "w")})
+    assert res.returncode == 0, res.stderr
+    calls = repo.log.read_text()
+    assert calls.index("pg_dump") < calls.index("DROP SCHEMA public CASCADE")   # copy before replacing
+    assert "CREATE TABLE hives" in (tmp_path / "restored.sql").read_text()
+
+
+def test_update_backs_up_first_and_rollback(repo):
+    repo("add", "asal", "asal.tj")
+    repo("update", "all")
+    calls = repo.log.read_text()
+    assert calls.index("pg_dump") < calls.index("up -d --force-recreate")
+    r = repo("rollback")
+    assert "предыдущая версия" in r.stdout.lower() or "Возвращена" in r.stdout
+    assert "tag beekeeping-backend:previous beekeeping-backend:latest" in repo.log.read_text()
+
+
+def test_check_and_cron(repo, tmp_path):
+    repo("add", "asal", "asal.tj")
+    r = repo("check")
+    assert "Всё в порядке" in r.stdout
+    cron = tmp_path / "cron"
+    import os as _os
+    res = subprocess.run(["bash", str(repo.root / "deploy" / "client.sh"), "cron"], capture_output=True, text=True,
+                         env={**_os.environ, "BEE_CRON_FILE": str(cron)})
+    assert res.returncode == 0, res.stderr
+    text = cron.read_text()
+    assert "backup all --send" in text and "renew" in text and "check --alert" in text

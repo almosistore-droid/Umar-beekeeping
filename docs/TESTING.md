@@ -201,6 +201,13 @@ docker compose -f docker-compose.dev.yml exec backend python -m app.utils.dev_in
 - [ ] Выключите «CRM» в «Ещё» → о долгах больше не пишет; у наблюдателя напоминаний нет совсем.
 - [ ] Язык Тоҷикӣ → напоминания приходят на таджикском.
 
+### Этап 10 — сервер (один раз после обновления)
+- [ ] `./deploy/harden.sh` → `ufw status` показывает 22, 80, 443; `fail2ban-client status sshd` работает.
+- [ ] `./deploy/client.sh backup-setup` → в Telegram пришло проверочное сообщение; пароль копий записан у вас.
+- [ ] `./deploy/client.sh backup all --send` → в Telegram файл `…sql.gz.enc`; `decrypt` этим паролем открывает его.
+- [ ] `./deploy/client.sh cron` и `./deploy/client.sh check` → «Всё в порядке».
+- [ ] https://ДОМЕН/api/docs → 404; приложение открывается быстрее (первая загрузка ~150 КБ в gzip).
+
 ### Панель владельца (на сервере)
 - [ ] `./deploy/client.sh owner admin.ДОМЕН` → открыть https://admin.ДОМЕН, войти паролем из вывода команды.
 - [ ] Видны все клиенты: ульи, пользователи, мёд, последний вход, «оплачено до».
