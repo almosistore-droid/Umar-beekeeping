@@ -15,7 +15,22 @@ export default defineConfig({
       '/api': { target: process.env.VITE_PROXY_TARGET ?? 'http://localhost:8000', changeOrigin: true },
     },
   },
-  build: { target: 'es2020', sourcemap: false },
+  build: {
+    target: 'es2020',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        // libraries change rarely: kept in their own files, phones keep them cached across our releases
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react'
+          if (id.includes('react-router')) return 'router'
+          if (id.includes('@tanstack') || id.includes('idb-keyval')) return 'query'
+          return undefined
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

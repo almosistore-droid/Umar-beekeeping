@@ -30,8 +30,9 @@ from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 from app.models.enums import FamilyStrength, FeedUnit, ProductType, WinteringResult
 
 
-def _fk(table: str, nullable: bool = False, ondelete: str = "RESTRICT"):
-    return mapped_column(UUID(as_uuid=True), ForeignKey(f"{table}.id", ondelete=ondelete), nullable=nullable)
+def _fk(table: str, nullable: bool = False, ondelete: str = "RESTRICT", index: bool = False):
+    return mapped_column(UUID(as_uuid=True), ForeignKey(f"{table}.id", ondelete=ondelete), nullable=nullable,
+                         index=index)
 
 
 def _author():
@@ -79,7 +80,7 @@ class OtherProduct(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     collected_at: Mapped[date] = mapped_column(Date, nullable=False)
     quantity: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     unit: Mapped[FeedUnit] = mapped_column(Enum(FeedUnit, name="feed_unit", create_type=False), nullable=False)
-    hive_id: Mapped[uuid.UUID | None] = _fk("hives", nullable=True)
+    hive_id: Mapped[uuid.UUID | None] = _fk("hives", nullable=True, index=True)
     apiary_id: Mapped[uuid.UUID | None] = _fk("apiaries", nullable=True)
     price_per_unit: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     total_value: Mapped[Decimal | None] = mapped_column(
@@ -98,7 +99,7 @@ class Swarm(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         CheckConstraint("new_hive_id IS NULL OR captured", name="settled_only_if_captured"),
     )
 
-    hive_id: Mapped[uuid.UUID] = _fk("hives")
+    hive_id: Mapped[uuid.UUID] = _fk("hives", index=True)
     swarm_date: Mapped[date] = mapped_column(Date, nullable=False)
     swarm_count: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=1)
     captured: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -115,7 +116,7 @@ class HiveSplit(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "hive_splits"
     __table_args__ = (CheckConstraint("source_hive_id <> new_hive_id", name="different_hives"),)
 
-    source_hive_id: Mapped[uuid.UUID] = _fk("hives")
+    source_hive_id: Mapped[uuid.UUID] = _fk("hives", index=True)
     new_hive_id: Mapped[uuid.UUID] = _fk("hives")
     split_date: Mapped[date] = mapped_column(Date, nullable=False)
     queen_id: Mapped[uuid.UUID | None] = _fk("queens", nullable=True)
@@ -129,14 +130,14 @@ hive_merge_sources = Table(
     "hive_merge_sources",
     Base.metadata,
     Column("merge_id", UUID(as_uuid=True), ForeignKey("hive_merges.id", ondelete="RESTRICT"), primary_key=True),
-    Column("hive_id", UUID(as_uuid=True), ForeignKey("hives.id", ondelete="RESTRICT"), primary_key=True),
+    Column("hive_id", UUID(as_uuid=True), ForeignKey("hives.id", ondelete="RESTRICT"), primary_key=True, index=True),
 )
 
 
 class HiveMerge(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "hive_merges"
 
-    target_hive_id: Mapped[uuid.UUID] = _fk("hives")
+    target_hive_id: Mapped[uuid.UUID] = _fk("hives", index=True)
     merge_date: Mapped[date] = mapped_column(Date, nullable=False)
     kept_queen_id: Mapped[uuid.UUID | None] = _fk("queens", nullable=True)
     notes: Mapped[str | None] = mapped_column(Text)

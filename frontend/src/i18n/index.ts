@@ -8,7 +8,6 @@
  * The language is fixed for a page load (module-level label maps are built once); switching the
  * language saves it and reloads the Mini App.
  */
-import tg from './tg.json'
 
 export type Lang = 'ru' | 'tg'
 export const LANGS: { value: Lang; label: string }[] = [
@@ -16,7 +15,23 @@ export const LANGS: { value: Lang; label: string }[] = [
   { value: 'tg', label: 'Тоҷикӣ' },
 ]
 const STORAGE_KEY = 'fayzi-umar.lang'
-const catalogs: Record<Lang, Record<string, string>> = { ru: {}, tg: tg as Record<string, string> }
+// The Tajik catalog (~100 KB) is downloaded only for Tajik: main.tsx awaits loadCatalog() before the app starts
+const catalogs: Record<Lang, Record<string, string>> = { ru: {}, tg: {} }
+
+export async function loadCatalog(lang: Lang = current): Promise<void> {
+  if (lang === 'tg' && !Object.keys(catalogs.tg).length) {
+    try {
+      catalogs.tg = (await import('./tg.json')).default as Record<string, string>
+    } catch {
+      /* offline on the very first start: Russian until the next start */
+    }
+  }
+}
+
+/** Test helper (setup.ts): the catalog without a dynamic import. */
+export function setCatalogForTests(lang: Lang, data: Record<string, string>): void {
+  catalogs[lang] = data
+}
 
 function telegramLanguage(): string | undefined {
   try {

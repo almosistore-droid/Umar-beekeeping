@@ -192,7 +192,7 @@ class Task(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     due_date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[TaskStatus] = mapped_column(Enum(TaskStatus, name="task_status"), nullable=False, default=TaskStatus.OPEN)
     source_type: Mapped[str | None] = mapped_column(String(40))
-    source_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    source_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True)  # record / rearing batch
     created_by: Mapped[uuid.UUID | None] = _user_fk()
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_by: Mapped[uuid.UUID | None] = _user_fk()

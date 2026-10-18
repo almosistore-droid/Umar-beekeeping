@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../hooks/useAuth'
 import { prefetchForOffline } from '../../services/offlineCache'
+import { warmUpPages } from '../../router/lazyPage'
 import { flushOutbox, useOutbox } from '../../services/outbox'
 import { tr } from '../../i18n'
 
@@ -21,6 +22,7 @@ export function OfflineBar() {
   useEffect(() => {
     if (!signedIn || !online) return
     void prefetchForOffline(qc)
+    warmUpPages() // all screens into the phone's cache for the next trip to the apiary
     const send = () => { void flushOutbox().then((n) => { if (n) void qc.invalidateQueries() }) }
     send()
     const timer = setInterval(send, 30_000)

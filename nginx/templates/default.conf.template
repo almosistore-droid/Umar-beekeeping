@@ -1,6 +1,14 @@
 # Edge proxy: HTTPS termination, routing, rate limiting, security headers.
 # ${DOMAIN} is substituted from .env by the nginx image at startup.
 
+# Compress text answers (JSON lists, scripts, styles): much less mobile data at the apiary
+gzip on;
+gzip_vary on;
+gzip_proxied any;
+gzip_comp_level 5;
+gzip_min_length 1024;
+gzip_types text/plain text/css application/javascript application/json application/manifest+json image/svg+xml;
+
 limit_req_zone $binary_remote_addr zone=api:10m rate=20r/s;
 limit_req_zone $binary_remote_addr zone=auth:10m rate=10r/m;
 
