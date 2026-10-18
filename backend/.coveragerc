@@ -1,0 +1,12 @@
+[run]
+source = app
+concurrency = thread
+omit =
+    app/utils/seed.py
+    app/utils/dev_init_data.py
+    app/utils/check_setup.py
+    app/i18n/extract.py
+
+[report]
+skip_covered = true
+show_missing = true
