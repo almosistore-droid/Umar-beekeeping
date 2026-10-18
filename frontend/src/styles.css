@@ -648,3 +648,33 @@ button.btn { display: inline-flex; align-items: center; justify-content: center;
 .offline-bar--off .offline-bar__dot { background: var(--amber); }
 .offline-bar--bad .offline-bar__dot { background: var(--ember); }
 .outbox-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+
+/* ---------- queen rearing ---------- */
+.rearing-card { display: block; text-decoration: none; color: inherit; }
+.rearing-card__head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.rearing-card__main { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rearing-card__day { width: 52px; height: 48px; flex: none; display: grid; place-items: center; align-content: center;
+  clip-path: var(--hex); background: var(--gold-grad); color: #1b1406; line-height: 1; }
+.rearing-card__day b { font-family: 'Forum', serif; font-size: 20px; }
+.rearing-card__day small { font-size: 10px; }
+.rearing-due { color: var(--amber); }
+.funnel { display: flex; flex-wrap: wrap; gap: 2px 0; }
+.funnel__cell { display: inline-flex; align-items: baseline; gap: 4px; position: relative; padding-right: 14px; }
+.funnel__cell b { font-family: 'Forum', serif; font-size: 20px; color: var(--gold); }
+.funnel__cell small { color: var(--smoke); font-size: 12px; }
+.funnel__cell i { position: absolute; right: 4px; color: var(--rim); font-style: normal; }
+.funnel__cell--empty b { color: var(--rim); }
+.rearing-steps { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 0; }
+.rearing-step { display: flex; gap: 12px; position: relative; padding-bottom: 14px; }
+.rearing-step:not(:last-child)::before { content: ''; position: absolute; left: 17px; top: 36px; bottom: 0; width: 2px; background: var(--rim); }
+.rearing-step__day { width: 36px; height: 34px; flex: none; display: grid; place-items: center; clip-path: var(--hex);
+  background: var(--comb-2); color: var(--smoke); font-family: 'Forum', serif; font-size: 16px; }
+.rearing-step--done .rearing-step__day { background: color-mix(in srgb, var(--leaf) 40%, var(--comb-2)); color: var(--wax); }
+.rearing-step--today .rearing-step__day, .rearing-step--overdue .rearing-step__day { background: var(--gold-grad); color: #1b1406; }
+.rearing-step__body { flex: 1; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding-top: 6px; min-width: 0; }
+.rearing-step__top { display: flex; justify-content: space-between; gap: 8px; width: 100%; }
+.rearing-step__chip { align-self: flex-start; flex: none; line-height: 1.6; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--comb-2); color: var(--smoke); white-space: nowrap; }
+.rearing-step__chip--done { color: var(--leaf); }
+.rearing-step__chip--today, .rearing-step__chip--overdue { background: rgba(var(--gold-rgb), 0.15); color: var(--gold); }
+.rearing-step--skipped { opacity: 0.55; }
+.rearing-step__body p { margin: 0; color: var(--wax); }

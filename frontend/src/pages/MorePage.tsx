@@ -31,6 +31,7 @@ export function MorePage() {
         {canManage && <Link to="/queens" className="menu__item"><Icon name="crown" />{tr("Матки")}<span className="chevron">›</span></Link>}
         <Link to="/apiaries" className="menu__item"><Icon name="apiary" />{tr("Пасеки")}<span className="chevron">›</span></Link>
         <Link to="/stock" className="menu__item"><Icon name="box" />{tr("Склад")}<span className="chevron">›</span></Link>
+        <Link to="/rearing" className="menu__item"><Icon name="crown" />{tr("Вывод маток")}<span className="chevron">›</span></Link>
         <Link to="/honey" className="menu__item"><Icon name="honey" />{tr("Мёд")}<span className="chevron">›</span></Link>
         <Link to="/products" className="menu__item"><Icon name="feed" />{tr("Продукция")}<span className="chevron">›</span></Link>
         <Link to="/qr-labels" className="menu__item"><Icon name="qr" />{tr("QR-наклейки")}<span className="chevron">›</span></Link>

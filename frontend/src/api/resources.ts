@@ -10,6 +10,7 @@ import type {
   CrmSummary, Customer, CustomerDetails, Debtor, Expense, ExpenseCategory, LineInput, Order, OrderStatus, PayNowInput,
   PaymentMethod, Sale,
 } from '../types/api'
+import type { RearingBatch } from '../types/api'
 import type { FramePrep, FramePrepResult, StockCategory, StockItem, StockItemDetails, StockNorms, StockOverview, StockUnit } from '../types/api'
 import type { AccountCredentials, AdminOverview, AuditPage, Invite, InviteResult, Dashboard, HiveCheck, LabelsRequest, QrInfo, QrResolve, QrStatus, ReportFormat, YearlyReport } from '../types/api'
 
@@ -267,4 +268,20 @@ export const stockApi = {
   cancelFramePrep: (id: string, reason: string) => api<FramePrep>(`/api/stock/frame-preps/${id}/cancel`, json('POST', { reason })),
   norms: () => api<StockNorms>('/api/stock/norms'),
   saveNorms: (body: NormsInput) => api<StockNorms>('/api/stock/norms', json('PUT', body)),
+}
+
+// ---------- queen rearing ----------
+export interface RearingInput {
+  label?: string | null; grafted_at: string; cells_grafted: number; mother_queen_id?: string | null
+  cell_builder_hive_id?: string | null; notes?: string | null
+}
+export const rearingApi = {
+  list: () => api<RearingBatch[]>('/api/rearing'),
+  get: (id: string) => api<RearingBatch>(`/api/rearing/${id}`),
+  create: (body: RearingInput) => api<RearingBatch>('/api/rearing', json('POST', body)),
+  update: (id: string, body: RearingInput) => api<RearingBatch>(`/api/rearing/${id}`, json('PUT', body)),
+  stepDone: (id: string, key: string, count?: number | null) =>
+    api<RearingBatch>(`/api/rearing/${id}/steps/${key}/done`, json('POST', { count: count ?? null })),
+  finish: (id: string) => api<RearingBatch>(`/api/rearing/${id}/finish`, { method: 'POST' }),
+  cancel: (id: string, reason: string) => api<RearingBatch>(`/api/rearing/${id}/cancel`, json('POST', { reason })),
 }

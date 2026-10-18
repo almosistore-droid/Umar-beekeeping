@@ -481,3 +481,19 @@ export interface FramePrep {
   notes: string | null; cancelled_at: string | null; created_at: string
 }
 export interface FramePrepResult { prep: FramePrep; lines: UseLine[] }
+
+// ---------- queen rearing ----------
+export type RearingState = 'done' | 'today' | 'overdue' | 'upcoming' | 'skipped'
+export interface RearingStep {
+  key: string; day: number; date: string; title: string; hint: string
+  count_field: 'cells_accepted' | 'cells_sealed' | 'queens_emerged' | 'queens_mated' | null; count_label: string | null
+  state: RearingState; task_id: string | null
+}
+export interface RearingBatch {
+  id: string; label: string; grafted_at: string; day: number; cells_grafted: number
+  cells_accepted: number | null; cells_sealed: number | null; queens_emerged: number | null; queens_mated: number | null
+  mother_queen_id: string | null; mother_queen_code: string | null
+  cell_builder_hive_id: string | null; cell_builder_number: string | null
+  status: 'ACTIVE' | 'DONE' | 'CANCELLED'; finished_at: string | null; cancel_reason: string | null; notes: string | null
+  next_step: RearingStep | null; steps: RearingStep[]
+}

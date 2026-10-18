@@ -51,6 +51,7 @@ def run(telegram_id: int | None) -> None:
         _seed_operations(db, user)
         _seed_crm(db, user)
         _seed_stock(db, user)
+        _seed_rearing(db, user)
     finally:
         db.close()
 
@@ -290,6 +291,25 @@ def _seed_stock(db, user) -> None:
                                    initial_quantity=120), user)
     st.prepare_frames(db, FramePrepIn(frames=20, prepared_at=today - timedelta(days=10)), user)
     print("Готово: склад — закупки, рамки подготовлены, сахар заканчивается.")
+
+
+def _seed_rearing(db, user) -> None:
+    """Queen rearing demo: a batch grafted 6 days ago, larvae accepted and cells sealed."""
+    from app.models import Hive, Queen, RearingBatch
+    from app.schemas.rearing import RearingIn, StepDoneIn
+    from app.services import rearing_service as rs
+
+    if db.scalar(select(RearingBatch.id)):
+        print("Демо-партия вывода маток уже есть.")
+        return
+    queen = db.scalar(select(Queen).where(Queen.status == "ACTIVE"))
+    builder = db.scalar(select(Hive).where(Hive.current_family_id.is_not(None)))
+    batch = rs.create(db, RearingIn(grafted_at=app_today() - timedelta(days=6), cells_grafted=30,
+                                    mother_queen_id=queen.id if queen else None,
+                                    cell_builder_hive_id=builder.id if builder else None), user)
+    rs.step_done(db, batch.id, "acceptance", StepDoneIn(count=24), user)
+    rs.step_done(db, batch.id, "sealed", StepDoneIn(count=22), user)
+    print("Готово: партия вывода маток, 6-й день.")
 
 
 if __name__ == "__main__":

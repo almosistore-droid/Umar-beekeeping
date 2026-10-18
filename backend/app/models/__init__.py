@@ -29,10 +29,12 @@ from app.models.crm import Customer, Expense, Order, OrderItem, Payment, Sale, S
 from app.models.qr import QrCode
 from app.models.device import DeviceSession, LoginCode, LoginCodeStatus
 from app.models.notification import NotificationLog
+from app.models.rearing import RearingBatch, RearingStatus
 from app.models.stock import FramePreparation, StockItem, StockMovement, StockNorms
 from app.models.user import InviteStatus, User, UserInvite, UserRole
 
 __all__ = [
+    "RearingBatch", "RearingStatus",
     "FramePreparation", "StockItem", "StockMovement", "StockNorms",
     "NotificationLog",
     "DeviceSession", "LoginCode", "LoginCodeStatus",

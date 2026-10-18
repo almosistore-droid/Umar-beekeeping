@@ -127,6 +127,11 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
   allowlist of keys, buster = cached user id). `useAuth` opens offline with the remembered profile (`offline: true`) and
   re-logs in silently. `OfflineBar` in AppLayout, `/outbox` page. Hooks returning field records must handle `Queued`.
 
+## Queen rearing (specs/016-queen-rearing)
+- `rearing_batches` (`models/rearing.py`), schedule `rearing_service.STEPS` (days 0/1/5/10/12/19/26); future steps are
+  `tasks` with `source_type = rearing:<step>` (bot sends them), counts accepted ≤ grafted, each ≤ previous step.
+  Pages `pages/rearing/RearingPages.tsx` (`/rearing`, `/rearing/:id`), menu «Ещё → Вывод маток».
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client (the bot passes it only for login confirmation, signed). The role is loaded from DB on every request (`get_current_user`).
