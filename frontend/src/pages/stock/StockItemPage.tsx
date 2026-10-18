@@ -8,7 +8,8 @@ import { LoadingView } from '../../components/StateViews'
 import { ErrorBox, Sheet } from '../../components/ui'
 import { usePermissions } from '../../hooks/usePermissions'
 import type { StockMovement } from '../../types/api'
-import { MOVEMENT_KIND, STOCK_CATEGORY, formatDate, qty } from '../../utils/labels'
+import { MOVEMENT_KIND, STOCK_CATEGORY, formatDate, money, qty } from '../../utils/labels'
+import { useCurrency } from '../../components/crm/forms'
 import { tr } from '../../i18n'
 
 const MANUAL = new Set(['RECEIPT', 'CONSUMPTION', 'INVENTORY'])
@@ -16,6 +17,7 @@ const MANUAL = new Set(['RECEIPT', 'CONSUMPTION', 'INVENTORY'])
 export function StockItemPage() {
   const { id = '' } = useParams()
   const { canWrite, canManage } = usePermissions()
+  const currency = useCurrency()
   const data = useQuery({ queryKey: ['stock-item', id], queryFn: () => stockApi.item(id) })
   const [moving, setMoving] = useState<MoveKind | null>(null)
   const [editing, setEditing] = useState(false)
@@ -63,7 +65,8 @@ export function StockItemPage() {
               <b>{MOVEMENT_KIND[m.kind]}{m.hive_number ? ` · ${tr("улей №{0}", m.hive_number)}` : ''}</b>
               <span className="small hint">
                 {formatDate(m.moved_at)}{m.note && m.kind !== 'FEEDING' && m.kind !== 'TREATMENT' ? ` · ${m.note}` : ''}
-                {m.author_name ? ` · ${m.author_name}` : ''}{m.cancelled_at ? ` · ${tr("отменено")}` : ''}
+                {m.author_name ? ` · ${m.author_name}` : ''}{m.amount ? ` · ${money(m.amount, currency)}` : ''}
+                {m.cancelled_at ? ` · ${tr("отменено")}` : ''}
               </span>
             </span>
             <span className="stock-row__qty" style={{ fontSize: 17 }}>{Number(m.quantity) > 0 ? '+' : ''}{qty(m.quantity, item.unit)}</span>
@@ -85,7 +88,9 @@ export function StockItemPage() {
         {cancelling && (cancelling.frame_prep_id
           ? <CancelStockForm text={tr("Отменится вся подготовка: проволока, вощина и рамки вернутся на склад. Запись останется в истории с пометкой «отменено».")}
               cancel={(r) => stockApi.cancelFramePrep(cancelling.frame_prep_id!, r)} onDone={() => setCancelling(null)} />
-          : <CancelStockForm text={tr("Запись не удаляется: она останется в истории с пометкой «отменено» и не будет учитываться в остатке.")}
+          : <CancelStockForm text={cancelling.expense_id
+              ? tr("Запись не удаляется: она останется в истории с пометкой «отменено». Расход в CRM на эту сумму тоже отменится.")
+              : tr("Запись не удаляется: она останется в истории с пометкой «отменено» и не будет учитываться в остатке.")}
               cancel={(r) => stockApi.cancelMovement(cancelling.id, r)} onDone={() => setCancelling(null)} />)}
       </Sheet>
     </div>

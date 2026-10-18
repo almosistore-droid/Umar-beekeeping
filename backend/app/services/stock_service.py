@@ -17,8 +17,8 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from app.models import Feeding, Hive, Treatment, User
-from app.models.enums import FeedType, FeedUnit
+from app.models import Expense, Feeding, Hive, Treatment, User
+from app.models.enums import ExpenseCategory, FeedType, FeedUnit
 from app.models.stock import (
     CANDY,
     FOUNDATION,
@@ -197,7 +197,9 @@ def create_item(db: Session, data: StockItemIn, user: User) -> StockItemOut:
     audit.record(db, user=user, entity_type="stock_item", entity_id=item.id, action="created",
                  new=audit.snapshot(item, ["name", "category", "unit", "min_quantity"]))
     if data.initial_quantity:
-        _move(db, item, StockMovementKind.RECEIPT, data.initial_quantity, user, note="Начальный остаток")
+        m = _move(db, item, StockMovementKind.RECEIPT, data.initial_quantity, user, note="Начальный остаток")
+        if data.initial_amount:
+            _receipt_expense(db, item, m, data.initial_amount, user)
     db.commit()
     db.refresh(item)
     return item_out(item, balance(db, item.id))
@@ -277,13 +279,46 @@ def add_movement(db: Session, item_id: uuid.UUID, data: MovementIn, user: User) 
                 raise ConflictError(f"На складе только {fmt(current)} {unit} — столько списать нельзя")
             _move(db, item, StockMovementKind.CONSUMPTION, -data.quantity, user, moved_at=data.moved_at, note=data.note)
         else:
-            _move(db, item, StockMovementKind.RECEIPT, data.quantity, user, moved_at=data.moved_at, note=data.note)
+            m = _move(db, item, StockMovementKind.RECEIPT, data.quantity, user, moved_at=data.moved_at, note=data.note)
+            if data.amount:
+                _receipt_expense(db, item, m, data.amount, user)
     db.commit()
     return item_out(item, balance(db, item.id))
 
 
+# ---------- receipts with a price → CRM expense ----------
+
+_EXPENSE_BY_CODE = {FOUNDATION: ExpenseCategory.FOUNDATION, FRAMES_EMPTY: ExpenseCategory.FRAMES,
+                    FRAMES_READY: ExpenseCategory.FRAMES, WIRE: ExpenseCategory.FRAMES}
+_EXPENSE_BY_CATEGORY = {StockCategory.FRAMES: ExpenseCategory.FRAMES, StockCategory.FEED: ExpenseCategory.FEED,
+                        StockCategory.MEDICINE: ExpenseCategory.MEDICINE, StockCategory.OTHER: ExpenseCategory.OTHER}
+
+
+def expense_category(item: StockItem) -> ExpenseCategory:
+    return _EXPENSE_BY_CODE.get(item.code or "", _EXPENSE_BY_CATEGORY[item.category])
+
+
+def _receipt_expense(db: Session, item: StockItem, movement: StockMovement, amount: Decimal, user: User) -> Expense:
+    """«Пришло 50 кг сахара за 600 смн» → the same expense appears in CRM (profit counts it)."""
+    expense = Expense(expense_date=movement.moved_at, category=expense_category(item), amount=amount,
+                      description=f"Склад: {item.name} {fmt(movement.quantity)} {UNIT_LABEL[item.unit]}",
+                      created_by=user.id)
+    db.add(expense)
+    db.flush()
+    movement.amount, movement.expense_id = amount, expense.id
+    audit.record(db, user=user, entity_type="expense", entity_id=expense.id, action="created",
+                 new=audit.snapshot(expense, ["expense_date", "category", "amount", "description"]),
+                 comment="Приход на склад")
+    return expense
+
+
 def _cancel(db: Session, movement: StockMovement, user: User | None, reason: str, hive_id=None) -> None:
     movement.cancelled_at = _now()
+    if movement.expense is not None and movement.expense.cancelled_at is None:
+        movement.expense.cancelled_at, movement.expense.cancel_reason = movement.cancelled_at, \
+            f"Отменён приход на склад: {reason}"[:255]
+        audit.record(db, user=user, entity_type="expense", entity_id=movement.expense.id, action="cancelled",
+                     new={"amount": str(movement.expense.amount)}, comment=reason)
     audit.record(db, user=user, entity_type="stock_movement", entity_id=movement.id,
                  action="cancelled", old={"quantity": str(movement.quantity)},
                  new={"item": movement.item.name, "unit": movement.item.unit.value}, comment=reason)

@@ -242,3 +242,53 @@ def test_future_dates_refused(client, keeper):
     r = client.post("/api/stock/frame-preps", json={"frames": 1, "prepared_at": str(TODAY + timedelta(days=2))},
                     headers=keeper)
     assert r.status_code == 422
+
+
+def test_receipt_with_price_becomes_a_crm_expense(client, people):
+    keeper = people["keeper"]
+    sugar = by_code(client, keeper, "sugar")
+    r = client.post(f"/api/stock/items/{sugar['id']}/movements",
+                    json={"kind": "RECEIPT", "quantity": "50", "amount": "650"}, headers=keeper)
+    assert r.status_code == 201, r.text
+    expenses = client.get("/api/crm/expenses", headers=keeper).json()
+    assert len(expenses) == 1
+    e = expenses[0]
+    assert e["category"] == "FEED" and float(e["amount"]) == 650
+    assert e["description"] == "Склад: Сахар 50 кг" and e["stock_item_id"] == sugar["id"]
+
+    # the expense cannot be cancelled / re-priced in CRM: it follows the warehouse receipt
+    assert client.post(f"/api/crm/expenses/{e['id']}/cancel", json={"reason": "ошибка"}, headers=keeper).status_code == 409
+    assert client.put(f"/api/crm/expenses/{e['id']}", json={"amount": "700"}, headers=keeper).status_code == 409
+    assert client.put(f"/api/crm/expenses/{e['id']}", json={"description": "Сахар 50 кг, базар"},
+                      headers=keeper).status_code == 200
+
+    move = client.get(f"/api/stock/items/{sugar['id']}", headers=keeper).json()["movements"][0]
+    assert float(move["amount"]) == 650 and move["expense_id"] == e["id"]
+    client.post(f"/api/stock/movements/{move['id']}/cancel", json={"reason": "ошибка"}, headers=keeper)
+    e = client.get("/api/crm/expenses?include_cancelled=true", headers=keeper).json()[0]
+    assert e["cancelled_at"] is not None and "Отменён приход на склад" in e["cancel_reason"]
+
+
+def test_foundation_and_medicine_categories_and_initial_price(client, keeper):
+    foundation = by_code(client, keeper, "foundation")
+    client.post(f"/api/stock/items/{foundation['id']}/movements",
+                json={"kind": "RECEIPT", "quantity": "3", "amount": "540"}, headers=keeper)
+    client.post("/api/stock/items", json={"name": "Бипин", "category": "MEDICINE", "unit": "ML",
+                                          "initial_quantity": "20", "initial_amount": "45"}, headers=keeper)
+    cats = sorted(e["category"] for e in client.get("/api/crm/expenses", headers=keeper).json())
+    assert cats == ["FOUNDATION", "MEDICINE"]
+
+
+def test_price_is_for_managers_only(client, people):
+    a, keeper = people["assistant"], people["keeper"]
+    sugar = by_code(client, a, "sugar")
+    r = client.post(f"/api/stock/items/{sugar['id']}/movements",
+                    json={"kind": "RECEIPT", "quantity": "5", "amount": "60"}, headers=a)
+    assert r.status_code == 403
+    client.post(f"/api/stock/items/{sugar['id']}/movements",
+                json={"kind": "RECEIPT", "quantity": "5", "amount": "60"}, headers=keeper)
+    moves = client.get(f"/api/stock/items/{sugar['id']}", headers=a).json()["movements"]
+    assert moves[0]["amount"] is None
+    r = client.post(f"/api/stock/items/{sugar['id']}/movements",
+                    json={"kind": "CONSUMPTION", "quantity": "1", "amount": "5"}, headers=keeper)
+    assert r.status_code == 403

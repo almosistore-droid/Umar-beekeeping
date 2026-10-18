@@ -30,6 +30,7 @@ class StockItemIn(BaseModel):
     notes: str | None = Field(default=None, max_length=2000)
     # first receipt right away (optional)
     initial_quantity: Decimal | None = Field(default=None, gt=0, le=Decimal("1000000"), decimal_places=3)
+    initial_amount: Decimal | None = Field(default=None, gt=0, le=Decimal("1000000000"), decimal_places=2)
 
     @field_validator("name")
     @classmethod
@@ -47,6 +48,7 @@ class StockItemIn(BaseModel):
 
 class StockItemUpdate(StockItemIn):
     initial_quantity: None = None
+    initial_amount: None = None
 
 
 class StockItemOut(ORMModel):
@@ -68,6 +70,8 @@ class MovementIn(BaseModel):
     quantity: Decimal = Field(ge=0, le=Decimal("1000000"), decimal_places=3)
     moved_at: date | None = None
     note: str | None = Field(default=None, max_length=255)
+    # receipt only: what was paid — the same sum becomes a CRM expense
+    amount: Decimal | None = Field(default=None, gt=0, le=Decimal("1000000000"), decimal_places=2)
 
     @field_validator("moved_at")
     @classmethod
@@ -92,6 +96,8 @@ class MovementOut(ORMModel):
     treatment_id: uuid.UUID | None
     hive_id: uuid.UUID | None = None
     hive_number: str | None = None
+    amount: Decimal | None = None   # shown to ADMIN / BEEKEEPER only
+    expense_id: uuid.UUID | None = None
     cancelled_at: datetime | None
     author_name: str | None = None
     created_at: datetime

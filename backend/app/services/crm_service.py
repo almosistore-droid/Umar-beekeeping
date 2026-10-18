@@ -207,6 +207,7 @@ def expense_out(e: Expense) -> ExpenseOut:
         apiary_id=e.apiary_id, apiary_name=e.apiary.name if e.apiary else None, hive_id=e.hive_id,
         cancelled_at=e.cancelled_at, cancel_reason=e.cancel_reason,
         author=e.author.display_name if e.author else None, created_at=e.created_at,
+        stock_item_id=e.stock_movement.item_id if _from_stock(e) else None,
     )
 
 
@@ -236,9 +237,15 @@ def get_expense(db: Session, expense_id: uuid.UUID) -> Expense:
     return _get(db, Expense, expense_id, "Расход не найден")
 
 
+def _from_stock(e: Expense) -> bool:
+    return getattr(e, "stock_movement", None) is not None
+
+
 def update_expense(db: Session, e: Expense, data: ExpenseUpdate, user: User) -> Expense:
     if e.cancelled_at:
         raise ConflictError("Расход отменён — его нельзя изменить")
+    if _from_stock(e) and data.amount is not None and data.amount != e.amount:
+        raise ConflictError("Этот расход создан приходом на склад — сумму меняйте там: отмените приход и запишите заново")
     changes = data.model_dump(exclude_unset=True, exclude={"comment"})
     if "apiary_id" in changes:
         _check_place(db, changes["apiary_id"], None)
@@ -259,6 +266,8 @@ def update_expense(db: Session, e: Expense, data: ExpenseUpdate, user: User) -> 
 def cancel_expense(db: Session, e: Expense, reason: str, user: User) -> Expense:
     if e.cancelled_at:
         raise ConflictError("Расход уже отменён")
+    if _from_stock(e):
+        raise ConflictError("Этот расход создан приходом на склад — отмените приход на складе, расход отменится сам")
     e.cancelled_at, e.cancel_reason = datetime.now(UTC), reason
     audit.record(db, user=user, entity_type="expense", entity_id=e.id, hive_id=e.hive_id, action="cancelled",
                  new={"amount": str(e.amount)}, comment=reason)

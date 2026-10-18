@@ -411,6 +411,7 @@ export interface Expense {
   id: string; expense_date: string; category: ExpenseCategory; amount: string; description: string | null
   apiary_id: string | null; apiary_name: string | null; hive_id: string | null
   cancelled_at: string | null; cancel_reason: string | null; author: string | null; created_at: string
+  stock_item_id?: string | null
 }
 export interface Order {
   id: string; customer: CustomerBrief; order_date: string; due_date: string | null; status: OrderStatus
@@ -471,6 +472,7 @@ export interface StockMovement {
   id: string; item_id: string; moved_at: string; kind: StockMovementKind; quantity: string; note: string | null
   frame_prep_id: string | null; feeding_id: string | null; treatment_id: string | null
   hive_id: string | null; hive_number: string | null; cancelled_at: string | null; author_name: string | null; created_at: string
+  amount?: string | null; expense_id?: string | null
 }
 export interface StockItemDetails { item: StockItem; movements: StockMovement[] }
 export interface UseLine { item_id: string; name: string; unit: StockUnit; quantity: string; balance_after: string }

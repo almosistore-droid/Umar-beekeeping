@@ -60,8 +60,11 @@ def create_item(body: StockItemIn, db: DB, user: Manager):
 
 
 @router.get("/items/{item_id}", response_model=StockItemDetails)
-def item(item_id: uuid.UUID, db: DB, _: CurrentUser):
+def item(item_id: uuid.UUID, db: DB, user: CurrentUser):
     out, movements = svc.item_details(db, item_id)
+    if user.role not in CAN_MANAGE:  # money: ADMIN / BEEKEEPER only
+        for m in movements:
+            m.amount = m.expense_id = None
     return StockItemDetails(item=out, movements=movements)
 
 
@@ -84,6 +87,8 @@ def restore_item(item_id: uuid.UUID, db: DB, user: Manager):
 def add_movement(item_id: uuid.UUID, body: MovementIn, db: DB, user: Writer):
     if body.kind == "INVENTORY" and user.role not in CAN_MANAGE:
         raise PermissionDenied("Пересчёт склада делает пчеловод или администратор")
+    if body.amount is not None and (body.kind != "RECEIPT" or user.role not in CAN_MANAGE):
+        raise PermissionDenied("Цену прихода указывает пчеловод или администратор")
     return svc.add_movement(db, item_id, body, user)
 
 

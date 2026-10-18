@@ -115,6 +115,8 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
   (ADMIN/BEEKEEPER, `notify_field`), start param `go_stock`. Stock audit entries carry no hive_id (keeps hive timelines clean).
 - Frontend: `pages/stock/*` (`/stock`, `/stock/:id`, `/stock/norms`), `components/stock/forms.tsx`; feeding form shows the
   write-off, treatment form picks a medicine from the stock.
+- Priced receipt (`amount`, managers only) → CRM `Expense` via `stock_service._receipt_expense` (`expense_id` on the
+  movement, `ExpenseOut.stock_item_id`); cancel cascades; CRM refuses cancel / amount change of such an expense.
 
 ## Offline (specs/015-offline)
 - Field writes (`healthApi.inspect/feed/treat(hiveRef, body)`) go through `saveOrQueue` (`services/outbox.ts`): adds

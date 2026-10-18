@@ -2,7 +2,9 @@ import { useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { stockApi, type MovementInput, type NormsInput } from '../../api/resources'
 import type { FramePrepResult, StockCategory, StockItem, StockNorms, StockUnit } from '../../types/api'
-import { STOCK_CATEGORY, STOCK_UNIT, qty, todayIso } from '../../utils/labels'
+import { STOCK_CATEGORY, STOCK_UNIT, num, qty, todayIso } from '../../utils/labels'
+import { usePermissions } from '../../hooks/usePermissions'
+import { useCurrency } from '../crm/forms'
 import { frameNeed } from '../../utils/stock'
 import { haptic } from '../../services/telegram'
 import { Choice, ErrorBox, Field, SubmitButton, fieldError } from '../ui'
@@ -29,11 +31,17 @@ export function useStockMutation<T, R>(fn: (v: T) => Promise<R>, onDone: (r: R) 
 export type MoveKind = MovementInput['kind']
 
 export function MovementForm({ item, kind, onDone }: { item: StockItem; kind: MoveKind; onDone: () => void }) {
+  const { canManage } = usePermissions()
+  const priced = kind === 'RECEIPT' && canManage
   const [amount, setAmount] = useState(kind === 'INVENTORY' ? String(Number(item.quantity)) : '')
+  const [price, setPrice] = useState('')
   const [date, setDate] = useState(todayIso())
   const [note, setNote] = useState('')
+  const qc = useQueryClient()
   const save = useStockMutation(
-    () => stockApi.move(item.id, { kind, quantity: parseQty(amount), moved_at: date, note: note || null }), onDone)
+    () => stockApi.move(item.id, { kind, quantity: parseQty(amount), moved_at: date, note: note || null,
+      amount: priced && price ? parseQty(price) : null }),
+    () => { if (priced && price) for (const k of ['crm-expenses', 'crm-summary', 'dashboard']) qc.invalidateQueries({ queryKey: [k] }); onDone() })
   const unit = STOCK_UNIT[item.unit]
   const label = kind === 'RECEIPT' ? tr("Сколько пришло, {0}", unit)
     : kind === 'CONSUMPTION' ? tr("Сколько израсходовано, {0}", unit) : tr("Сколько есть на самом деле, {0}", unit)
@@ -48,6 +56,7 @@ export function MovementForm({ item, kind, onDone }: { item: StockItem; kind: Mo
           required autoFocus />
       </Field>
       {amount && !Number.isNaN(n) && <p className="hint small">{tr("Станет: {0}", qty(after, item.unit))}</p>}
+      {priced && <PriceField price={price} setPrice={setPrice} quantity={n} unit={item.unit} error={fieldError(save.error, 'amount')} />}
       <Field label={tr("Дата")} error={fieldError(save.error, 'moved_at')}>
         <input className="input" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} />
       </Field>
@@ -60,6 +69,22 @@ export function MovementForm({ item, kind, onDone }: { item: StockItem; kind: Mo
         </SubmitButton>
       </div>
     </form>
+  )
+}
+
+/** «Сколько заплатили»: the sum becomes a CRM expense; shows the price per unit. */
+function PriceField({ price, setPrice, quantity, unit, error }: {
+  price: string; setPrice: (v: string) => void; quantity: number; unit: StockUnit; error?: string
+}) {
+  const currency = useCurrency()
+  const p = parseQty(price)
+  const per = p > 0 && quantity > 0 ? p / quantity : null
+  return (
+    <Field label={tr("Сколько заплатили, {0}", currency)} error={error}
+      hint={per !== null ? tr("{0} {1} за 1 {2} · сумма попадёт в расходы CRM", num(per), currency, STOCK_UNIT[unit])
+        : tr("Необязательно. Сумма сама попадёт в расходы CRM")}>
+      <input className="input" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+    </Field>
   )
 }
 
@@ -123,11 +148,13 @@ export function ItemForm({ item, onDone }: { item?: StockItem; onDone: (i: Stock
   const [unit, setUnit] = useState<StockUnit>(item?.unit ?? 'PCS')
   const [min, setMin] = useState(item?.min_quantity != null ? String(Number(item.min_quantity)) : '')
   const [initial, setInitial] = useState('')
+  const [initialPrice, setInitialPrice] = useState('')
   const [notes, setNotes] = useState(item?.notes ?? '')
   const system = !!item?.code
   const body = {
     name, category, unit, min_quantity: min ? parseQty(min) : null, notes: notes || null,
-    ...(item ? {} : { initial_quantity: initial ? parseQty(initial) : null }),
+    ...(item ? {} : { initial_quantity: initial ? parseQty(initial) : null,
+      initial_amount: initial && initialPrice ? parseQty(initialPrice) : null }),
   }
   const save = useStockMutation(() => item ? stockApi.updateItem(item.id, body) : stockApi.createItem(body), onDone)
   return (
@@ -152,6 +179,8 @@ export function ItemForm({ item, onDone }: { item?: StockItem; onDone: (i: Stock
           <input className="input" inputMode="decimal" value={initial} onChange={(e) => setInitial(e.target.value)} />
         </Field>
       )}
+      {!item && initial && <PriceField price={initialPrice} setPrice={setInitialPrice} quantity={parseQty(initial)} unit={unit}
+        error={fieldError(save.error, 'initial_amount')} />}
       <Field label={tr("Заметка")}><input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
       <div className="submit-bar"><SubmitButton pending={save.isPending}>{item ? tr("Сохранить") : tr("Добавить на склад")}</SubmitButton></div>
     </form>

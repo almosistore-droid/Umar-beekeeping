@@ -25,7 +25,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, backref, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
@@ -110,6 +110,7 @@ class StockMovement(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "stock_movements"
     __table_args__ = (
         CheckConstraint("quantity <> 0", name="quantity_not_zero"),
+        CheckConstraint("amount IS NULL OR (amount > 0 AND kind = 'RECEIPT')", name="amount_only_receipt"),
         Index("ix_stock_movements_item_date", "item_id", "moved_at"),
         Index("ix_stock_movements_feeding", "feeding_id", postgresql_where=text("feeding_id IS NOT NULL")),
         Index("ix_stock_movements_treatment", "treatment_id", postgresql_where=text("treatment_id IS NOT NULL")),
@@ -129,9 +130,15 @@ class StockMovement(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         UUID(as_uuid=True), ForeignKey("treatments.id", ondelete="RESTRICT"))
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_by: Mapped[uuid.UUID | None] = _author()
+    # receipt with a price: what was paid and the CRM expense made from it
+    amount: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    expense_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("expenses.id", ondelete="RESTRICT"), unique=True)
 
     item = relationship("StockItem", lazy="joined")
     author = relationship("User", lazy="joined")
+    expense = relationship("Expense", lazy="select",
+                           backref=backref("stock_movement", uselist=False, lazy="select"))
 
 
 class StockNorms(UUIDPrimaryKeyMixin, TimestampMixin, Base):

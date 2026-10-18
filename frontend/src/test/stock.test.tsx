@@ -115,3 +115,32 @@ describe('Feeding form', () => {
     await waitFor(() => expect(screen.getByText(/на складе только 8 кг/)).toBeInTheDocument())
   })
 })
+
+describe('Receipt with a price', () => {
+  it('sends the sum and shows the price per unit', async () => {
+    role = 'BEEKEEPER'
+    const { MovementForm } = await import('../components/stock/forms')
+    const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (u) => {
+      const url = String(u)
+      if (url.endsWith('/api/crm/settings')) return json({ currency: 'смн' })
+      return json(overview.items[4], 201)
+    })
+    const done = vi.fn()
+    wrap(<MovementForm item={overview.items[4]} kind="RECEIPT" onDone={done} />)
+    await userEvent.type(screen.getByLabelText('Сколько пришло, кг'), '50')
+    await userEvent.type(await screen.findByLabelText(/Сколько заплатили, смн/), '650')
+    expect(screen.getByText('13 смн за 1 кг · сумма попадёт в расходы CRM')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Записать приход' }))
+    await waitFor(() => expect(done).toHaveBeenCalled())
+    const post = spy.mock.calls.find(([u, i]) => String(u).includes('/movements') && i?.method === 'POST')!
+    expect(JSON.parse(String(post[1]?.body))).toMatchObject({ kind: 'RECEIPT', quantity: 50, amount: 650 })
+  })
+
+  it('an assistant records the receipt without a price', async () => {
+    role = 'ASSISTANT'
+    const { MovementForm } = await import('../components/stock/forms')
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => json({}))
+    wrap(<MovementForm item={overview.items[4]} kind="RECEIPT" onDone={() => undefined} />)
+    expect(screen.queryByLabelText(/Сколько заплатили/)).not.toBeInTheDocument()
+  })
+})

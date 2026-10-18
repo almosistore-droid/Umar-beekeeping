@@ -248,9 +248,9 @@ export const notificationsApi = {
 // ---------- warehouse ----------
 export interface StockItemInput {
   name: string; category: StockCategory; unit: StockUnit; min_quantity?: number | null; notes?: string | null
-  initial_quantity?: number | null
+  initial_quantity?: number | null; initial_amount?: number | null
 }
-export interface MovementInput { kind: 'RECEIPT' | 'CONSUMPTION' | 'INVENTORY'; quantity: number; moved_at?: string; note?: string | null }
+export interface MovementInput { kind: 'RECEIPT' | 'CONSUMPTION' | 'INVENTORY'; quantity: number; moved_at?: string; note?: string | null; amount?: number | null }
 export interface NormsInput { wire_m_per_frame: number; foundation_g_per_frame: number; sugar_kg_per_l_syrup: number; sugar_kg_per_kg_syrup: number }
 export const stockApi = {
   overview: (archived = false) => api<StockOverview>(`/api/stock${qs({ archived: archived || undefined })}`),

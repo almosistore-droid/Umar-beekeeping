@@ -26,6 +26,13 @@ Automatic write-offs may go below zero (a record is never refused); such items a
 treatment cancels the old write-off and makes a new one. Manual movements and whole frame batches are cancelled
 with a reason (ADMIN, BEEKEEPER); nothing is deleted.
 
+## Receipts with a price → CRM expense (added 2026-10-18)
+- A receipt (or the first quantity of a new item) may carry «Сколько заплатили» — ADMIN/BEEKEEPER only; the same sum
+  becomes a CRM expense (category: foundation → FOUNDATION, frames/wire → FRAMES, feed → FEED, medicines → MEDICINE,
+  other → OTHER; description «Склад: Сахар 50 кг»), linked by `stock_movements.expense_id`.
+- Cancelling the receipt cancels the expense; in CRM such an expense cannot be cancelled or re-priced (text/date may
+  be edited) and links back to the warehouse. Prices are hidden from assistants and viewers.
+
 ## Norms («Ещё → Нормы расхода», ADMIN/BEEKEEPER edit, everyone sees)
 wire m per frame (3), foundation g per frame (110), sugar kg per l of syrup (0.63 = 1:1), sugar kg per kg of syrup (0.5).
 Changing the norms does not recalculate past records.

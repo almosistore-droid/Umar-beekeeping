@@ -242,6 +242,7 @@ class ExpenseOut(BaseModel):
     cancel_reason: str | None
     author: str | None
     created_at: datetime
+    stock_item_id: uuid.UUID | None = None  # made by a warehouse receipt
 
 
 # ---------- orders ----------

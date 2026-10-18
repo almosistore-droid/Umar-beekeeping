@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { crmApi } from '../../api/resources'
 import { CancelForm, ExpenseForm, useCurrency } from '../../components/crm/forms'
@@ -45,7 +46,12 @@ export function ExpensesPage() {
       <Sheet open={editing !== null} title={editing === 'new' ? tr("Новый расход") : tr("Расход")} onClose={() => setEditing(null)}>
         {editing && <>
           <ExpenseForm expense={editing === 'new' ? undefined : editing} onDone={() => setEditing(null)} />
-          {editing !== 'new' && (
+          {editing !== 'new' && editing.stock_item_id && (
+            <Link className="btn btn--ghost btn--block" to={`/stock/${editing.stock_item_id}`}>
+              {tr("Создан приходом на склад — открыть склад")}
+            </Link>
+          )}
+          {editing !== 'new' && !editing.stock_item_id && (
             <button type="button" className="btn btn--ghost btn--block" onClick={() => { setCancelling(editing); setEditing(null) }}>{tr("Отменить расход")}</button>
           )}
         </>}
