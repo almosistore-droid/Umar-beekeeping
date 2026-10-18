@@ -30,9 +30,10 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version="0.1.0",
         lifespan=lifespan,
-        docs_url="/api/docs",
-        redoc_url="/api/redoc",
-        openapi_url="/api/openapi.json",
+        # the API description is for developers: not published on the production server
+        docs_url=None if settings.environment == "production" else "/api/docs",
+        redoc_url=None if settings.environment == "production" else "/api/redoc",
+        openapi_url=None if settings.environment == "production" else "/api/openapi.json",
     )
 
     app.add_middleware(
@@ -42,6 +43,17 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["Authorization", "Content-Type", "X-Lang"],
     )
+
+    @app.middleware("http")
+    async def no_store(request: Request, call_next):
+        """Data answers are never kept by browsers or proxies (shared phones, Telegram's web view).
+        Brand images are public and versioned (?v=…), they set their own long cache."""
+        response = await call_next(request)
+        path = request.url.path
+        if path.startswith("/api/") and not path.startswith("/api/branding"):
+            response.headers.setdefault("Cache-Control", "no-store")
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        return response
 
     @app.middleware("http")
     async def subscription(request: Request, call_next):

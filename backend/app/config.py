@@ -2,7 +2,7 @@
 import re
 from datetime import date
 from functools import lru_cache
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -40,7 +40,7 @@ class Settings(BaseSettings):
 
     # JWT
     jwt_secret: str = Field(default="", description="Long random string")
-    jwt_algorithm: str = "HS256"
+    jwt_algorithm: Literal["HS256", "HS384", "HS512"] = "HS256"  # never «none» or a public-key algorithm
     jwt_expire_minutes: int = 60 * 12
 
     # Money label shown next to amounts (CRM, reports)

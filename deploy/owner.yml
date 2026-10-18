@@ -9,6 +9,11 @@ services:
     pull_policy: never
     container_name: bee-owner
     restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "2"}
     entrypoint: ["uvicorn", "app.owner_panel.main:app", "--host", "0.0.0.0", "--port", "8000",
                  "--proxy-headers", "--forwarded-allow-ips=*"]
     env_file: ${OWNER_ENV}

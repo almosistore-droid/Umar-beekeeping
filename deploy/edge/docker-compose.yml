@@ -7,6 +7,10 @@ services:
     image: nginx:1.27-alpine
     container_name: bee-edge
     restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
     ports:
       - "80:80"
       - "443:443"

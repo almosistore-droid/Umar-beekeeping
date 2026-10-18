@@ -164,3 +164,18 @@ def test_owner_panel_setup(repo):
 def test_public_sites_hide_the_owner_api():
     site = (REPO / "deploy" / "edge" / "site.conf.template").read_text()
     assert "location /api/owner/ { return 404; }" in site
+
+
+@pytest.mark.parametrize("has_key", [False, True])
+def test_harden_never_locks_out_without_a_key(tmp_path, has_key):
+    keys = tmp_path / "authorized_keys"
+    if has_key:
+        keys.write_text("ssh-ed25519 AAAA test")
+    env = {**os.environ, "DRY_RUN": "1", "HARDEN_KEYS": str(keys), "HARDEN_ETC": str(tmp_path / "etc")}
+    res = subprocess.run(["bash", str(REPO / "deploy" / "harden.sh"), "--ssh-keys-only"], env=env,
+                         capture_output=True, text=True)
+    assert res.returncode == 0, res.stderr
+    assert "ufw allow 443/tcp" in res.stdout and "ufw --force enable" in res.stdout
+    assert ("90-bee.conf" in res.stdout) is has_key
+    if not has_key:
+        assert "пароли НЕ отключаю" in res.stdout

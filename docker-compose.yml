@@ -1,9 +1,17 @@
 name: beekeeping
 
+# no privilege escalation, logs capped (a full disk stops everything)
+x-defaults: &defaults
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+  logging:
+    driver: json-file
+    options: {max-size: "10m", max-file: "3"}
+
 services:
   postgres:
+    <<: *defaults
     image: postgres:16-alpine
-    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -18,8 +26,8 @@ services:
     # Not published to the host: only reachable from other containers
 
   backend:
+    <<: *defaults
     build: ./backend
-    restart: unless-stopped
     env_file: .env
     environment:
       ENVIRONMENT: production
@@ -32,12 +40,12 @@ services:
       - uploads:/app/uploads
 
   frontend:
+    <<: *defaults
     build: ./frontend
-    restart: unless-stopped
 
   bot:
+    <<: *defaults
     build: ./bot
-    restart: unless-stopped
     env_file: .env
     environment:
       WEBAPP_URL: https://${DOMAIN}
@@ -45,8 +53,8 @@ services:
       - backend
 
   nginx:
+    <<: *defaults
     image: nginx:1.27-alpine
-    restart: unless-stopped
     environment:
       DOMAIN: ${DOMAIN}
     ports:

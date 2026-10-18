@@ -5,10 +5,18 @@
 # No ports are published: the shared edge nginx (deploy/edge) reaches backend/frontend over the
 # «bee-edge» network by the aliases <slug>-backend / <slug>-frontend.
 
+# Every container: no privilege escalation, logs capped (a full disk stops everything)
+x-defaults: &defaults
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+  logging:
+    driver: json-file
+    options: {max-size: "10m", max-file: "3"}
+
 services:
   postgres:
+    <<: *defaults
     image: postgres:16-alpine
-    restart: unless-stopped
     # small settings: up to five clients share one 2–4 GB server
     command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=40"]
     environment:
@@ -25,9 +33,16 @@ services:
     networks: [default]
 
   backend:
+    <<: *defaults
+    cap_drop: [ALL]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4)"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+      start_period: 40s
     image: beekeeping-backend:latest
     pull_policy: never
-    restart: unless-stopped
     env_file: ${CLIENT_ENV}
     environment:
       ENVIRONMENT: production
@@ -46,17 +61,18 @@ services:
         aliases: ["${SLUG}-backend"]
 
   frontend:
+    <<: *defaults
     image: beekeeping-frontend:latest
     pull_policy: never
-    restart: unless-stopped
     networks:
       edge:
         aliases: ["${SLUG}-frontend"]
 
   bot:
+    <<: *defaults
+    cap_drop: [ALL]
     image: beekeeping-bot:latest
     pull_policy: never
-    restart: unless-stopped
     profiles: ["bot"] # started only when the client has a bot token
     env_file: ${CLIENT_ENV}
     environment:

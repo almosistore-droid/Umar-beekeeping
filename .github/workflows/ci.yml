@@ -37,7 +37,7 @@ jobs:
       - name: Tests (coverage must stay ≥ 90 %)
         run: pytest -p no:warnings --cov --cov-report=term --cov-fail-under=90
       - name: Known vulnerabilities in Python packages
-        run: pip-audit -r requirements.txt --progress-spinner off
+        run: pip-audit -r requirements.txt -r ../bot/requirements.txt --progress-spinner off
 
   frontend:
     runs-on: ubuntu-latest
