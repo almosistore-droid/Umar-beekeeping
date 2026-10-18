@@ -12,6 +12,7 @@ import { Choice, Sheet } from '../components/ui'
 import { ChangePasswordForm } from '../components/auth/PasswordForms'
 import { InstallHint } from '../components/auth/InstallHint'
 import { isStandalone } from '../services/pwa'
+import { outboxSnapshot, resetOutbox } from '../services/outbox'
 import { LANGS, getLang, switchLang, tr, type Lang } from '../i18n'
 
 export function MorePage() {
@@ -81,7 +82,12 @@ function PhoneAppCard() {
       <InstallHint />
       {onDevice && (
         <button type="button" className="btn btn--ghost btn--block" disabled={leaving}
-          onClick={() => { setLeaving(true); void logout() }}>
+          onClick={() => {
+            const waiting = outboxSnapshot().items.length
+            if (waiting && !window.confirm(tr("В телефоне {0} неотправленных записей. После выхода они пропадут. Всё равно выйти?", waiting))) return
+            if (waiting) resetOutbox()
+            setLeaving(true); void logout()
+          }}>
           <Icon name="logout" size={18} />{tr("Выйти на этом устройстве")}
         </button>
       )}

@@ -76,7 +76,7 @@ class InspectionFields(BaseModel):
 
 
 class InspectionCreate(InspectionFields):
-    pass
+    client_uid: uuid.UUID | None = None  # made by the phone (offline queue): repeated sends are ignored
 
 
 class InspectionUpdate(InspectionFields):
@@ -218,7 +218,7 @@ class TreatmentFields(BaseModel):
 
 
 class TreatmentCreate(TreatmentFields):
-    pass
+    client_uid: uuid.UUID | None = None  # made by the phone (offline queue): repeated sends are ignored
 
 
 class TreatmentUpdate(TreatmentFields):
@@ -269,7 +269,7 @@ class FeedingFields(BaseModel):
 
 
 class FeedingCreate(FeedingFields):
-    pass
+    client_uid: uuid.UUID | None = None  # made by the phone (offline queue): repeated sends are ignored
 
 
 class FeedingUpdate(FeedingFields):

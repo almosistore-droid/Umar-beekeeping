@@ -1,7 +1,8 @@
 /* Service worker: makes the app installable and opens it quickly.
- * Caches only the static app (HTML shell, hashed /assets/, icons, fonts). Never /api: data is always live.
+ * Caches only the static app (HTML shell, hashed /assets/, fonts) and the brand images (/api/branding/*).
+ * Never other /api answers: the app keeps its own offline copy of the data (services/offlineCache).
  * The HTML is fetched from the network first, so a new release shows up on the next launch. */
-const CACHE = 'beekeeping-v2'
+const CACHE = 'beekeeping-v3'
 // Icons and the manifest are served by the backend (/api/branding/…) with the installation's brand
 const SHELL = ['/']
 
@@ -21,7 +22,16 @@ self.addEventListener('fetch', (event) => {
   const req = event.request
   if (req.method !== 'GET') return
   const url = new URL(req.url)
-  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return
+  if (url.origin !== self.location.origin) return
+  if (url.pathname.startsWith('/api/branding/')) {
+    // logo, icons, manifest: public and rarely changed — from the cache at once, refreshed in the background
+    event.respondWith(caches.open(CACHE).then((c) => c.match(req).then((hit) => {
+      const fresh = fetch(req).then((res) => { if (res.ok) c.put(req, res.clone()); return res }).catch(() => hit)
+      return hit || fresh
+    })))
+    return
+  }
+  if (url.pathname.startsWith('/api/')) return // data is never cached here (the app keeps its own copy)
 
   if (req.mode === 'navigate') {
     // network first; offline → the cached shell (the app then shows «Нет соединения»)

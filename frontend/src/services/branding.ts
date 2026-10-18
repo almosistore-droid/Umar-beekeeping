@@ -30,6 +30,7 @@ export const DEFAULT_BRANDING: Branding = {
   subscription: { active: true, days_left: null, contact: null },
 }
 
+const BRAND_KEY = 'fayzi-umar.brand'
 let current: Branding = DEFAULT_BRANDING
 const listeners = new Set<() => void>()
 
@@ -75,7 +76,15 @@ function valid(data: unknown): data is Branding {
 export async function loadBranding(timeoutMs = 4000): Promise<Branding> {
   const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs))
   const data = await Promise.race([api<unknown>('/api/branding').catch(() => null), timeout])
-  setBranding(valid(data) ? data : DEFAULT_BRANDING)
+  if (valid(data)) {
+    try { window.localStorage.setItem(BRAND_KEY, JSON.stringify(data)) } catch { /* private mode */ }
+    setBranding(data)
+  } else {
+    // no connection at the apiary: the brand seen last time (the subscription is checked again online)
+    let saved: unknown = null
+    try { saved = JSON.parse(window.localStorage.getItem(BRAND_KEY) ?? 'null') } catch { /* broken */ }
+    setBranding(valid(saved) ? { ...saved, subscription: { ...saved.subscription, active: true } } : DEFAULT_BRANDING)
+  }
   return current
 }
 

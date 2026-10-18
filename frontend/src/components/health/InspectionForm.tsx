@@ -6,6 +6,7 @@ import type { FamilyStrength, FoodLevel, Hive, InspectionHealth, QueenCondition,
 import { FOOD_LEVEL, INSPECTION_HEALTH, QUEEN_CONDITION, STRENGTH, addDaysIso, formatDate, todayIso } from '../../utils/labels'
 import { Choice, ErrorBox, Field, Stepper, SubmitButton } from '../ui'
 import { useHiveRecordMutation } from './useHiveRecordMutation'
+import { isQueued } from '../../services/outbox'
 import { tr } from '../../i18n'
 
 const strengthOpts = (Object.keys(STRENGTH) as FamilyStrength[]).map((k) => ({ value: k, label: STRENGTH[k].label }))
@@ -34,6 +35,7 @@ export function InspectionForm({ hive, onDone, doneActions }: { hive: Hive; onDo
   })
   const [prefilled, setPrefilled] = useState(false)
   const [warnings, setWarnings] = useState<RecordWarning[] | null>(null)
+  const [queued, setQueued] = useState(false)
   const [day, setDay] = useState(todayIso())
 
   useEffect(() => {
@@ -44,7 +46,8 @@ export function InspectionForm({ hive, onDone, doneActions }: { hive: Hive; onDo
     }
   }, [previous.data, prefilled])
 
-  const save = useHiveRecordMutation(hive, () => healthApi.inspect(hive.id, { ...f, inspected_at: dayToInstant(day) }), (res) => {
+  const save = useHiveRecordMutation(hive, () => healthApi.inspect(hive, { ...f, inspected_at: dayToInstant(day) }), (res) => {
+    if (isQueued(res)) { setQueued(true); setWarnings([]); return }
     if (res.warnings.length || doneActions) setWarnings(res.warnings)
     else onDone()
   })
@@ -60,6 +63,7 @@ export function InspectionForm({ hive, onDone, doneActions }: { hive: Hive; onDo
       <div className="form">
         <div className="result-ok"><span className="result-ok__mark" aria-hidden>✓</span><b>{tr("Осмотр сохранён")}</b>
           <span className="hint small">{day === todayIso() ? tr("Сегодня") : formatDate(day)}{tr(", улей №{0}", hive.hive_number)}</span></div>
+        {queued && <div className="warn-box" role="status">{tr("Нет связи — осмотр сохранён в телефоне и отправится сам, когда появится интернет.")}</div>}
         {warnings.map((w) => <div key={w.code} className="warn-box">{w.message}</div>)}
         <ErrorBox error={markQueenless.error} />
         {canMarkQueenless && (

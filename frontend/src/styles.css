@@ -638,3 +638,13 @@ button.btn { display: inline-flex; align-items: center; justify-content: center;
 .stock-banner { display: flex; gap: 10px; align-items: flex-start; text-decoration: none; color: var(--wax); margin: 0 0 12px; }
 .stock-banner svg { flex: none; margin-top: 2px; color: var(--amber); }
 .stock-honey { display: block; text-decoration: none; color: inherit; padding-top: 4px; padding-bottom: 4px; }
+
+/* ---------- work without internet ---------- */
+.offline-bar { display: flex; align-items: center; gap: 8px; margin: -4px 0 12px; padding: 8px 12px; border-radius: 12px;
+  font-size: 13px; text-decoration: none; color: var(--wax); background: rgba(var(--gold-rgb), 0.1); border: 1px solid rgba(var(--gold-rgb), 0.25); }
+.offline-bar--off { background: color-mix(in srgb, var(--amber) 14%, transparent); border-color: color-mix(in srgb, var(--amber) 35%, transparent); }
+.offline-bar--bad { background: color-mix(in srgb, var(--ember) 14%, transparent); border-color: color-mix(in srgb, var(--ember) 40%, transparent); }
+.offline-bar__dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--gold); }
+.offline-bar--off .offline-bar__dot { background: var(--amber); }
+.offline-bar--bad .offline-bar__dot { background: var(--ember); }
+.outbox-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }

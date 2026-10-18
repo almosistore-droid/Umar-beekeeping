@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { BottomNav, ROOT_PATHS } from '../components/BottomNav'
 import { getWebApp, takeStartParam } from '../services/telegram'
+import { OfflineBar } from '../components/offline/OfflineBar'
 
 /** Start parameters used by the reminder buttons in Telegram (stage 8). */
 export const START_SCREENS: Record<string, string> = {
@@ -37,6 +38,7 @@ export function AppLayout() {
   return (
     <div className="app">
       <main className="app__content">
+        <OfflineBar />
         <Outlet />
       </main>
       <BottomNav />

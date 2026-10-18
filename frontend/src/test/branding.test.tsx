@@ -37,9 +37,19 @@ describe('branding', () => {
   })
 
   it('keeps the defaults when the server cannot be reached', async () => {
+    window.localStorage.clear()
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('offline') }))
     const b = await loadBranding()
     expect(b.name).toBe(DEFAULT_BRANDING.name)
+    expect(b.subscription.active).toBe(true)
+  })
+
+  it('offline the brand seen last time is used', async () => {
+    mockFetch(asal)
+    await loadBranding()
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('offline') }))
+    const b = await loadBranding()
+    expect(b.name).toBe('Asal Pro')
     expect(b.subscription.active).toBe(true)
   })
 

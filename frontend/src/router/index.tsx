@@ -31,6 +31,7 @@ import { HiveInspectPage } from '../pages/HiveInspectPage'
 import { HiveCheckPage } from '../pages/HiveCheckPage'
 import { tr } from '../i18n'
 import { StockPage } from '../pages/stock/StockPage'
+import { OutboxPage } from '../pages/OutboxPage'
 import { StockItemPage } from '../pages/stock/StockItemPage'
 import { StockNormsPage } from '../pages/stock/StockNormsPage'
 
@@ -74,6 +75,7 @@ export const routes = [
       { path: 'stock', element: <StockPage /> },
       { path: 'stock/norms', element: <StockNormsPage /> },
       { path: 'stock/:id', element: <StockItemPage /> },
+      { path: 'outbox', element: <OutboxPage /> },
       { path: 'more', element: <MorePage /> },
       { path: '*', element: <MessageView icon="inspect" title={tr("Страница не найдена")} /> },
     ],

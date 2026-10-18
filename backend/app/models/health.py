@@ -46,7 +46,12 @@ def _user_fk(nullable: bool = True):
     return mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=nullable)
 
 
-class Inspection(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class ClientUidMixin:
+    """Id made by the phone for records saved without internet: sending it twice creates one record."""
+    client_uid: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), unique=True)
+
+
+class Inspection(ClientUidMixin, UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "hive_inspections"
     __table_args__ = (
         CheckConstraint("frames_total BETWEEN 0 AND 60", name="frames_total_range"),
@@ -124,7 +129,7 @@ class HiveDisease(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     author = relationship("User", lazy="joined")
 
 
-class Treatment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class Treatment(ClientUidMixin, UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "treatments"
     __table_args__ = (
         CheckConstraint("next_treatment_date IS NULL OR next_treatment_date >= treated_at", name="next_after_date"),
@@ -151,7 +156,7 @@ class Treatment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     performer = relationship("User", lazy="joined")
 
 
-class Feeding(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class Feeding(ClientUidMixin, UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "feedings"
     __table_args__ = (
         CheckConstraint("quantity > 0", name="quantity_positive"),

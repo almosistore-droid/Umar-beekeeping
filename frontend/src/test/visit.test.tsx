@@ -97,7 +97,7 @@ describe('Full inspection at the hive', () => {
     })
   })
 
-  it('today is sent as the server time', async () => {
+  it('today is sent with the current time (kept when the record waits offline)', async () => {
     const spy = setup('BEEKEEPER', (url, init) => {
       if (url.endsWith('/api/hives/h1')) return json(hive)
       if (url.endsWith('/inspections') && init?.method === 'POST') return json({ inspection: { id: 'i1' }, hive, warnings: [] }, 201)
@@ -107,7 +107,9 @@ describe('Full inspection at the hive', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Сохранить осмотр' }))
     await waitFor(() => expect(spy.mock.calls.some(([u, i]) => String(u).endsWith('/inspections') && i?.method === 'POST')).toBe(true))
     const post = spy.mock.calls.find(([u, i]) => String(u).endsWith('/inspections') && i?.method === 'POST')!
-    expect(JSON.parse(String(post[1]!.body)).inspected_at).toBeNull()
+    const body = JSON.parse(String(post[1]!.body))
+    expect(Math.abs(Date.parse(body.inspected_at) - Date.now())).toBeLessThan(60_000)
+    expect(body.client_uid).toMatch(/^[0-9a-f-]{36}$/)
   })
 })
 

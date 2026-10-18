@@ -116,6 +116,15 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Frontend: `pages/stock/*` (`/stock`, `/stock/:id`, `/stock/norms`), `components/stock/forms.tsx`; feeding form shows the
   write-off, treatment form picks a medicine from the stock.
 
+## Offline (specs/015-offline)
+- Field writes (`healthApi.inspect/feed/treat(hiveRef, body)`) go through `saveOrQueue` (`services/outbox.ts`): adds
+  `client_uid`, queues on network error / offline, 15 s timeout. Server: `client_uid` unique on hive_inspections,
+  feedings, treatments; `health_service.already_saved` returns the saved record (idempotent).
+- `services/connection.ts` drives online state (api client handlers + /api/health ping) and TanStack `onlineManager`;
+  queries `networkMode: 'offlineFirst'`, mutations `'always'`. Cache persisted to IndexedDB (`services/offlineCache.ts`,
+  allowlist of keys, buster = cached user id). `useAuth` opens offline with the remembered profile (`offline: true`) and
+  re-logs in silently. `OfflineBar` in AppLayout, `/outbox` page. Hooks returning field records must handle `Queued`.
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client (the bot passes it only for login confirmation, signed). The role is loaded from DB on every request (`get_current_user`).

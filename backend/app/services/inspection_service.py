@@ -69,6 +69,9 @@ def warnings_for(inspection: Inspection, hive: Hive) -> list[dict[str, str]]:
 
 
 def create_inspection(db: Session, hive_id: uuid.UUID, data: InspectionCreate, user: User):
+    from app.services.health_service import already_saved
+    if (done := already_saved(db, Inspection, data.client_uid, hive_id)) is not None:
+        return done, db.get(Hive, hive_id), []
     hive = get_hive_for_record(db, hive_id)
     values = data.model_dump()
     values["inspected_at"] = values["inspected_at"] or datetime.now(timezone.utc)

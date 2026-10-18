@@ -19,10 +19,20 @@ const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? ''
 let accessToken: string | null = null
 let onUnauthorized: (() => void) | null = null
 let onPaymentRequired: (() => void) | null = null
+let network: { failed: () => void; ok: () => void } | null = null
+
+/** services/connection: learns from every request whether the server is reachable. */
+export function setNetworkHandlers(handlers: { failed: () => void; ok: () => void } | null) {
+  network = handlers
+}
 
 // Token is kept in memory only: on reload the app re-authenticates with fresh initData.
 export function setAccessToken(token: string | null) {
   accessToken = token
+}
+
+export function hasAccessToken(): boolean {
+  return accessToken !== null
 }
 
 export function setUnauthorizedHandler(handler: (() => void) | null) {
@@ -52,8 +62,10 @@ async function request(path: string, init: RequestInit): Promise<Response> {
   try {
     response = await fetch(`${BASE_URL}${path}`, { ...init, headers })
   } catch {
+    network?.failed()
     throw new ApiError(0, tr("Нет соединения с сервером. Проверьте интернет."))
   }
+  network?.ok()
   if (!response.ok) await raise(response)
   return response
 }

@@ -1,6 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { CACHE_MAX_AGE, cachedUserId, persister, shouldPersist } from './services/offlineCache'
 import { App } from './App'
 import { AuthProvider } from './hooks/useAuth'
 import { initTelegram } from './services/telegram'
@@ -14,6 +16,8 @@ import '@fontsource-variable/manrope/index.css'
 import '@fontsource-variable/onest/index.css' // fallback for Tajik letters; the browser downloads only the subsets it needs
 import './styles.css'
 import { getLang } from './i18n'
+import { initConnection } from './services/connection'
+import { flushOutbox } from './services/outbox'
 
 initTelegram()
 initPwa()
@@ -24,19 +28,29 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
+      gcTime: CACHE_MAX_AGE, // kept for the offline cache
+      networkMode: 'offlineFirst', // show the saved data at once; no connection is not an error to wait on
       retry: (count, err) => !(err instanceof ApiError && err.status >= 400 && err.status < 500) && count < 2,
       refetchOnWindowFocus: false,
     },
+    // saving must never wait for the connection: field records go to the outbox (services/outbox)
+    mutations: { networkMode: 'always' },
   },
+})
+
+// Back online at the apiary: send what was saved on the phone, then refresh the screens
+initConnection(() => {
+  void flushOutbox().then((sent) => { if (sent) void queryClient.invalidateQueries() })
 })
 
 // The brand (name, logo, colour) and the subscription state come before the first screen
 void loadBranding().then(() => createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider client={queryClient}
+      persistOptions={{ persister, maxAge: CACHE_MAX_AGE, buster: cachedUserId(), dehydrateOptions: { shouldDehydrateQuery: shouldPersist } }}>
       <AuthProvider>
         <App />
       </AuthProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   </StrictMode>,
 ))

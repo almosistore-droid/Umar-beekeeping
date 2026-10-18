@@ -52,6 +52,16 @@ _LIVING = frozenset({HiveStatus.ACTIVE, HiveStatus.STRONG, HiveStatus.WEAK, Hive
 
 # ---------- guards ----------
 
+def already_saved(db: Session, model, client_uid: uuid.UUID | None, hive_id: uuid.UUID):
+    """A record sent again from the phone's offline queue (same client_uid): return the saved one."""
+    if client_uid is None:
+        return None
+    existing = db.scalar(select(model).where(model.client_uid == client_uid))
+    if existing is not None and existing.hive_id != hive_id:
+        raise ConflictError("Эта запись уже сохранена для другого улья")
+    return existing
+
+
 def get_hive_for_record(db: Session, hive_id: uuid.UUID, *, require_family: bool = True) -> Hive:
     hive = db.get(Hive, hive_id)
     if hive is None:
@@ -249,6 +259,8 @@ def _treatment_reminder(db, hive, treatment, user):
 
 
 def create_treatment(db: Session, hive_id: uuid.UUID, data: TreatmentCreate, user: User) -> tuple[Treatment, Hive]:
+    if (done := already_saved(db, Treatment, data.client_uid, hive_id)) is not None:
+        return done, db.get(Hive, hive_id)
     hive = get_hive_for_record(db, hive_id)
     disease_id, case = _resolve_treatment_links(db, hive, data)
     if case and case.status == DiseaseCaseStatus.RESOLVED:
@@ -327,6 +339,8 @@ def _feeding_title(f: Feeding) -> str:
 
 
 def create_feeding(db: Session, hive_id: uuid.UUID, data: FeedingCreate, user: User) -> tuple[Feeding, Hive]:
+    if (done := already_saved(db, Feeding, data.client_uid, hive_id)) is not None:
+        return done, db.get(Hive, hive_id)
     hive = get_hive_for_record(db, hive_id)
     feeding = Feeding(hive_id=hive.id, created_by=user.id, **data.model_dump(exclude={"fed_at"}),
                       fed_at=data.fed_at or today())

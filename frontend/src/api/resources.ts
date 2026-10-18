@@ -1,4 +1,7 @@
 import { api, apiBlob } from './client'
+import { saveOrQueue } from '../services/outbox'
+
+export type HiveRef = { id: string; hive_number?: string | null }
 import type {
   Apiary, AuditEntry, Family, FamilyOrigin, FamilyStatus, FamilyStrength, Hive, HiveListItem,
   HiveStatus, HiveType, Page, Queen, QueenAssignment, QueenOrigin, QueenStatus, User, UserRole,
@@ -35,7 +38,7 @@ export const apiariesApi = {
 }
 
 // ---------- hives ----------
-export interface HiveFilters { apiary_id?: string; status?: HiveStatus[]; strength?: FamilyStrength[]; needs_inspection?: boolean; q?: string; include_archived?: boolean }
+export interface HiveFilters { apiary_id?: string; status?: HiveStatus[]; strength?: FamilyStrength[]; needs_inspection?: boolean; q?: string; include_archived?: boolean; limit?: number }
 export interface FamilyInput { strength: FamilyStrength; origin: FamilyOrigin; start_date?: string | null; notes?: string | null }
 export interface HiveCreateInput {
   id?: string | null; apiary_id: string; hive_number: string; hive_type: HiveType; status?: HiveStatus | null
@@ -119,8 +122,10 @@ export interface FeedingInput {
 export const healthApi = {
   inspections: (hiveId: string) => api<Inspection[]>(`/api/hives/${hiveId}/inspections`),
   check: (hiveId: string) => api<HiveCheck>(`/api/hives/${hiveId}/check`),
-  inspect: (hiveId: string, body: InspectionInput) =>
-    api<{ inspection: Inspection; hive: Hive; warnings: RecordWarning[] }>(`/api/hives/${hiveId}/inspections`, json('POST', body)),
+  /** Field records: without a connection they are kept on the phone and sent later (services/outbox). */
+  inspect: (hive: HiveRef, body: InspectionInput) =>
+    saveOrQueue<{ inspection: Inspection; hive: Hive; warnings: RecordWarning[] }>('inspection', hive,
+      `/api/hives/${hive.id}/inspections`, { ...body, inspected_at: body.inspected_at ?? new Date().toISOString() }),
   diseases: () => api<Disease[]>('/api/diseases'),
   cases: (hiveId: string) => api<DiseaseCase[]>(`/api/hives/${hiveId}/diseases`),
   openCase: (hiveId: string, body: CaseInput) =>
@@ -128,11 +133,11 @@ export const healthApi = {
   updateCase: (caseId: string, body: { status?: CaseStatus; resolved_at?: string | null; notes?: string | null }) =>
     api<{ case: DiseaseCase; hive: Hive }>(`/api/disease-cases/${caseId}`, json('PUT', body)),
   treatments: (hiveId: string) => api<Treatment[]>(`/api/hives/${hiveId}/treatments`),
-  treat: (hiveId: string, body: TreatmentInput) =>
-    api<{ treatment: Treatment; hive: Hive }>(`/api/hives/${hiveId}/treatments`, json('POST', body)),
+  treat: (hive: HiveRef, body: TreatmentInput) =>
+    saveOrQueue<{ treatment: Treatment; hive: Hive }>('treatment', hive, `/api/hives/${hive.id}/treatments`, { ...body }),
   feedings: (hiveId: string) => api<Feeding[]>(`/api/hives/${hiveId}/feedings`),
-  feed: (hiveId: string, body: FeedingInput) =>
-    api<{ feeding: Feeding; hive: Hive }>(`/api/hives/${hiveId}/feedings`, json('POST', body)),
+  feed: (hive: HiveRef, body: FeedingInput) =>
+    saveOrQueue<{ feeding: Feeding; hive: Hive }>('feeding', hive, `/api/hives/${hive.id}/feedings`, { ...body }),
   timeline: (hiveId: string) => api<TimelineItem[]>(`/api/hives/${hiveId}/timeline`),
   tasks: (params: { hive_id?: string; status?: string } = {}) => api<TaskItem[]>(`/api/tasks${qs(params)}`),
   completeTask: (taskId: string) => api<TaskItem>(`/api/tasks/${taskId}/done`, { method: 'POST' }),

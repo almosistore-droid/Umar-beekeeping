@@ -86,7 +86,7 @@ export function TreatmentForm({ hive, onDone }: { hive: Hive; onDone: () => void
   const [stockQty, setStockQty] = useState('')
   const picked = medicines.find((i) => i.id === stockItem)
 
-  const save = useHiveRecordMutation(hive, () => healthApi.treat(hive.id, {
+  const save = useHiveRecordMutation(hive, () => healthApi.treat(hive, {
     treated_at: date, medication, dosage: dosage || null, method, result: result || null, next_treatment_date: next,
     hive_disease_id: target?.startsWith('case:') ? target.slice(5) : null,
     disease_id: target?.startsWith('disease:') ? target.slice(8) : null,
@@ -153,7 +153,7 @@ export function FeedingForm({ hive, onDone }: { hive: Hive; onDone: () => void }
   const amount = Number(qty.replace(',', '.'))
   const need = stock.data ? feedingNeed(stock.data.norms, type, amount, unit) : null
   const needItem = need ? stock.data?.items.find((i) => i.code === need.code) : undefined
-  const save = useHiveRecordMutation(hive, () => healthApi.feed(hive.id, {
+  const save = useHiveRecordMutation(hive, () => healthApi.feed(hive, {
     feed_type: type, quantity: Number(qty.replace(',', '.')), unit, fed_at: date, reason: reason || null, next_feeding_date: next,
   }), onDone)
 
