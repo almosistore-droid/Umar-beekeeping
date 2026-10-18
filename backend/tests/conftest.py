@@ -42,6 +42,8 @@ def migrated_db():
 @pytest.fixture(autouse=True)
 def clean_tables():
     yield
+    from app.services.subscription_service import reset_cache
+    reset_cache()
     with engine.begin() as conn:
         # Reference data seeded by migrations (disease catalog) is kept; only custom entries are removed
         tables = conn.execute(

@@ -132,6 +132,13 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
   `tasks` with `source_type = rearing:<step>` (bot sends them), counts accepted ≤ grafted, each ≤ previous step.
   Pages `pages/rearing/RearingPages.tsx` (`/rearing`, `/rearing/:id`), menu «Ещё → Вывод маток».
 
+## Owner panel (specs/017-owner-panel)
+- Effective paid-until = `installation_state` row (owner panel / `python -m app.utils.subscription`) else
+  SUBSCRIPTION_UNTIL (`subscription_service.effective_until`, 15 s cache; tests reset it in conftest).
+- `/api/owner/*` (`routers/owner.py`): `X-Owner-Token` = OWNER_TOKEN, exempt from the 402 middleware, hidden by the
+  public nginx. Panel = separate ASGI app `app/owner_panel/main.py` (no app settings; reads clients/*.env), skipped by
+  the i18n extract. Deploy: `deploy/owner.yml`, `deploy/edge/owner-site.conf.template`, `client.sh owner|owner-password`.
+
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.
 - Never trust a Telegram user id from the client (the bot passes it only for login confirmation, signed). The role is loaded from DB on every request (`get_current_user`).

@@ -12,6 +12,8 @@ from pathlib import Path
 
 APP = Path(__file__).resolve().parent.parent
 CYR = re.compile(r"[А-Яа-яЁё]")
+# the owner panel is for the subscription owner only and is written in Russian
+SKIP_DIRS = ("owner_panel/",)
 SKIP_FILES = {"utils/seed.py", "utils/dev_init_data.py", "utils/check_setup.py", "i18n/extract.py", "i18n/__init__.py"}
 
 
@@ -60,7 +62,7 @@ def all_templates() -> set[str]:
     found: set[str] = set()
     for path in sorted(APP.rglob("*.py")):
         rel = path.relative_to(APP).as_posix()
-        if rel in SKIP_FILES:
+        if rel in SKIP_FILES or rel.startswith(SKIP_DIRS):
             continue
         found |= templates_in(path.read_text(encoding="utf-8"))
     return found

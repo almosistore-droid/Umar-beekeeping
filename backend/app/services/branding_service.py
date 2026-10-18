@@ -63,7 +63,8 @@ def _shade(hex_colour: str, factor: float) -> str:
 
 
 def subscription(settings: Settings) -> dict:
-    until = settings.subscription_until
+    from app.services.subscription_service import effective_until
+    until = effective_until(settings)
     if until is None:
         return {"active": True, "days_left": None, "contact": settings.subscription_contact or None}
     left = (until - today()).days
@@ -72,7 +73,9 @@ def subscription(settings: Settings) -> dict:
 
 
 def is_blocked(settings: Settings) -> bool:
-    return settings.subscription_until is not None and today() > settings.subscription_until
+    from app.services.subscription_service import effective_until
+    until = effective_until(settings)
+    return until is not None and today() > until
 
 
 def branding(settings: Settings) -> dict:

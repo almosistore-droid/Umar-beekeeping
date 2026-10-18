@@ -56,6 +56,7 @@ def test_add_creates_private_env_with_generated_secrets(repo):
     assert len(env["JWT_SECRET"]) == 64
     assert env["SUBSCRIPTION_UNTIL"] == (date.today() + timedelta(days=30)).isoformat()
     assert env["UVICORN_WORKERS"] == "1"
+    assert len(env["OWNER_TOKEN"]) == 64
     assert oct(env_file.stat().st_mode & 0o777) == "0o600"
     assert "__" not in env_file.read_text()
 
@@ -82,8 +83,12 @@ def test_extend_and_block_change_the_paid_date(repo):
     # after a block the new period starts today, not from the past date
     repo("extend", "asal", "+30days")
     assert read_env(env_file)["SUBSCRIPTION_UNTIL"] == (date.today() + timedelta(days=30)).isoformat()
-    # the backend is recreated so it reads the new date
-    assert "up -d --force-recreate backend" in repo.log.read_text()
+    # the date goes into the client's database (it wins over the .env)
+    assert "exec -T backend python -m app.utils.subscription set " + read_env(env_file)["SUBSCRIPTION_UNTIL"] \
+        in repo.log.read_text()
+    repo("extend", "asal", "none")
+    assert read_env(env_file)["SUBSCRIPTION_UNTIL"] == ""
+    assert "subscription set none" in repo.log.read_text()
 
 
 def test_start_writes_the_site_and_runs_the_bot_only_with_a_token(repo):
@@ -110,6 +115,7 @@ def test_adopt_keeps_the_old_docker_project_and_its_data(repo):
     env = read_env(repo.root / "clients" / "fayzi.env")
     assert env["COMPOSE_PROJECT"] == "beekeeping"  # → volumes beekeeping_pgdata / beekeeping_uploads
     assert env["UVICORN_WORKERS"] == "1" and env["BRAND_NAME"] == "Fayzi Umar"
+    assert len(env["OWNER_TOKEN"]) == 64
     assert (repo.root / ".env.moved").exists() and not (repo.root / ".env").exists()
     calls = repo.log.read_text()
     assert calls.index("docker-compose.yml down") < calls.index("-p beekeeping")
@@ -132,3 +138,29 @@ def test_edge_site_keeps_the_rate_limits_of_the_single_install():
                  "limit_req zone=auth burst=10 nodelay;", "limit_req zone=api burst=40 nodelay;",
                  'add_header Content-Security-Policy', 'add_header Permissions-Policy'):
         assert line in single and line in site, line
+
+
+def test_owner_panel_setup(repo):
+    repo("add", "asal", "asal.tj")
+    old = repo.root / "clients" / "old.env"
+    old.write_text("SLUG=old\nDOMAIN=old.tj\nPOSTGRES_USER=bee\nPOSTGRES_DB=beekeeping\n")
+    r = repo("owner", "admin.fayzi.tj")
+    owner_env = read_env(repo.root / "deploy" / "owner.env")
+    assert owner_env["DOMAIN"] == "admin.fayzi.tj" and len(owner_env["OWNER_SECRET"]) == 64
+    assert owner_env["OWNER_PASSWORD"] in r.stdout
+    assert oct((repo.root / "deploy" / "owner.env").stat().st_mode & 0o777) == "0o600"
+    assert len(read_env(old)["OWNER_TOKEN"]) == 64       # the client without a key got one
+    site = (repo.root / "deploy" / "edge" / "sites" / "_owner.conf").read_text()
+    assert "server_name admin.fayzi.tj;" in site and "http://bee-owner:8000" in site
+    calls = repo.log.read_text()
+    assert "-p bee-old" in calls and "owner.yml" in calls
+    # again: the password stays, a new one only on request
+    again = repo("owner", "admin.fayzi.tj")
+    assert owner_env["OWNER_PASSWORD"] not in again.stdout
+    r = repo("owner-password")
+    assert read_env(repo.root / "deploy" / "owner.env")["OWNER_PASSWORD"] in r.stdout
+
+
+def test_public_sites_hide_the_owner_api():
+    site = (REPO / "deploy" / "edge" / "site.conf.template").read_text()
+    assert "location /api/owner/ { return 404; }" in site

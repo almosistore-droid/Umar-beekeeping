@@ -1,0 +1,28 @@
+# Owner panel: all subscription clients on this server in one screen (deploy/client.sh owner DOMAIN).
+# Same image as the backend, another entry point. Reads clients/*.env (read-only) to know each client's
+# domain and OWNER_TOKEN, and talks to the clients' backends over the «bee-edge» network.
+name: bee-owner
+
+services:
+  owner:
+    image: beekeeping-backend:latest
+    pull_policy: never
+    container_name: bee-owner
+    restart: unless-stopped
+    entrypoint: ["uvicorn", "app.owner_panel.main:app", "--host", "0.0.0.0", "--port", "8000",
+                 "--proxy-headers", "--forwarded-allow-ips=*"]
+    env_file: ${OWNER_ENV}
+    # clients/*.env are readable by root only (they hold secrets); the container itself is read-only
+    user: "0:0"
+    read_only: true
+    tmpfs: [/tmp]
+    volumes:
+      - ${CLIENTS_DIR}:/clients:ro
+    networks:
+      edge:
+        aliases: ["bee-owner"]
+
+networks:
+  edge:
+    external: true
+    name: bee-edge

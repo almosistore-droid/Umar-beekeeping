@@ -12,3 +12,4 @@ uploads/
 clients/
 backups/
 deploy/edge/sites/*.conf
+deploy/owner.env

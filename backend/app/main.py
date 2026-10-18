@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from app import i18n
 from app.config import get_settings
 from app.routers import admin, apiaries, auth, health, hives, queens, users
-from app.routers import branding, crm, notifications, operations, qr, rearing, records, reports, stock
+from app.routers import branding, crm, notifications, operations, owner, qr, rearing, records, reports, stock
 from app.services import branding_service
 from app.utils.errors import DomainError
 from app.utils.validation_messages import humanize_errors
@@ -47,7 +47,8 @@ def create_app() -> FastAPI:
     async def subscription(request: Request, call_next):
         """After SUBSCRIPTION_UNTIL the whole app is closed (except health and the public brand)."""
         path = request.url.path
-        if (path.startswith("/api/") and not path.startswith(("/api/health", "/api/branding"))
+        # /api/owner: the owner panel must reach a closed client to extend it (protected by OWNER_TOKEN)
+        if (path.startswith("/api/") and not path.startswith(("/api/health", "/api/branding", "/api/owner"))
                 and branding_service.is_blocked(get_settings())):
             return JSONResponse(status_code=402, content={
                 "detail": "Подписка закончилась. Обратитесь к поставщику, чтобы продлить доступ."})
@@ -112,6 +113,7 @@ def create_app() -> FastAPI:
     app.include_router(notifications.router)
     app.include_router(stock.router)
     app.include_router(rearing.router)
+    app.include_router(owner.router)
     return app
 
 

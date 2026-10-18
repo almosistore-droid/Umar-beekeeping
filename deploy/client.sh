@@ -121,7 +121,7 @@ cmd_add() {
   mkdir -p "$CLIENTS/$slug"; chmod 700 "$CLIENTS"
   local until; until=$(date -d "+30 days" +%F)
   sed -e "s/__SLUG__/$slug/g" -e "s/__DOMAIN__/$domain/g" -e "s/__UNTIL__/$until/" \
-      -e "s/__PGPASS__/$(secret 16)/" -e "s/__JWT__/$(secret 32)/" \
+      -e "s/__PGPASS__/$(secret 16)/" -e "s/__JWT__/$(secret 32)/" -e "s/__OWNER__/$(secret 32)/" \
       "$ROOT/deploy/client.env.template" > "$env"
   chmod 600 "$env"
   say "Создан $env (подписка до $until)"
@@ -170,30 +170,44 @@ cmd_update() {
   docker image prune -f >/dev/null || true
 }
 
+current_until() { # current_until SLUG ENV → paid-until date the running backend uses ("" = no limit)
+  local out; out=$(compose "$1" exec -T backend python -m app.utils.subscription show 2>/dev/null | tail -n1 | tr -d '\r' || true)
+  if [[ "$out" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then echo "$out"
+  elif [[ "$out" == none ]]; then echo ""
+  else env_get "$2" SUBSCRIPTION_UNTIL; fi
+}
+
+set_until() { # set_until SLUG ENV DATE|none — in the client's database (wins over the .env) and in the .env
+  local slug=$1 env=$2 value=$3
+  env_set "$env" SUBSCRIPTION_UNTIL "$([[ $value == none ]] && echo "" || echo "$value")"
+  compose "$slug" up -d backend
+  compose "$slug" exec -T backend python -m app.utils.subscription set "$value"
+}
+
 cmd_extend() {
   local slug=${1:-} when=${2:-}
   local env; env=$(client_env "$slug")
-  [[ -n "$when" ]] || die "укажите дату (2027-10-17) или срок (+1year, +6months, +30days)"
+  [[ -n "$when" ]] || die "укажите дату (2027-10-17), срок (+1year, +6months, +30days) или none (без срока)"
   local new
-  if [[ "$when" == +* ]]; then
+  if [[ "$when" == none ]]; then
+    new=none
+  elif [[ "$when" == +* ]]; then
     # from the current end date, or from today if it has already passed
-    local cur; cur=$(env_get "$env" SUBSCRIPTION_UNTIL)
+    local cur; cur=$(current_until "$slug" "$env")
     local base; base=$(date +%F)
     [[ -n "$cur" && "$cur" > "$base" ]] && base=$cur
     new=$(date -d "$base ${when#+}" +%F) || die "непонятный срок «$when»"
   else
     new=$(date -d "$when" +%F) || die "непонятная дата «$when»"
   fi
-  env_set "$env" SUBSCRIPTION_UNTIL "$new"
-  compose "$slug" up -d --force-recreate backend
-  say "$slug: подписка до $new"
+  set_until "$slug" "$env" "$new"
+  say "$slug: подписка $([[ $new == none ]] && echo "без срока" || echo "до $new")"
 }
 
 cmd_block() {
   local slug=${1:-}
   local env; env=$(client_env "$slug")
-  env_set "$env" SUBSCRIPTION_UNTIL "$(date -d yesterday +%F)"
-  compose "$slug" up -d --force-recreate backend
+  set_until "$slug" "$env" "$(date -d yesterday +%F)"
   say "$slug: доступ закрыт (данные сохранены). Открыть: ./deploy/client.sh extend $slug +1month"
 }
 
@@ -202,7 +216,7 @@ cmd_list() {
   printf "%-12s %-24s %-20s %-12s %s\n" "КЛИЕНТ" "ДОМЕН" "НАЗВАНИЕ" "ДО" "СОСТОЯНИЕ"
   for s in $(all_slugs); do
     local env="$CLIENTS/$s.env"
-    local until; until=$(env_get "$env" SUBSCRIPTION_UNTIL)
+    local until; until=$(current_until "$s" "$env")
     local paid="оплачено"
     if [[ -n "$until" && "$today" > "$until" ]]; then paid="ЗАКРЫТО"
     elif [[ -n "$until" && "$(date -d "$until -7 days" +%F)" < "$today" ]]; then paid="скоро конец"; fi
@@ -254,11 +268,59 @@ cmd_adopt() {
   env_set "$env" COMPOSE_PROJECT beekeeping
   env_set "$env" UVICORN_WORKERS 1
   grep -qE "^BRAND_NAME=" "$env" || env_set "$env" BRAND_NAME "Fayzi Umar"
+  [[ -n "$(env_get "$env" OWNER_TOKEN)" ]] || env_set "$env" OWNER_TOKEN "$(secret 32)"
   say "Остановка старой установки (данные остаются)"
   (cd "$ROOT" && docker compose -f docker-compose.yml down)
   cmd_start "$slug"
   mv "$old" "$old.moved"
   say "Перенесено. Старый .env переименован в .env.moved; настройки клиента теперь в $env"
+}
+
+# ---------- owner panel ----------
+
+owner_compose() {
+  OWNER_ENV="$ROOT/deploy/owner.env" CLIENTS_DIR="$CLIENTS" \
+    docker compose -f "$ROOT/deploy/owner.yml" --env-file "$ROOT/deploy/owner.env" "$@"
+}
+
+cmd_owner() {
+  local domain=${1:-}
+  [[ "$domain" =~ ^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]] || die "укажите домен панели, например admin.fayziumar.tj"
+  docker image inspect beekeeping-backend:latest >/dev/null 2>&1 || die "сначала ./deploy/client.sh build"
+  local env="$ROOT/deploy/owner.env"
+  if [[ ! -f "$env" ]]; then
+    local pass; pass=$(secret 8)
+    printf 'DOMAIN=%s\nOWNER_PASSWORD=%s\nOWNER_SECRET=%s\nTIMEZONE=Asia/Dushanbe\n' "$domain" "$pass" "$(secret 32)" > "$env"
+    chmod 600 "$env"
+    say "Пароль панели владельца: $pass"
+    echo "   Сохраните его в надёжном месте. Новый пароль: ./deploy/client.sh owner-password"
+  else
+    env_set "$env" DOMAIN "$domain"
+  fi
+  # every client needs its own key for the panel
+  for s in $(all_slugs); do
+    local cenv="$CLIENTS/$s.env"
+    if [[ -z "$(env_get "$cenv" OWNER_TOKEN)" ]]; then
+      env_set "$cenv" OWNER_TOKEN "$(secret 32)"
+      say "Ключ панели для $s добавлен"
+      compose "$s" up -d --force-recreate backend
+    fi
+  done
+  edge_up
+  owner_compose up -d --force-recreate
+  ensure_certificate _owner "$domain"
+  sed -e "s/__DOMAIN__/$domain/g" "$EDGE/owner-site.conf.template" > "$EDGE/sites/_owner.conf"
+  edge_reload
+  say "Панель владельца: https://$domain"
+}
+
+cmd_owner_password() {
+  local env="$ROOT/deploy/owner.env"
+  [[ -f "$env" ]] || die "панель ещё не установлена: ./deploy/client.sh owner ДОМЕН"
+  local pass; pass=$(secret 8)
+  env_set "$env" OWNER_PASSWORD "$pass"
+  owner_compose up -d --force-recreate
+  say "Новый пароль панели владельца: $pass"
 }
 
 cmd_renew() {
@@ -273,7 +335,7 @@ usage() {
   ./deploy/client.sh add ИМЯ ДОМЕН            новый клиент (создаст clients/ИМЯ.env)
   ./deploy/client.sh logo ИМЯ файл.png        логотип клиента
   ./deploy/client.sh start ИМЯ                сертификат + сайт + запуск (и после правки .env)
-  ./deploy/client.sh extend ИМЯ +1year        продлить (или +6months, +30days, 2027-10-17)
+  ./deploy/client.sh extend ИМЯ +1year        продлить (или +6months, +30days, 2027-10-17, none — без срока)
   ./deploy/client.sh block ИМЯ                закрыть доступ сейчас (данные сохраняются)
   ./deploy/client.sh list                     все клиенты, домены, срок оплаты
   ./deploy/client.sh backup all               копии баз в backups/ (хранятся 30 дней)
@@ -281,6 +343,8 @@ usage() {
   ./deploy/client.sh stop ИМЯ                 остановить (данные сохраняются)
   ./deploy/client.sh adopt ИМЯ                перенести старую установку (.env) в клиенты
   ./deploy/client.sh renew                    продлить сертификаты (для cron)
+  ./deploy/client.sh owner ДОМЕН              панель владельца: все клиенты, продление одной кнопкой
+  ./deploy/client.sh owner-password           новый пароль панели владельца
 TXT
 }
 
@@ -300,6 +364,8 @@ main() {
     stop) cmd_stop "$@" ;;
     adopt) cmd_adopt "$@" ;;
     renew) cmd_renew "$@" ;;
+    owner) cmd_owner "$@" ;;
+    owner-password) cmd_owner_password "$@" ;;
     *) usage ;;
   esac
 }

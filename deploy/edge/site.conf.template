@@ -23,6 +23,9 @@ server {
     add_header Permissions-Policy "camera=(self), microphone=(), geolocation=()" always;
     add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org 'self'" always;
 
+    # the owner API is for the owner panel inside the server only
+    location /api/owner/ { return 404; }
+
     location = /api/auth/telegram {
         limit_req zone=auth burst=10 nodelay;
         limit_req_status 429;

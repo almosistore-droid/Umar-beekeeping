@@ -56,6 +56,16 @@ class Settings(BaseSettings):
     subscription_until: date | None = None
     # Who to contact to renew (shown on the blocked screen), e.g. «+992 90 000-00-00 · @owner»
     subscription_contact: str = ""
+    # Secret shared with the owner panel (deploy/client.sh makes it); empty = the owner API is off
+    owner_token: str = ""
+
+    @field_validator("owner_token")
+    @classmethod
+    def _owner_token(cls, v: str) -> str:
+        v = v.strip()
+        if v and len(v) < 32:
+            raise ValueError("OWNER_TOKEN must be at least 32 characters")
+        return v
 
     @field_validator("subscription_until", mode="before")
     @classmethod
