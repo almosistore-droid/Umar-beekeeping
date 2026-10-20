@@ -58,6 +58,8 @@ class Settings(BaseSettings):
     subscription_contact: str = ""
     # Secret shared with the owner panel (deploy/client.sh makes it); empty = the owner API is off
     owner_token: str = ""
+    # False: users, roles, passwords and the activity log are managed only from the owner panel
+    admin_in_app: bool = True
 
     @field_validator("owner_token")
     @classmethod

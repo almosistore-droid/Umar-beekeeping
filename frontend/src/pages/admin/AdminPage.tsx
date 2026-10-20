@@ -14,9 +14,9 @@ const yesNo = (ok: boolean, yes: string, no: string) => <Badge tone={ok ? 'ok' :
 
 /** «Админ-панель»: everything about the Mini App, plus entry points to access and the activity log. */
 export function AdminPage() {
-  const { isAdmin } = usePermissions()
-  const overview = useQuery({ queryKey: ['admin-overview'], queryFn: adminApi.overview, enabled: isAdmin })
-  if (!isAdmin) return <MessageView icon="shield" title={tr("Только для администратора")} />
+  const { isAdmin, canAdminister } = usePermissions()
+  const overview = useQuery({ queryKey: ['admin-overview'], queryFn: adminApi.overview, enabled: canAdminister })
+  if (!canAdminister) return <MessageView icon="shield" title={isAdmin ? tr("Управление пользователями доступно только в панели владельца") : tr("Только для администратора")} />
   if (overview.isLoading) return <LoadingView />
   const o = overview.data
   const sections = o ? [...new Set(o.counts.map((c) => c.section))] : []

@@ -13,18 +13,18 @@ const PAGE = 50
 
 /** Every change in the system, newest first; filter by person and by section. */
 export function AuditLogPage() {
-  const { isAdmin } = usePermissions()
+  const { isAdmin, canAdminister } = usePermissions()
   const [userId, setUserId] = useState('')
   const [entity, setEntity] = useState('')
-  const users = useQuery({ queryKey: ['users'], queryFn: usersApi.list, enabled: isAdmin })
+  const users = useQuery({ queryKey: ['users'], queryFn: usersApi.list, enabled: canAdminister })
   const log = useInfiniteQuery({
     queryKey: ['admin-audit', userId, entity],
     queryFn: ({ pageParam }) => adminApi.audit({ user_id: userId || undefined, entity_type: entity || undefined, offset: pageParam, limit: PAGE }),
     initialPageParam: 0,
     getNextPageParam: (last) => last.next_offset ?? undefined,
-    enabled: isAdmin,
+    enabled: canAdminister,
   })
-  if (!isAdmin) return <MessageView icon="shield" title={tr("Только для администратора")} />
+  if (!canAdminister) return <MessageView icon="shield" title={isAdmin ? tr("Управление пользователями доступно только в панели владельца") : tr("Только для администратора")} />
   const items = log.data?.pages.flatMap((p) => p.items) ?? []
   const types = log.data?.pages[0]?.entity_types ?? []
 

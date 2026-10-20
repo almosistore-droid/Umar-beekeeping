@@ -1,4 +1,5 @@
-"""State of this installation kept in the database (one row): the paid-until date set from the owner panel.
+"""State of this installation kept in the database (one row): the paid-until date set from the owner panel
+and where users are managed (in the app or only in the owner panel).
 
 When the row says `subscription_override`, its date wins over SUBSCRIPTION_UNTIL from the .env (which is only the
 starting value), so the owner can extend or close a client without touching the server files.
@@ -21,4 +22,6 @@ class InstallationState(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     singleton: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     subscription_override: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     subscription_until: Mapped[date | None] = mapped_column(Date)  # None + override = no limit
-    updated_from: Mapped[str | None] = mapped_column(String(40))   # «owner panel», «server»
+    updated_from: Mapped[str | None] = mapped_column(String(40))
+    # who manages users: True = the client's admin in the app, False = only the owner panel, None = ADMIN_IN_APP
+    admin_in_app: Mapped[bool | None] = mapped_column(Boolean)   # «owner panel», «server»

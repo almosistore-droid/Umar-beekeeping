@@ -87,10 +87,11 @@ def _find_user(db: Session, data: InviteCreate) -> User | None:
     return None
 
 
-def create_invite(db: Session, data: InviteCreate, admin: User) -> InviteResult:
+def create_invite(db: Session, data: InviteCreate, admin: User | None) -> InviteResult:
+    """`admin=None` — from the owner panel."""
     user = _find_user(db, data)
     if user is not None:
-        if user.id == admin.id:
+        if admin is not None and user.id == admin.id:
             raise ConflictError("Это вы. Свою роль изменить нельзя")
         before = audit.snapshot(user, ["role", "is_active"])
         user.role, user.is_active = data.role, True
@@ -109,10 +110,10 @@ def create_invite(db: Session, data: InviteCreate, admin: User) -> InviteResult:
     if clash:
         raise ConflictError("Для этого человека уже есть приглашение. Отзовите его, чтобы создать новое")
     invite = UserInvite(telegram_id=data.telegram_id, username=data.username, role=data.role, note=data.note,
-                        status=InviteStatus.PENDING, expires_at=_now() + timedelta(days=INVITE_DAYS), created_by=admin.id)
+                        status=InviteStatus.PENDING, expires_at=_now() + timedelta(days=INVITE_DAYS), created_by=admin.id if admin else None)
     db.add(invite)
     db.flush()
-    audit.record(db, user=admin, entity_type="user_invite", entity_id=invite.id, action="invited",
+    audit.record(db, user=admin, entity_type="user_invite", entity_id=invite.id, action="invited", comment=None if admin else "Панель владельца",
                  new={"telegram_id": data.telegram_id, "username": data.username, "role": data.role.value, "note": data.note})
     db.commit()
     db.refresh(invite)
@@ -133,14 +134,14 @@ def list_invites(db: Session) -> list[InviteOut]:
     return [invite_out(i) for i in rows]
 
 
-def revoke_invite(db: Session, invite_id: uuid.UUID, admin: User) -> InviteOut:
+def revoke_invite(db: Session, invite_id: uuid.UUID, admin: User | None) -> InviteOut:
     invite = db.get(UserInvite, invite_id)
     if invite is None:
         raise NotFoundError("Приглашение не найдено")
     if invite.status != InviteStatus.PENDING:
         raise ConflictError("Приглашение уже использовано или отозвано")
     invite.status = InviteStatus.REVOKED
-    audit.record(db, user=admin, entity_type="user_invite", entity_id=invite.id, action="invite_revoked",
+    audit.record(db, user=admin, entity_type="user_invite", entity_id=invite.id, action="invite_revoked", comment=None if admin else "Панель владельца",
                  old={"status": "PENDING"}, new={"status": "REVOKED"})
     db.commit()
     db.refresh(invite)
@@ -157,6 +158,30 @@ def claim_invite(db: Session, user: User) -> UserInvite | None:
         return None
     invite.status, invite.used_by, invite.used_at = InviteStatus.USED, user.id, _now()
     return invite
+
+
+def list_users(db: Session) -> list[User]:
+    return list(db.scalars(select(User).order_by(User.created_at)))
+
+
+def update_user(db: Session, user_id: uuid.UUID, changes: dict, admin: User | None) -> User:
+    """Role / active flag. `admin=None` — from the owner panel (may change anyone)."""
+    user = db.get(User, user_id)
+    if user is None:
+        raise NotFoundError("Пользователь не найден")
+    if admin is not None and user.id == admin.id and (
+            changes.get("role", UserRole.ADMIN) != UserRole.ADMIN or changes.get("is_active") is False):
+        raise ConflictError("Нельзя снять права администратора или отключить самого себя")
+    before = audit.snapshot(user, ["role", "is_active"])
+    for key, value in changes.items():
+        setattr(user, key, value)
+    old, new = audit.diff(before, audit.snapshot(user, ["role", "is_active"]))
+    if new:
+        audit.record(db, user=admin, entity_type="user", entity_id=user.id, action="updated", old=old, new=new,
+                     comment=None if admin else "Панель владельца")
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 # ---------- overview ----------

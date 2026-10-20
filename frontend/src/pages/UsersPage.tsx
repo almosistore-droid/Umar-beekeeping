@@ -22,13 +22,13 @@ const ROLE_HINT: Record<UserRole, string> = {
 
 /** Admin: users and access — roles, blocking, adding people in advance (invitations). */
 export function UsersPage() {
-  const { isAdmin } = usePermissions()
+  const { isAdmin, canAdminister } = usePermissions()
   const me = useAuth().user
   const qc = useQueryClient()
   const [adding, setAdding] = useState(false)
   const [passwordFor, setPasswordFor] = useState<User | null>(null)
-  const users = useQuery({ queryKey: ['users'], queryFn: usersApi.list, enabled: isAdmin })
-  const invites = useQuery({ queryKey: ['invites'], queryFn: adminApi.invites, enabled: isAdmin })
+  const users = useQuery({ queryKey: ['users'], queryFn: usersApi.list, enabled: canAdminister })
+  const invites = useQuery({ queryKey: ['invites'], queryFn: adminApi.invites, enabled: canAdminister })
   const refresh = () => ['users', 'invites', 'admin-overview'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }))
   const update = useMutation({
     mutationFn: ({ id, ...body }: { id: string; role?: UserRole; is_active?: boolean }) => usersApi.update(id, body),
@@ -37,7 +37,7 @@ export function UsersPage() {
   })
   const revoke = useMutation({ mutationFn: adminApi.revoke, onSuccess: () => { haptic('success'); refresh() }, onError: () => haptic('error') })
 
-  if (!isAdmin) return <MessageView icon="users" title={tr("Только для администратора")} />
+  if (!canAdminister) return <MessageView icon="users" title={isAdmin ? tr("Управление пользователями доступно только в панели владельца") : tr("Только для администратора")} />
   if (users.isLoading) return <LoadingView />
   const pending = (invites.data ?? []).filter((i) => i.status === 'PENDING' && !i.expired)
 

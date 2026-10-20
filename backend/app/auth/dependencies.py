@@ -65,6 +65,14 @@ def require_roles(*roles: UserRole) -> Callable[[User], User]:
     return checker
 
 
+def require_admin_in_app() -> None:
+    """User management (users, invitations, passwords, activity log) may be moved to the owner panel."""
+    from app.config import get_settings
+    from app.services.subscription_service import admin_in_app
+    if not admin_in_app(get_settings()):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Управление пользователями доступно только в панели владельца")
+
+
 # Convenience role groups used by routers
 ANY_ROLE = (UserRole.ADMIN, UserRole.BEEKEEPER, UserRole.ASSISTANT, UserRole.VIEWER)
 CAN_WRITE = (UserRole.ADMIN, UserRole.BEEKEEPER, UserRole.ASSISTANT)

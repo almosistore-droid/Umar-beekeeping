@@ -103,7 +103,7 @@ def _login_free(db: Session, login: str, except_id: uuid.UUID | None = None) -> 
         raise ConflictError("Этот логин уже занят")
 
 
-def create_account(db: Session, admin: User, *, first_name: str, last_name: str | None, login: str,
+def create_account(db: Session, admin: User | None, *, first_name: str, last_name: str | None, login: str,
                    role: UserRole) -> tuple[User, str]:
     login = normalize_login(login)
     _login_free(db, login)
@@ -112,19 +112,19 @@ def create_account(db: Session, admin: User, *, first_name: str, last_name: str 
                 password_hash=hash_password(password), must_change_password=True, role=role, is_active=True)
     db.add(user)
     db.flush()
-    audit.record(db, user=admin, entity_type="user", entity_id=user.id, action="account_created",
+    audit.record(db, user=admin, entity_type="user", entity_id=user.id, action="account_created", comment=None if admin else "Панель владельца",
                  new={"login": login, "role": role.value, "name": user.display_name})
     db.commit()
     db.refresh(user)
     return user, password
 
 
-def reset_password(db: Session, admin: User, user_id: uuid.UUID, login: str | None) -> tuple[User, str]:
+def reset_password(db: Session, admin: User | None, user_id: uuid.UUID, login: str | None) -> tuple[User, str]:
     """New temporary password (and a login for a Telegram user who had none). Logs the person out everywhere."""
     user = db.get(User, user_id)
     if user is None:
         raise NotFoundError("Пользователь не найден")
-    if user.id == admin.id:
+    if admin is not None and user.id == admin.id:
         raise ConflictError("Свой пароль меняйте в «Ещё → Сменить пароль»")
     changes: dict = {}
     if login is not None and normalize_login(login) != user.login:
@@ -141,7 +141,8 @@ def reset_password(db: Session, admin: User, user_id: uuid.UUID, login: str | No
     user.locked_until = None
     db.execute(update(DeviceSession).where(DeviceSession.user_id == user.id, DeviceSession.revoked_at.is_(None))
                .values(revoked_at=_now()))
-    audit.record(db, user=admin, entity_type="user", entity_id=user.id, action="password_reset", new=changes or None)
+    audit.record(db, user=admin, entity_type="user", entity_id=user.id, action="password_reset", new=changes or None,
+                 comment=None if admin else "Панель владельца")
     db.commit()
     db.refresh(user)
     return user, password

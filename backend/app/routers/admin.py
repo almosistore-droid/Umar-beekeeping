@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import ADMIN_ONLY, require_roles
+from app.auth.dependencies import ADMIN_ONLY, require_admin_in_app, require_roles
 from app.database import get_db
 from app.models import User
 from app.schemas.admin import (
@@ -20,7 +20,7 @@ from app.schemas.admin import (
 from app.schemas.auth import UserOut
 from app.services import admin_service, password_service
 
-router = APIRouter(prefix="/api/admin", tags=["admin"])
+router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(require_admin_in_app)])
 DB = Annotated[Session, Depends(get_db)]
 Admin = Annotated[User, Depends(require_roles(*ADMIN_ONLY))]
 

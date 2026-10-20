@@ -6,6 +6,8 @@ import { vi } from 'vitest'
 import { AdminPage } from '../pages/admin/AdminPage'
 import { AuditLogPage } from '../pages/admin/AuditLogPage'
 import { UsersPage } from '../pages/UsersPage'
+import { MorePage } from '../pages/MorePage'
+import { DEFAULT_BRANDING, loadBranding } from '../services/branding'
 import type { TelegramWebApp } from '../types/telegram'
 
 let role = 'ADMIN'
@@ -119,6 +121,22 @@ describe('Users and access', () => {
     role = 'BEEKEEPER'
     wrap(<UsersPage />)
     expect(screen.getByText('Только для администратора')).toBeInTheDocument()
+  })
+
+  it('moves to the owner panel when the subscription owner keeps user management', async () => {
+    const brand = (admin_in_app: boolean) => vi.spyOn(globalThis, 'fetch').mockImplementation(async (u) =>
+      String(u).includes('/api/branding') ? json({ ...DEFAULT_BRANDING, admin_in_app }) : json([]))
+    brand(false)
+    await loadBranding()
+    const spy = brand(false)
+    const view = wrap(<UsersPage />)
+    expect(screen.getByText('Управление пользователями доступно только в панели владельца')).toBeInTheDocument()
+    view.unmount()
+    wrap(<MorePage />)
+    expect(screen.queryByText('Админ-панель')).not.toBeInTheDocument()
+    expect(spy.mock.calls.some(([u]) => String(u).includes('/api/users') || String(u).includes('/api/admin'))).toBe(false)
+    brand(true)
+    await loadBranding()
   })
 })
 

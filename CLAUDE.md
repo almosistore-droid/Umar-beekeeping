@@ -138,6 +138,11 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - `/api/owner/*` (`routers/owner.py`): `X-Owner-Token` = OWNER_TOKEN, exempt from the 402 middleware, hidden by the
   public nginx. Panel = separate ASGI app `app/owner_panel/main.py` (no app settings; reads clients/*.env), skipped by
   the i18n extract. Deploy: `deploy/owner.yml`, `deploy/edge/owner-site.conf.template`, `client.sh owner|owner-password`.
+- User management may live only in the panel: `installation_state.admin_in_app` (panel button, `PUT /api/owner/settings`)
+  else ADMIN_IN_APP (default true); `subscription_service.admin_in_app`. Off → `require_admin_in_app` makes `/api/admin/*`
+  and `/api/users*` 403, `/api/branding.admin_in_app=false`, frontend `usePermissions().canAdminister` hides «Админ-панель».
+  Owner endpoints `/api/owner/users|accounts|invites|audit` reuse admin_service/password_service with `admin=None`
+  (audit comment «Панель владельца»); panel pages `/clients/<slug>/users`, `/clients/<slug>/log`.
 
 ## Stage 10 (specs/018-stage10-production)
 - Keep: acceptance tests for §38 (`tests/test_acceptance.py`), no-N+1 (`tests/test_query_counts.py` — add new list

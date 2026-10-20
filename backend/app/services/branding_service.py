@@ -72,6 +72,11 @@ def subscription(settings: Settings) -> dict:
             "contact": settings.subscription_contact or None}
 
 
+def _admin_in_app(settings: Settings) -> bool:
+    from app.services.subscription_service import admin_in_app
+    return admin_in_app(settings)
+
+
 def is_blocked(settings: Settings) -> bool:
     from app.services.subscription_service import effective_until
     until = effective_until(settings)
@@ -89,6 +94,7 @@ def branding(settings: Settings) -> dict:
         "logo_url": f"/api/branding/logo.png?v={v}",
         "icon_url": f"/api/branding/icon-180.png?v={v}",
         "subscription": subscription(settings),
+        "admin_in_app": _admin_in_app(settings),
     }
 
 

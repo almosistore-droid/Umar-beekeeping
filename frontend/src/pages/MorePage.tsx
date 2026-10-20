@@ -17,12 +17,12 @@ import { LANGS, getLang, switchLang, tr, type Lang } from '../i18n'
 
 export function MorePage() {
   const { user } = useAuth()
-  const { isAdmin, canManage } = usePermissions()
+  const { canAdminister, canManage } = usePermissions()
   if (!user) return null
   return (
     <div className="page">
       <h1 className="page__title">{tr("Ещё")}</h1>
-      {isAdmin && (
+      {canAdminister && (
         <nav className="menu">
           <Link to="/admin" className="menu__item"><Icon name="shield" />{tr("Админ-панель")}<span className="chevron">›</span></Link>
         </nav>

@@ -17,6 +17,8 @@ export type Branding = {
   logo_url: string
   icon_url: string
   subscription: Subscription
+  /** false: users, roles and the activity log are managed only in the subscription owner's panel */
+  admin_in_app?: boolean
 }
 
 export const DEFAULT_BRANDING: Branding = {
@@ -28,6 +30,7 @@ export const DEFAULT_BRANDING: Branding = {
   logo_url: '/api/branding/logo.png',
   icon_url: '/api/branding/icon-180.png',
   subscription: { active: true, days_left: null, contact: null },
+  admin_in_app: true,
 }
 
 const BRAND_KEY = 'fayzi-umar.brand'
