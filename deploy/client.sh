@@ -75,7 +75,7 @@ all_slugs() {
 
 edge_up() {
   docker network inspect bee-edge >/dev/null 2>&1 || docker network create bee-edge >/dev/null
-  mkdir -p "$WEBROOT" "$EDGE/sites"
+  mkdir -p "$WEBROOT" "$EDGE/sites" "$CERTS"
   docker compose -f "$EDGE/docker-compose.yml" up -d
 }
 
@@ -83,13 +83,25 @@ edge_reload() {
   docker exec bee-edge nginx -t && docker exec bee-edge nginx -s reload
 }
 
-write_site() { # write_site SLUG DOMAIN TEMPLATE
-  sed -e "s/__SLUG__/$1/g" -e "s/__DOMAIN__/$2/g" "$EDGE/$3" > "$EDGE/sites/$1.conf"
+CERTS="${BEE_CERTS:-/etc/bee-certs}"       # own certificates (e.g. Cloudflare Origin), win over Let's Encrypt
+LETSENCRYPT="${BEE_LETSENCRYPT:-/etc/letsencrypt}"
+
+own_cert() { [[ -f "$CERTS/$1/fullchain.pem" && -f "$CERTS/$1/privkey.pem" ]]; }
+
+cert_file() { # cert_file DOMAIN → certificate path on the host
+  if own_cert "$1"; then echo "$CERTS/$1/fullchain.pem"; else echo "$LETSENCRYPT/live/$1/fullchain.pem"; fi
+}
+
+write_site() { # write_site SLUG DOMAIN TEMPLATE — paths inside the edge container
+  local cert="/etc/letsencrypt/live/$2/fullchain.pem" key="/etc/letsencrypt/live/$2/privkey.pem"
+  if own_cert "$2"; then cert="/etc/bee-certs/$2/fullchain.pem"; key="/etc/bee-certs/$2/privkey.pem"; fi
+  local file="$EDGE/sites/$1.conf"
+  sed -e "s/__SLUG__/$1/g" -e "s/__DOMAIN__/$2/g" -e "s#__CERT__#$cert#g" -e "s#__KEY__#$key#g" "$EDGE/$3" > "$file"
 }
 
 ensure_certificate() { # ensure_certificate SLUG DOMAIN
   local slug=$1 domain=$2
-  if [[ -f "/etc/letsencrypt/live/$domain/fullchain.pem" ]]; then return; fi
+  if own_cert "$domain" || [[ -f "$LETSENCRYPT/live/$domain/fullchain.pem" ]]; then return; fi
   command -v certbot >/dev/null || die "нет certbot: apt install -y certbot"
   say "Сертификат для $domain (домен уже должен смотреть на этот сервер)"
   write_site "$slug" "$domain" site-http.conf.template
@@ -173,6 +185,7 @@ cmd_update() {
     say "Обновление $s"
     compose "$s" up -d --force-recreate --remove-orphans
   done
+  [[ "$target" == all ]] && cmd_sites || true
   docker image prune -f >/dev/null || true
 }
 
@@ -362,7 +375,7 @@ check_client() { # prints problems of one client, one per line
     "import urllib.request;print(urllib.request.urlopen('http://127.0.0.1:8000/api/health',timeout=5).status)" 2>/dev/null \
     | tail -n1 | tr -d '\r' || true)
   [[ "$health" == 200 ]] || echo "$s: приложение не отвечает"
-  local pem="${BEE_LETSENCRYPT:-/etc/letsencrypt}/live/$domain/fullchain.pem"
+  local pem; pem=$(cert_file "$domain")
   if [[ -f "$pem" ]]; then
     local end; end=$(openssl x509 -enddate -noout -in "$pem" | cut -d= -f2)
     local days=$(( ( $(date -d "$end" +%s) - $(date +%s) ) / 86400 ))
@@ -445,6 +458,44 @@ cmd_adopt() {
   say "Перенесено. Старый .env переименован в .env.moved; настройки клиента теперь в $env"
 }
 
+# ---------- certificates and sites ----------
+
+cmd_sites() { # rewrite every site from the templates (after an update or a certificate change)
+  local s; for s in $(all_slugs); do
+    local d; d=$(env_get "$CLIENTS/$s.env" DOMAIN)
+    [[ -n "$d" && -f "$(cert_file "$d")" ]] && write_site "$s" "$d" site.conf.template
+  done
+  if [[ -f "$ROOT/deploy/owner.env" ]]; then
+    local od; od=$(env_get "$ROOT/deploy/owner.env" DOMAIN)
+    [[ -n "$od" && -f "$(cert_file "$od")" ]] && write_site _owner "$od" owner-site.conf.template
+  fi
+  edge_up >/dev/null
+  edge_reload
+}
+
+cmd_cert_files() { # cert-files CERT.pem KEY.pem — own certificate (Cloudflare Origin, purchased), no renewal by us
+  local cert=${1:-} key=${2:-}
+  [[ -f "$cert" && -f "$key" ]] || die "укажите файлы сертификата и ключа: cert-files cert.pem key.pem"
+  openssl x509 -noout -in "$cert" 2>/dev/null || die "$cert — не сертификат (нужен PEM: -----BEGIN CERTIFICATE-----)"
+  local a b
+  a=$(openssl x509 -noout -pubkey -in "$cert" | sha256sum); b=$(openssl pkey -pubout -in "$key" 2>/dev/null | sha256sum)
+  [[ "$a" == "$b" ]] || die "ключ не подходит к сертификату"
+  local domains=() s d
+  for s in $(all_slugs); do domains+=("$(env_get "$CLIENTS/$s.env" DOMAIN)"); done
+  [[ -f "$ROOT/deploy/owner.env" ]] && domains+=("$(env_get "$ROOT/deploy/owner.env" DOMAIN)")
+  local used=0
+  for d in "${domains[@]}"; do
+    [[ -n "$d" ]] || continue
+    if openssl x509 -noout -in "$cert" -checkhost "$d" | grep -q "does match"; then
+      ( umask 077; mkdir -p "$CERTS/$d"; cp "$cert" "$CERTS/$d/fullchain.pem"; cp "$key" "$CERTS/$d/privkey.pem" )
+      say "$d: свой сертификат установлен (до $(openssl x509 -noout -enddate -in "$cert" | cut -d= -f2))"
+      used=1
+    fi
+  done
+  [[ $used == 1 ]] || die "сертификат не подходит ни к одному домену на этом сервере"
+  cmd_sites
+}
+
 # ---------- owner panel ----------
 
 owner_compose() {
@@ -478,7 +529,7 @@ cmd_owner() {
   edge_up
   owner_compose up -d --force-recreate
   ensure_certificate _owner "$domain"
-  sed -e "s/__DOMAIN__/$domain/g" "$EDGE/owner-site.conf.template" > "$EDGE/sites/_owner.conf"
+  write_site _owner "$domain" owner-site.conf.template
   edge_reload
   say "Панель владельца: https://$domain"
 }
@@ -492,8 +543,14 @@ cmd_owner_password() {
   say "Новый пароль панели владельца: $pass"
 }
 
-cmd_renew() {
-  certbot renew --webroot -w "$WEBROOT" --quiet --deploy-hook "docker exec bee-edge nginx -s reload"
+cmd_renew() { # Let's Encrypt only for domains without an own certificate (those need no renewal from us)
+  local dir d
+  for dir in "$LETSENCRYPT"/renewal/*.conf; do
+    [[ -f "$dir" ]] || continue
+    d=$(basename "$dir" .conf)
+    own_cert "$d" && continue
+    certbot renew --cert-name "$d" --webroot -w "$WEBROOT" --quiet --deploy-hook "docker exec bee-edge nginx -s reload"
+  done
 }
 
 usage() {
@@ -520,6 +577,8 @@ usage() {
   ./deploy/client.sh renew                    продлить сертификаты (для cron)
   ./deploy/client.sh owner ДОМЕН              панель владельца: все клиенты, продление одной кнопкой
   ./deploy/client.sh owner-password           новый пароль панели владельца
+  ./deploy/client.sh cert-files cert.pem key.pem  свой сертификат (Cloudflare Origin) вместо Let's Encrypt
+  ./deploy/client.sh sites                    пересоздать настройки сайтов (после обновления)
 TXT
 }
 
@@ -546,6 +605,8 @@ main() {
     adopt) cmd_adopt "$@" ;;
     renew) cmd_renew "$@" ;;
     owner) cmd_owner "$@" ;;
+    sites) cmd_sites "$@" ;;
+    cert-files) cmd_cert_files "$@" ;;
     owner-password) cmd_owner_password "$@" ;;
     *) usage ;;
   esac

@@ -19,6 +19,7 @@ services:
       - ./sites:/etc/nginx/sites:ro
       - ../../nginx/proxy_params_bee:/etc/nginx/proxy_params_bee:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /etc/bee-certs:/etc/bee-certs:ro
       - /var/www/certbot:/var/www/certbot:ro
     networks: [edge]
 

@@ -145,7 +145,9 @@ New stage or large feature: `/speckit-specify` → `/speckit-clarify` (optional)
 - Production: docs hidden, JWT HS* only, `no-store` on /api data. Frontend: rarely used screens via `lazyPage` in
   `router/index.tsx` (warmed up by OfflineBar), Tajik catalog loaded in `main.tsx` before `boot.tsx`.
 - Server ops in `deploy/client.sh`: backup [--send] / backup-setup / decrypt / restore / check [--alert] / cron /
-  rollback; `deploy/harden.sh`. Tests with fake docker/curl in `tests/test_deploy_client.py`.
+  rollback; `deploy/harden.sh`. Own certificates (Cloudflare Origin): `client.sh cert-files cert key` → `/etc/bee-certs/<domain>/`,
+  site templates use `__CERT__`/`__KEY__` (filled by `write_site`, own cert wins over Let's Encrypt), `renew` skips them;
+  `sites` rewrites all sites; real IP from `CF-Connecting-IP` only for Cloudflare ranges (`edge/conf.d/10-cloudflare.conf`). Tests with fake docker/curl in `tests/test_deploy_client.py`.
 
 ## Auth
 - `POST /api/auth/telegram` validates `initData` (HMAC-SHA256, key = HMAC("WebAppData", bot_token)) in `app/auth/telegram.py`, then issues a JWT.

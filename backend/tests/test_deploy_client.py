@@ -38,7 +38,8 @@ exit 0
 """)
         fake.chmod(0o755)
     # CI runs as a normal user: /var/www/certbot cannot be created there
-    env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}", "BEE_WEBROOT": str(tmp_path / "webroot")}
+    env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}", "BEE_WEBROOT": str(tmp_path / "webroot"),
+           "BEE_CERTS": str(tmp_path / "bee-certs"), "BEE_LETSENCRYPT": str(tmp_path / "letsencrypt")}
 
     def run(*args, ok=True):
         res = subprocess.run(["bash", str(root / "deploy" / "client.sh"), *args], env=env,
@@ -49,6 +50,7 @@ exit 0
 
     run.root = root
     run.log = log
+    run.tmp = tmp_path
     return run
 
 
@@ -251,3 +253,60 @@ def test_check_and_cron(repo, tmp_path):
     assert res.returncode == 0, res.stderr
     text = cron.read_text()
     assert "backup all --send" in text and "renew" in text and "check --alert" in text
+
+
+def make_cert(dir: Path, name: str, *hosts: str) -> tuple[Path, Path]:
+    cert, key = dir / f"{name}.pem", dir / f"{name}.key"
+    san = ",".join(f"DNS:{h}" for h in hosts)
+    subprocess.run(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "5475",
+                    "-subj", f"/CN={hosts[0]}", "-addext", f"subjectAltName={san}",
+                    "-keyout", str(key), "-out", str(cert)], check=True, capture_output=True)
+    return cert, key
+
+
+def test_own_certificate_replaces_lets_encrypt(repo):
+    """Cloudflare Origin certificate: no port 80, no renewal; sites point to /etc/bee-certs."""
+    repo("add", "asal", "asal.tj")
+    repo("owner", "admin.asal.tj")
+    cert, key = make_cert(repo.tmp, "origin", "asal.tj", "*.asal.tj")
+    _, other_key = make_cert(repo.tmp, "other", "other.tj")
+
+    assert "не подходит" in repo("cert-files", str(cert), str(other_key), ok=False).stderr
+    foreign, foreign_key = make_cert(repo.tmp, "foreign", "foreign.tj")
+    assert "ни к одному домену" in repo("cert-files", str(foreign), str(foreign_key), ok=False).stderr
+
+    r = repo("cert-files", str(cert), str(key))
+    assert "asal.tj: свой сертификат" in r.stdout and "admin.asal.tj: свой сертификат" in r.stdout
+    stored = repo.tmp / "bee-certs" / "asal.tj" / "privkey.pem"
+    assert stored.read_bytes() == key.read_bytes()
+    assert oct(stored.stat().st_mode & 0o777) == "0o600"
+    for name, domain in (("asal", "asal.tj"), ("_owner", "admin.asal.tj")):
+        site = (repo.root / "deploy" / "edge" / "sites" / f"{name}.conf").read_text()
+        assert f"ssl_certificate     /etc/bee-certs/{domain}/fullchain.pem;" in site
+        assert f"ssl_certificate_key /etc/bee-certs/{domain}/privkey.pem;" in site
+        assert "__CERT__" not in site and "letsencrypt" not in site
+
+    # starting again asks Let's Encrypt for nothing
+    repo.log.write_text("")
+    repo("start", "asal")
+    assert "certbot" not in repo.log.read_text()
+    assert "/etc/bee-certs/asal.tj/" in (repo.root / "deploy" / "edge" / "sites" / "asal.conf").read_text()
+    # the expiry check reads the own certificate (valid 15 years → no warning)
+    assert "истекает" not in repo("check", "asal").stdout
+    # renewal skips own certificates, still renews the Let's Encrypt ones
+    renewal = repo.tmp / "letsencrypt" / "renewal"
+    renewal.mkdir(parents=True)
+    (renewal / "asal.tj.conf").write_text("")
+    (renewal / "old.tj.conf").write_text("")
+    repo.log.write_text("")
+    repo("renew")
+    calls = repo.log.read_text()
+    assert "--cert-name old.tj" in calls and "--cert-name asal.tj" not in calls
+
+
+def test_edge_mounts_own_certificates_and_trusts_only_cloudflare_for_real_ip():
+    compose = (REPO / "deploy" / "edge" / "docker-compose.yml").read_text()
+    assert "/etc/bee-certs:/etc/bee-certs:ro" in compose
+    cf = (REPO / "deploy" / "edge" / "conf.d" / "10-cloudflare.conf").read_text()
+    assert "real_ip_header CF-Connecting-IP;" in cf
+    assert "set_real_ip_from 0.0.0.0/0" not in cf and cf.count("set_real_ip_from") >= 15

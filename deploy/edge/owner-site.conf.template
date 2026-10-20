@@ -11,8 +11,8 @@ server {
     http2 on;
     server_name __DOMAIN__;
 
-    ssl_certificate     /etc/letsencrypt/live/__DOMAIN__/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/__DOMAIN__/privkey.pem;
+    ssl_certificate     __CERT__;
+    ssl_certificate_key __KEY__;
 
     set $bee_owner http://bee-owner:8000;
 

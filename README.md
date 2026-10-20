@@ -189,6 +189,14 @@ nano clients/asal.env                    # BRAND_NAME, BRAND_COLOR, SUBSCRIPTION
 одной кнопкой: `./deploy/client.sh owner admin.ВАШ_ДОМЕН` (DNS-запись A для admin.… → IP сервера). Пароль
 показывается один раз; новый — `./deploy/client.sh owner-password`.
 
+**Сертификат без порта 80 (Cloudflare).** Если хостинг пропускает порт 80 нестабильно и Let's Encrypt не
+продлевается: домен переводят на DNS Cloudflare (оранжевое облако, SSL/TLS → «Full (strict)»), в Cloudflare
+создают Origin Certificate на `домен` и `*.домен` (15 лет), сохраняют его и ключ на сервере и выполняют
+`./deploy/client.sh cert-files origin.pem origin.key`. Файлы ложатся в `/etc/bee-certs/<домен>/` (только root),
+сайты переписываются, продлевать ничего не нужно (`renew` такие домены пропускает). Настоящие адреса
+посетителей nginx берёт из `CF-Connecting-IP` только от сетей Cloudflare (`deploy/edge/conf.d/10-cloudflare.conf`).
+После `git pull` с новыми шаблонами: `./deploy/client.sh sites` (делает и `update all`).
+
 Старую установку (одна копия, `.env` в корне) переводит в клиенты `./deploy/client.sh adopt fayzi` — база и
 файлы остаются (тот же Docker-проект `beekeeping`). Подробности: `specs/013-subscription-clients/spec.md`.
 
