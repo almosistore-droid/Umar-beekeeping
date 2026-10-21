@@ -119,7 +119,13 @@ cmd_build() {
   for part in backend frontend bot; do
     # the version in use stays as «previous»: ./deploy/client.sh rollback brings it back
     docker image inspect "beekeeping-$part:latest" >/dev/null 2>&1 && docker tag "beekeeping-$part:latest" "beekeeping-$part:previous"
-    docker build -t "beekeeping-$part:latest" -t "beekeeping-$part:$rev" "$part"
+    # Docker Hub is sometimes slow from the server: try again before giving up
+    local try ok=0
+    for try in 1 2 3; do
+      if docker build -t "beekeeping-$part:latest" -t "beekeeping-$part:$rev" "$part"; then ok=1; break; fi
+      [[ $try -lt 3 ]] && { echo "   сеть не ответила, попытка $((try + 1)) из 3 через 20 с…"; sleep "${BEE_RETRY_SLEEP:-20}"; }
+    done
+    [[ $ok == 1 ]] || die "сборка $part не удалась (нет связи с Docker Hub?) — работающая версия не тронута, повторите позже"
   done
   say "Версия $rev собрана"
   say "Готово. Перезапустить клиентов на новой версии: ./deploy/client.sh update all"

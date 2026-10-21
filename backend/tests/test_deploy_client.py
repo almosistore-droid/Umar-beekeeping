@@ -51,6 +51,7 @@ exit 0
     run.root = root
     run.log = log
     run.tmp = tmp_path
+    run.env = env
     return run
 
 
@@ -310,3 +311,22 @@ def test_edge_mounts_own_certificates_and_trusts_only_cloudflare_for_real_ip():
     cf = (REPO / "deploy" / "edge" / "conf.d" / "10-cloudflare.conf").read_text()
     assert "real_ip_header CF-Connecting-IP;" in cf
     assert "set_real_ip_from 0.0.0.0/0" not in cf and cf.count("set_real_ip_from") >= 15
+
+
+def test_build_retries_when_docker_hub_is_slow(repo):
+    fake = repo.tmp / "bin" / "docker"
+    count = repo.tmp / "builds"
+    fake.write_text(f"""#!/bin/bash
+echo "docker $*" >> "{repo.log}"
+if [[ "$1" == build ]]; then
+  n=$(cat "{count}" 2>/dev/null || echo 0); echo $((n + 1)) > "{count}"
+  [[ $n -lt 2 ]] && exit 1   # the first two builds time out
+fi
+exit 0
+""")
+    repo.env["BEE_RETRY_SLEEP"] = "0"
+    r = repo("build")
+    assert "попытка 2 из 3" in r.stdout and "попытка 3 из 3" in r.stdout and "собрана" in r.stdout
+    count.write_text("-10")  # every build fails now
+    r = repo("build", ok=False)
+    assert r.returncode != 0 and "сборка backend не удалась" in r.stderr
