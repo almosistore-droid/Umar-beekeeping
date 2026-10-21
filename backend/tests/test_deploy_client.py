@@ -330,3 +330,17 @@ exit 0
     count.write_text("-10")  # every build fails now
     r = repo("build", ok=False)
     assert r.returncode != 0 and "сборка backend не удалась" in r.stderr
+
+
+def test_demo_data_backs_up_first_and_runs_the_seed(repo):
+    repo("add", "asal", "asal.tj")
+    env_file = repo.root / "clients" / "asal.env"
+    assert "ADMIN_TELEGRAM_IDS" in repo("demo", "asal", ok=False).stderr  # nobody to sign the demo records
+    text = env_file.read_text()
+    text = "\n".join(l for l in text.splitlines() if not l.startswith("ADMIN_TELEGRAM_IDS=")) + "\nADMIN_TELEGRAM_IDS=777, 888\n"
+    env_file.write_text(text)
+    repo.log.write_text("")
+    r = repo("demo", "asal")
+    calls = repo.log.read_text()
+    assert calls.index("pg_dump") < calls.index("app.utils.seed --telegram-id 777")
+    assert "(демо)" in r.stdout

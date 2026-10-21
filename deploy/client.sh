@@ -311,6 +311,17 @@ cmd_backup() { # backup [SLUG|all] [--send]
   return $failed
 }
 
+cmd_demo() { # demo SLUG — demo apiaries «(демо)», hives, queens, records, CRM, stock (copy of the base first)
+  local slug=${1:-}; local env; env=$(client_env "$slug")
+  local admin; admin=$(env_get "$env" ADMIN_TELEGRAM_IDS); admin=${admin%%,*}; admin=${admin// /}
+  [[ "$admin" =~ ^[0-9]+$ ]] || die "в $env нет ADMIN_TELEGRAM_IDS — демо-записи нужно чьё-то имя"
+  say "Копия базы перед демо-данными"
+  cmd_backup "$slug" || die "копия не сделана — демо-данные не добавлены"
+  say "Демо-данные для $slug (автор — Telegram ID $admin)"
+  compose "$slug" exec -T backend python -m app.utils.seed --telegram-id "$admin"
+  say "Готово. Демо-записи помечены «(демо)»; ваши данные не изменены"
+}
+
 cmd_rollback() { # back to the version before the last build
   for part in backend frontend bot; do
     docker image inspect "beekeeping-$part:previous" >/dev/null 2>&1 || die "предыдущей версии нет (сборка была одна)"
@@ -583,6 +594,7 @@ usage() {
   ./deploy/client.sh renew                    продлить сертификаты (для cron)
   ./deploy/client.sh owner ДОМЕН              панель владельца: все клиенты, продление одной кнопкой
   ./deploy/client.sh owner-password           новый пароль панели владельца
+  ./deploy/client.sh demo ИМЯ                 добавить демо-пасеки, ульи, продажи, склад (для показа)
   ./deploy/client.sh cert-files cert.pem key.pem  свой сертификат (Cloudflare Origin) вместо Let's Encrypt
   ./deploy/client.sh sites                    пересоздать настройки сайтов (после обновления)
 TXT
@@ -611,6 +623,7 @@ main() {
     adopt) cmd_adopt "$@" ;;
     renew) cmd_renew "$@" ;;
     owner) cmd_owner "$@" ;;
+    demo) cmd_demo "$@" ;;
     sites) cmd_sites "$@" ;;
     cert-files) cmd_cert_files "$@" ;;
     owner-password) cmd_owner_password "$@" ;;
