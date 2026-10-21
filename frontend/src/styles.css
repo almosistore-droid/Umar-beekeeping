@@ -678,3 +678,11 @@ button.btn { display: inline-flex; align-items: center; justify-content: center;
 .rearing-step__chip--today, .rearing-step__chip--overdue { background: rgba(var(--gold-rgb), 0.15); color: var(--gold); }
 .rearing-step--skipped { opacity: 0.55; }
 .rearing-step__body p { margin: 0; color: var(--wax); }
+
+/* Developer's mark («Ещё», login screen): fixed gold, not the client's brand colour */
+.dev-credit { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 28px auto 8px; opacity: 0.85; }
+.dev-credit__mark { flex: none; }
+.dev-credit__text { display: flex; flex-direction: column; line-height: 1.15; }
+.dev-credit__by { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--tg-hint); }
+.dev-credit__name { font-family: var(--font-display); font-size: 19px; letter-spacing: 0.04em; color: #f4c23b; }
+.dev-credit__name small { font-family: var(--font-body, inherit); font-size: 10px; letter-spacing: 0.3em; margin-left: 4px; color: #d9a52b; }

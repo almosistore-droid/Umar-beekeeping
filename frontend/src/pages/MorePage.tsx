@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
+import { DeveloperCredit } from '../components/DeveloperCredit'
 import { useAuth } from '../hooks/useAuth'
 import { usePermissions } from '../hooks/usePermissions'
 import { ROLE_LABELS } from '../types/api'
@@ -52,6 +53,7 @@ export function MorePage() {
       <NotificationsCard />
       <LanguageCard />
       <PhoneAppCard />
+      <DeveloperCredit />
     </div>
   )
 }

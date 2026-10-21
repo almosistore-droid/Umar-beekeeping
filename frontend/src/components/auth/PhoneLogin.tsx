@@ -8,6 +8,7 @@ import { Icon } from '../Icon'
 import { InstallHint } from './InstallHint'
 import { PasswordLoginForm } from './PasswordForms'
 import { tr } from '../../i18n'
+import { DeveloperCredit } from '../DeveloperCredit'
 import { useBranding } from '../../services/branding'
 
 const POLL_EVERY_MS = 2000
@@ -133,6 +134,7 @@ export function PhoneLogin({ message }: { message?: string }) {
       )}
       <p className="hint small">{tr("Нет логина? Попросите администратора создать вам вход.")}</p>
       <InstallHint />
+      <DeveloperCredit />
     </div>
   )
 }
